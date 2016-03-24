@@ -1,0 +1,6 @@
+_build
+_build.test
+*.native
+*.byte
+tmp
+caradoc

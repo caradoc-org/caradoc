@@ -1,0 +1,101 @@
+%PDF-1.5
+%€€€€
+1 0 obj
+<<
+	/Type /Catalog
+	/Pages 3 0 R
+	/Garb#7/Garb /Garb /Garb#7/Pages 6 0 R
+>>
+endobj
+2 0 obj
+<<
+	/Name /F1
+	/BaseFont /Helvetica
+	/Type /Font
+	/Subtype /Type1
+>>
+endobj
+3 0 obj
+<<
+	/Count 1
+	/Kids [4 0 R]
+	/Type /Pages
+>>
+endobj
+4 0 obj
+<<
+	/Resources <<
+		/Font <<
+			/F1 2 0 R
+		>>
+	>>
+	/MediaBox [0 0 795 842]
+	/Parent 3 0 R
+	/Contents 5 0 R
+	/Type /Page
+>>
+endobj
+5 0 obj
+<< /Length 56 >>
+stream
+BT
+	/F1 30 Tf
+	350 750 Td
+	(Vous utilisez Poppler) Tj
+ET
+endstream
+endobj
+6 0 obj
+<<
+	/Count 1
+	/Kids [7 0 R]
+	/Type /Pages
+>>
+endobj
+7 0 obj
+<<
+	/Resources <<
+		/Font <<
+			/F1 2 0 R
+		>>
+	>>
+	/MediaBox [0 0 795 842]
+	/Parent 6 0 R
+	/Contents 8 0 R
+	/Type /Page
+>>
+endobj
+8 0 obj
+<< /Length 56 >>
+stream
+BT
+	/F1 30 Tf
+	350 750 Td
+	(Vous utilisez Acrobat) Tj
+ET
+endstream
+endobj
+9 0 obj
+<<>>
+endobj
+xref
+0 10
+0000000000 65535 f 
+0000000015 00000 n 
+0000000106 00000 n 
+0000000190 00000 n 
+0000000250 00000 n 
+0000000389 00000 n 
+0000000495 00000 n 
+0000000555 00000 n 
+0000000694 00000 n 
+0000000800 00000 n 
+trailer
+<<
+	/Size 10
+	/Root 1 0 R
+	/Info 9 0 R
+>>
+startxref
+820
+%%EOF

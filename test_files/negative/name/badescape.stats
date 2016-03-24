@@ -1,0 +1,4 @@
+Version : 1.5
+Incremental updates : 0
+Neither updates nor object streams nor free objects nor encryption
+Lexing error at offset 62 [0x3e] : invalid escape sequence in name context !

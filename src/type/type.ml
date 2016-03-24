@@ -1,0 +1,342 @@
+(*****************************************************************************)
+(*  Caradoc: a PDF parser and validator                                      *)
+(*  Copyright (C) 2015 ANSSI                                                 *)
+(*                                                                           *)
+(*  This program is free software; you can redistribute it and/or modify     *)
+(*  it under the terms of the GNU General Public License version 2 as        *)
+(*  published by the Free Software Foundation.                               *)
+(*                                                                           *)
+(*  This program is distributed in the hope that it will be useful,          *)
+(*  but WITHOUT ANY WARRANTY; without even the implied warranty of           *)
+(*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the            *)
+(*  GNU General Public License for more details.                             *)
+(*                                                                           *)
+(*  You should have received a copy of the GNU General Public License along  *)
+(*  with this program; if not, write to the Free Software Foundation, Inc.,  *)
+(*  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.              *)
+(*****************************************************************************)
+
+
+open Pdfobject
+open Mapkey
+open Errors
+open Boundedint
+open Algo
+
+
+module Type = struct
+
+  type 'a kind =
+    (* TODO : remove Any, that accepts any type *)
+    | Any
+    | Alias of string
+    | Class of string
+    | Stream of string
+    | Null
+    | Bool | Int | Real | String | Name
+    | Text | Date
+
+    | BoolExact of bool
+    | IntRange of (BoundedInt.t option) * (BoundedInt.t option)
+    | IntExact of BoundedInt.t
+    | IntIn of BoundedInt.t array
+    | NameExact of string
+    | NameIn of (string, unit) Hashtbl.t
+
+    | Array of 'a
+    | ArrayOrOne of 'a
+    | ArraySized of 'a * int
+    | ArrayVariantSized of 'a * (int array)
+    | ArrayTuples of 'a array
+    | ArrayDifferences
+    | Tuple of 'a array
+    | Variant of 'a kind list
+    | Dictionary of 'a
+
+  type t = {
+    kind : t kind;
+    allow_ind : bool;
+  }
+
+  type kind_t = t kind
+
+
+  type entry_t = {
+    typ : t;
+    optional : bool;
+  }
+
+  type class_t = ((string, entry_t) Hashtbl.t) * (string list) * bool
+  type pool_t = ((string, class_t) Hashtbl.t) * ((string, kind_t) Hashtbl.t)
+
+  type context = {
+    mutable pool : pool_t;
+    mutable types : kind_t MapKey.t;
+    mutable to_check : Key.t list;
+    mutable incomplete : bool;
+  }
+
+
+  let rec kind_to_string (kind : kind_t) : string =
+    match kind with
+    | Any -> "any"
+    | Alias name ->
+      "a\"" ^ name ^ "\""
+    | Class typename ->
+      "c\"" ^ typename ^ "\""
+    | Stream typename ->
+      "s\"" ^ typename ^ "\""
+    | Null -> "null"
+    | Bool -> "bool"
+    | Int -> "int"
+    | Real -> "real"
+    | String -> "string"
+    | Name -> "name"
+    | Text -> "text"
+    | Date -> "date"
+
+    | BoolExact true ->
+      "true"
+    | BoolExact false ->
+      "false"
+    | IntRange (low, high) ->
+      "(int" ^ (
+        match low with
+        | Some l ->
+          Printf.sprintf " >= %s" (BoundedInt.to_string l)
+        | None ->
+          ""
+      ) ^ (
+        match high with
+        | Some h ->
+          Printf.sprintf " <= %s" (BoundedInt.to_string h)
+        | None ->
+          ""
+      ) ^ ")"
+    | IntExact value ->
+      "(int = " ^ (BoundedInt.to_string value) ^ ")"
+    | IntIn values ->
+      "(int = " ^ (
+        Algo.join_string Array.fold_left BoundedInt.to_string " | " values
+      ) ^ ")"
+    | NameExact name ->
+      "(/" ^ name ^ ")"
+    | NameIn names ->
+      "(" ^ (
+        Algo.join_string List.fold_left (fun (x, _) -> "/" ^ x) ", " (Algo.sort_hash names)
+      ) ^ ")"
+
+    | Array typ ->
+      Printf.sprintf "%s[]" (type_to_string typ)
+    | ArrayOrOne typ ->
+      Printf.sprintf "%s[?]" (type_to_string typ)
+    | ArraySized (typ, len) ->
+      Printf.sprintf "%s[%d]" (type_to_string typ) len
+    | ArrayVariantSized (typ, lens) ->
+      Printf.sprintf "%s[%s]" (type_to_string typ) (
+        Algo.join_string Array.fold_left string_of_int ", " lens
+      )
+    | ArrayTuples types ->
+      "{" ^ (
+        Algo.join_string Array.fold_left type_to_string ", " types
+      ) ^ "}[]"
+    | ArrayDifferences ->
+      "differences"
+    | Tuple types ->
+      "{{" ^ (
+        Algo.join_string Array.fold_left type_to_string ", " types
+      ) ^ "}}"
+    | Variant options ->
+      "(" ^ (
+        Algo.join_string List.fold_left kind_to_string " | " options
+      ) ^ ")"
+    | Dictionary typ ->
+      Printf.sprintf "%s{}" (type_to_string typ)
+
+  and type_to_string (typ : t) : string =
+    (kind_to_string typ.kind) ^ (if typ.allow_ind then "" else "*")
+
+
+  let print_pool (pool : pool_t) : unit =
+    List.iter
+      (fun (typename, (entries, includes, _strict)) ->
+         Printf.printf "class %s\n" typename;
+         List.iter
+           (fun name ->
+              Printf.printf "\t#include : %s\n" name
+           ) (List.sort String.compare includes);
+         List.iter
+           (fun (name, entry) ->
+              Printf.printf "\t/%s : %s%s\n" name (type_to_string entry.typ) (if entry.optional then " [optional]" else "")
+           ) (Algo.sort_hash entries)
+      ) (Algo.sort_hash (fst pool));
+    List.iter
+      (fun (typename, kind) ->
+         Printf.printf "alias %s :\n\t%s\n" typename (kind_to_string kind);
+      ) (Algo.sort_hash (snd pool))
+
+
+  let rec check_pool_type (pool : pool_t) (typename : string) (kind : kind_t) : unit =
+    match kind with
+    | Alias name ->
+      if not (Hashtbl.mem (snd pool) name) then
+        raise (Errors.UnexpectedError (Printf.sprintf "Undeclared alias type \"%s\", used in \"%s\"" name typename));
+    | Class name
+    | Stream name ->
+      if not (Hashtbl.mem (fst pool) name) then
+        raise (Errors.UnexpectedError (Printf.sprintf "Undeclared class type \"%s\", used in \"%s\"" name typename));
+    | Array typ
+    | ArraySized (typ, _)
+    | ArrayVariantSized (typ, _) ->
+      check_pool_type pool (typename ^ "[]") typ.kind
+    | ArrayOrOne typ ->
+      check_pool_type pool (typename ^ "[?]") typ.kind
+    | ArrayTuples types ->
+      Array.iteri
+        (fun i x ->
+           check_pool_type pool (Printf.sprintf "%s[{%d}]" typename i) x.kind
+        ) types
+    | Tuple types ->
+      Array.iteri
+        (fun i x ->
+           check_pool_type pool (Printf.sprintf "%s{%d}" typename i) x.kind
+        ) types
+    | Variant options ->
+      let (_:int) = List.fold_left
+          (fun i x ->
+             check_pool_type pool (Printf.sprintf "%s<%d>" typename i) x;
+             i + 1
+          ) 0 options
+      in ()
+    | Dictionary typ ->
+      check_pool_type pool (typename ^ "{}") typ.kind
+    | Any
+    | Null | Bool | Int | Real | String | Name | Text | Date | ArrayDifferences
+    | BoolExact _ | IntRange _ | IntExact _ | IntIn _ | NameExact _ | NameIn _ ->
+      ()
+
+
+  let check_pool (pool : pool_t) : unit =
+    Hashtbl.iter
+      (fun typename (entries, includes, _) ->
+         List.iter
+           (fun name ->
+              if not (Hashtbl.mem (fst pool) name) then
+                raise (Errors.UnexpectedError (Printf.sprintf "Undeclared class type \"%s\", included by class \"%s\"" name typename));
+           ) includes;
+         Hashtbl.iter
+           (fun name entry ->
+              check_pool_type pool (Printf.sprintf "class %s/%s" typename name) entry.typ.kind
+           ) entries
+      ) (fst pool);
+    Hashtbl.iter
+      (fun typename kind ->
+         check_pool_type pool ("alias " ^ typename) kind
+      ) (snd pool)
+
+
+  let create_context () : context =
+    {
+      pool = (Hashtbl.create 16, Hashtbl.create 16);
+      types = MapKey.empty;
+      to_check = [];
+      incomplete = false;
+    }
+
+  (* TODO : check correctness *)
+  let copy_context (ctxt : context) : context =
+    {
+      pool = ctxt.pool;
+      types = ctxt.types;
+      to_check = ctxt.to_check;
+      incomplete = ctxt.incomplete;
+    }
+
+  let assign_context (dst : context) (src : context) : unit =
+    dst.pool <- src.pool;
+    dst.types <- src.types;
+    dst.to_check <- src.to_check;
+    dst.incomplete <- src.incomplete
+
+
+  let register_class ?(strict=true) (pool : pool_t) (typename : string) ?(includes=[]) (members : (string * entry_t) list) : unit =
+    let obj = Hashtbl.create (List.length members) in
+    List.iter (fun (key, value) -> Hashtbl.add obj key value) members;
+    Hashtbl.add (fst pool) typename (obj, includes, strict)
+
+  let register_alias (pool : pool_t) (typename : string) (kind : kind_t) : unit =
+    Hashtbl.add (snd pool) typename kind
+
+
+  let rec remove_alias (pool : pool_t) (kind : kind_t) : kind_t =
+    match kind with
+    | Alias name ->
+      begin
+        try
+          let k = Hashtbl.find (snd pool) name in
+          remove_alias pool k
+        with Not_found ->
+          raise (Errors.UnexpectedError (Printf.sprintf "Undeclared alias type %s" name));
+      end
+    | _ -> kind
+
+
+  let rec remove_variant (pool : pool_t) (kind : kind_t) : kind_t list =
+    let noalias = remove_alias pool kind in
+    match noalias with
+    | Variant l ->
+      List.fold_left (fun res x ->
+          Algo.merge_unique res (remove_variant pool x) compare
+        ) [] l
+    | _ -> [noalias]
+
+
+  let rec basic_type_intersection (type1 : kind_t) (type2 : kind_t) : kind_t option =
+    match (type1, type2) with
+    | (Any, _) -> Some type2
+    | (_, Any) -> Some type1
+
+    | (ArrayOrOne x, Array y)
+    | (ArrayOrOne x, ArrayOrOne y) when x = y ->
+      Some type2
+    | (ArrayOrOne x, _) ->
+      (* Non-array case *)
+      basic_type_intersection x.kind type2
+    | (_, ArrayOrOne _) ->
+      (* Symetric case *)
+      basic_type_intersection type2 type1
+
+    | _ when type1 = type2 ->
+      Some type1
+    | _ ->
+      None
+
+
+  let rec type_intersection (pool : pool_t) (type1 : kind_t) (type2 : kind_t) (indobj : Key.t) (entry : string) : kind_t =
+    let l1 = remove_variant pool type1 in
+    let l2 = remove_variant pool type2 in
+
+    let l = List.fold_left
+        (fun res x ->
+           List.fold_left
+             (fun res y ->
+                match basic_type_intersection x y with
+                | Some z ->
+                  z::res
+                | None ->
+                  res
+             ) res l2
+        ) [] l1
+    in
+
+    match l with
+    | [] ->
+      let msg = Printf.sprintf "Inconsistent type inference between %s and %s" (kind_to_string type1) (kind_to_string type2) in
+      raise (Errors.TypeError (msg, indobj, entry))
+    | [x] ->
+      x
+    | _ ->
+      Variant l
+
+end
+

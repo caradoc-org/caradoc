@@ -1,0 +1,17 @@
+1 : c"catalog"
+2 : c"pageroot"
+3 : c"page"
+4 : s"content_stream"
+5 : c"font_type1_standard"
+6 : c"page"
+7 : s"content_stream"
+8 : c"info"
+
+# of objects of known type : 8 / 8
+
+c"page" : 2
+s"content_stream" : 2
+c"catalog" : 1
+c"font_type1_standard" : 1
+c"info" : 1
+c"pageroot" : 1
