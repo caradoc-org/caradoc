@@ -1,0 +1,184 @@
+\section{File structure}
+\label{gram:file}
+
+The following rules describe the overall file structure.
+
+~
+
+\begin{grammar}
+<PDF> ::= <header> <body> <xref> <trailer> <eof-marker>
+
+<header> ::= <version> <non-ascii-marker>? <spaces>
+
+<version> ::= `\%PDF-1.' <version-digit> <eol>
+
+<non-ascii-marker> ::= `\%' <non-ascii-char> <non-ascii-char> <non-ascii-char> <non-ascii-char> <eol>
+
+<body> ::= <empty>
+\alt <body> <indirect-object> <spaces>
+
+<xref> ::= <xref-header> <xref-section>
+
+<xref-header> ::= `xref' <eol> <unsigned-int> <space> <unsigned-int> <eol>
+
+<xref-section> ::= <empty>
+\alt <xref-section> <unsigned-int-10> <space> <unsigned-int-5> <space> (`f' | `n') <xref-eol>
+
+<trailer> ::= `trailer' <spaces> <dictionary> <eol> `startxref' <eol> <unsigned-int> <eol>
+
+<eof-marker> ::= `\%\%EOF' <eol>?
+\end{grammar}
+
+
+\section{Objects}
+\label{gram:objects}
+
+The following rules describe the syntax of direct and indirect objects.
+
+~
+
+\begin{grammar}
+<indirect-object> ::= <indirect-object-header> <direct-object> <spaces> `endobj'
+\alt <indirect-object-header> <dictionary> <spaces> <stream> <spaces> `endobj'
+
+<indirect-object-header> ::= <unsigned-int> <spaces> <unsigned-int> <spaces> `obj' <spaces>
+
+<direct-object> ::= <null>
+\alt <bool>
+\alt <int>
+\alt <real>
+\alt <string>
+\alt <name>
+\alt <reference>
+\alt <array>
+\alt <dictionary>
+
+<reference> ::= <unsigned-int> <spaces> <unsigned-int> <spaces> `R'
+
+<array> ::= `[' <spaces> <array-content> `]'
+
+<array-content> ::= <empty>
+\alt <direct-object> <spaces> <array-content>
+
+<dictionary> ::= `\lless' <spaces> <dictionary-content> `\ggreater'
+
+<dictionary-content> ::= <empty>
+\alt <dictionary-content> <key-value>
+
+<key-value> ::= <name> <spaces> <direct-object> <spaces>
+\end{grammar}
+
+\section{Complex tokens}
+\label{gram:tokens}
+
+The following rules describe the syntax of complex tokens such as strings, names and streams.
+
+~
+
+\begin{grammar}
+<string> ::= <string-literal> | <string-hexa>
+
+<string-literal> ::= `(' <string-content> `)'
+
+<string-content> ::= <empty>
+\alt <string-content> <string-char>
+
+<string-char> ::= <string-regular>
+\alt `\textbackslash' (`n' | `r' | `t' | `b' | `f' | `(' | `)' | `\textbackslash' | <eol>)
+\alt `\textbackslash' <four-digit> <octal-digit> <octal-digit>
+\alt <string-literal>
+
+<string-hexa> ::= `<' <hexa-content> `>'
+
+<hexa-content> ::= <spaces>
+\alt <hexa-content> <hexa-char>
+
+<hexa-char> ::= <hexa-digit> <spaces> <hexa-digit> <spaces>
+
+<name> ::= `/' <name-content>
+
+<name-content> ::= <empty>
+\alt <name-content> <name-char>
+
+<name-char> ::= <name-regular>
+\alt `#' <hexa-digit> <hexa-digit>
+
+<stream> ::= `stream' <eol> <stream-content> `endstream'
+
+<stream-content> ::= <empty>
+\alt <stream-content> <any-char>
+\end{grammar}
+
+\section{Simple tokens}
+
+The following rules describe the syntax of simple tokens such as numbers.
+
+~
+
+\begin{grammar}
+<null> ::= `null'
+
+<bool> ::= `true' | `false'
+
+<int> ::= <sign>? <unsigned-int>
+
+<real> ::= <sign>? (<digits> `.' <digits>? | `.' <digits>)
+
+<unsigned-int> ::= <digits>
+
+<digits> ::= <digit>
+\alt <digits> <digit>
+
+<unsigned-int-10> ::= <unsigned-int-5> <unsigned-int-5>
+
+<unsigned-int-5> ::= <digit> <digit> <digit> <digit> <digit>
+
+<xref-eol> ::= <space> <cr> | <space> <lf> | <cr> <lf>
+
+<eol> ::= <cr> | <lf> | <cr> <lf>
+
+<any-space> ::= <space> | <cr> | <lf> | <tab>
+
+<spaces> ::= <empty>
+\alt <spaces> <any-space>
+\end{grammar}
+
+\section{Character set}
+\label{gram:chars}
+
+The following rules describe character classes.
+
+~
+
+\begin{grammar}
+<sign> ::= `+' | `-'
+
+<version-digit> ::= [`0'-`7']
+
+<hexa-digit> ::= [`0'-`9'`a'-`f'`A'-`F']
+
+<octal-digit> ::= [`0'-`7']
+
+<four-digit> ::= [`0'-`3']
+
+<digit> ::= [`0'-`9']
+
+<non-ascii-char> ::= [`\textbackslash x80'-`\textbackslash xFF']
+
+<space> ::= `\textbackslash x20'
+
+<cr> ::= `\textbackslash x0D'
+
+<lf> ::= `\textbackslash x0A'
+
+<tab> ::= `\textbackslash x09'
+
+<any-char> ::= [`\textbackslash x00'-`\textbackslash xFF']
+
+<string-regular> ::= <any-char> - (`(' | `)' | `\textbackslash')
+
+<regular> ::= <any-char> - (`\textbackslash x00' | `\textbackslash x09' | `\textbackslash x0A' | `\textbackslash x0C' | `\textbackslash x0D' | `\textbackslash x20' | `(' | `)' | `<' | `>' | `[' | `]' | `{' | `}' | `/' | `\%')
+
+<name-regular> ::= <regular> - `\#'
+\end{grammar}
+

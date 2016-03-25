@@ -1,0 +1,25 @@
+\documentclass{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=3cm]{geometry}
+
+\usepackage{syntax}
+\newcommand{\lless}{<{}<}
+\newcommand{\ggreater}{>{}>}
+
+
+\title{A proposal of a formal grammar for a subset of PDF}
+\author{Guillaume Endignoux \and Olivier Levillain \and Jean-Yves Migeon}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+This document describes a grammar for a restricted subset of the Portable Document Format, which excludes~--~among others~--~incremental updates, object streams and linearization. The grammar is presented in BNF, in a top-down order~--~from the file structure to the character set.
+
+\input{grammar-bnf.tex}
+
+\end{document}
+

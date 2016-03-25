@@ -4,3 +4,5 @@ _build.test
 *.byte
 tmp
 caradoc
+*.aux
+*.log
