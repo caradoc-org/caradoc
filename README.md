@@ -8,9 +8,9 @@ Along with an OCaml compiler, this program depends on the following libraries :
 
 - `menhir`, the parser generator that we use to convert PDF grammar into OCaml code ;
 - `ounit`, to manage unit tests ;
-- `cryptokit`, to handle the decoding of [http://www.ietf.org/rfc/rfc1951.txt](Deflate) streams in PDF files.
+- `cryptokit`, to handle the decoding of [Deflate](http://www.ietf.org/rfc/rfc1951.txt) streams in PDF files.
 
-The prefered way to install dependencies is via [https://opam.ocaml.org/](opam), the OCaml package manager.
+The prefered way to install dependencies is via [opam](https://opam.ocaml.org/), the OCaml package manager.
 The following commands give an example of installation.
 ```
 apt-get install ocaml opam
