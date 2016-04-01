@@ -43,9 +43,6 @@ module FetchCommon : sig
     mutable decompressed : ((PDFObject.t * BoundedInt.t) MapKey.t) MapKey.t;
     (* Intervals of objects in file *)
     intervals : Key.t Intervals.t;
-    (* TODO : use Params.t directly *)
-    (* Name of file to dump the first erroneous stream *)
-    mutable streamerrorfile : string option;
   }
 
   (*   Create a context

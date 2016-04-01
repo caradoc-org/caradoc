@@ -59,24 +59,6 @@ module MakeFetch (FetchComp : FetchCompT) = struct
           Intervals.add ctxt.FetchCommon.intervals (off, endstreampos) key;
 
           PDFObject.Stream (stream_dict, raw, PDFObject.Raw)
-
-        (*
-        let decoded, success =
-          decode raw key stream_dict (off +: offset) ctxt.FetchCommon.relaxstreams
-        in
-
-        begin
-          match ctxt.FetchCommon.streamerrorfile with
-          | Some f when not success ->
-              let out = open_out f in
-              Printf.fprintf out "%s" decoded;
-              close_out out;
-              ctxt.FetchCommon.streamerrorfile <- None
-          | _ -> ()
-        end;
-
-        PDFObject.Stream (stream_dict, raw, PDFObject.Content decoded)
-        *)
         | _ ->
           Intervals.add ctxt.FetchCommon.intervals (off, endobjpos) key;
           o

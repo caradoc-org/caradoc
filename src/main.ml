@@ -133,7 +133,6 @@ let command_extract =
     "--stream-limit", Arg.Int (fun v -> Params.global.Params.stream_limit <- Some v), "length when --expand-stream is activated, limit the length of the decoded streams to expand";
     "--decode-streams", Arg.Unit (fun () -> Params.global.Params.decode_streams <- true), "decode content of all streams";
     "--relax-streams", Arg.Unit (fun () -> Params.global.Params.relax_streams <- true), "relax unsupported filters (warning instead of fatal error)";
-    "--stream-errors", Arg.String (fun v -> Params.global.Params.stream_errors_filename <- Some v), "file to dump the first erroneous stream";
     "--dot", Arg.String (fun v -> Params.global.Params.dot_filename <- Some v), "file to dump the graph of references between objects";
     "--visjs", Arg.String (fun v -> Params.global.Params.visjs_filename <- Some v), "file to dump the graph of references between objects";
     "--loc", Arg.String (fun v -> Params.global.Params.loc_filename <- Some v), "file to dump the locations of objects in source file";

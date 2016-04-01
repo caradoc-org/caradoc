@@ -69,8 +69,6 @@ module Params = struct
     mutable holes_filename : string option;
     (* Types of objects *)
     mutable types_filename : string option;
-    (* Dump of the first incorrect stream *)
-    mutable stream_errors_filename : string option;
 
     (**** Verbosity ****)
     (* Verbose *)
@@ -105,7 +103,6 @@ module Params = struct
     loc_filename = None;
     holes_filename = None;
     types_filename = None;
-    stream_errors_filename = None;
     (* Verbosity *)
     verbose = false;
     debug = false;
@@ -134,7 +131,6 @@ module Params = struct
     global.loc_filename <- None;
     global.holes_filename <- None;
     global.types_filename <- None;
-    global.stream_errors_filename <- None;
     global.verbose <- false;
     global.debug <- false
 

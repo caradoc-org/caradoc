@@ -38,7 +38,6 @@ module FetchCommon = struct
     mutable traversed : bool MapKey.t;
     mutable decompressed : ((PDFObject.t * BoundedInt.t) MapKey.t) MapKey.t;
     intervals : Key.t Intervals.t;
-    mutable streamerrorfile : string option;
   }
 
   let make_context (input : in_channel) (length : BoundedInt.t) (xref : XRefTable.t) (intervals : Key.t Intervals.t) (doc : Document.t) : context =
@@ -50,7 +49,6 @@ module FetchCommon = struct
       traversed = MapKey.empty;
       decompressed = MapKey.empty;
       intervals = intervals;
-      streamerrorfile = Params.global.Params.stream_errors_filename;
     }
 
 end
