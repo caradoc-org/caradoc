@@ -85,7 +85,7 @@ module Graph = struct
 
 
   let print_dot_colors (graph : t) (f : Key.t -> string option) (filename : string) : unit =
-    let out = open_out filename in
+    let out = open_out_bin filename in
     Printf.fprintf out "digraph objects {\n";
 
     iter_vertices
@@ -148,7 +148,7 @@ module Graph = struct
 
   let print_visjs (graph : t) (filename : string) : unit =
     let ids = UniqueId.create () in
-    let out = open_out filename in
+    let out = open_out_bin filename in
 
     Printf.fprintf out "var nodes = [\n";
     iter_vertices

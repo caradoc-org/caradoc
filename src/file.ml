@@ -164,7 +164,7 @@ let find_xref (input : in_channel) (length : BoundedInt.t) (intervals : Key.t In
      - output file name
 *)
 let dump_xref (xref : XRefTable.t) (filename : string) : unit =
-  let out = open_out filename in
+  let out = open_out_bin filename in
   XRefTable.print out xref;
   close_out out
 
@@ -175,7 +175,7 @@ let dump_xref (xref : XRefTable.t) (filename : string) : unit =
      - output file name
 *)
 let dump_objects (doc : Document.t) (filename : string) : unit =
-  let out = open_out filename in
+  let out = open_out_bin filename in
   Document.print out doc;
   close_out out
 
@@ -519,7 +519,7 @@ let cleanup (input : in_channel) (out_filename : string) : unit =
 
   if Params.global.Params.verbose then
     Printf.printf "Saving file\n";
-  let output = open_out out_filename in
+  let output = open_out_bin out_filename in
   Document.print_pdf output doc3;
   close_out output
 

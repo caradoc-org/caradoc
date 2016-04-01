@@ -44,7 +44,7 @@ let dump_hole (input : in_channel) (start : BoundedInt.t) (length : BoundedInt.t
 
 
 let dump_intervals (intervals : Key.t Intervals.t) (filename : string) (input : in_channel) (length : BoundedInt.t) : unit =
-  let out = open_out filename in
+  let out = open_out_bin filename in
 
   let lastend = Intervals.fold (
       fun (low, high) key lastend ->
@@ -65,7 +65,7 @@ let dump_intervals (intervals : Key.t Intervals.t) (filename : string) (input : 
 
 
 let dump_holes (intervals : Key.t Intervals.t) (filename : string) (input : in_channel) (length : BoundedInt.t) : unit =
-  let out = open_out filename in
+  let out = open_out_bin filename in
 
   let lastend = Intervals.fold (
       fun (low, high) _ lastend ->

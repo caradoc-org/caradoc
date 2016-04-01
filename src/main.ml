@@ -62,7 +62,7 @@ let handle_errors f x =
 
 let command_xreftable =
   let parse_xreftable filename =
-    let input = open_in filename in
+    let input = open_in_bin filename in
     let stats = Stats.create () in
     let _, _, xref, _ = File.parse_until_xref input stats in
     close_in input;
@@ -94,7 +94,7 @@ let command_stats =
       Params.load_file Params.global !options_filename;
 
     let stats = Stats.create () in
-    let input = open_in filename in
+    let input = open_in_bin filename in
     let fail = ref false in
     Errors.catch ~fail:(fun () -> fail := true) (fun () ->
         File.statistics input stats
@@ -120,7 +120,7 @@ let command_extract =
     if !options_filename <> "" then
       Params.load_file Params.global !options_filename;
 
-    let input = open_in filename in
+    let input = open_in_bin filename in
     File.parse_file input
   in
 
@@ -157,7 +157,7 @@ let command_object =
     if !options_filename <> "" then
       Params.load_file Params.global !options_filename;
 
-    let input = open_in filename in
+    let input = open_in_bin filename in
     let obj = extract_object input (Key.make_gen_i !num !gen) in
     close_in input;
     Printf.printf "%s\n" (PDFObject.to_string obj)
@@ -184,7 +184,7 @@ let command_trailer =
     if !options_filename <> "" then
       Params.load_file Params.global !options_filename;
 
-    let input = open_in filename in
+    let input = open_in_bin filename in
     let trailers = extract_trailers input in
     List.iter (
       fun obj ->
@@ -210,7 +210,7 @@ let command_cleanup =
     if !options_filename <> "" then
       Params.load_file Params.global !options_filename;
 
-    let input = open_in filename in
+    let input = open_in_bin filename in
     File.cleanup input !out_filename
   in
 

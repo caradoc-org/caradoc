@@ -176,7 +176,7 @@ module Params = struct
 
   let load_file (params : t) (filename : string) : unit =
     let i = ref 0 in
-    let input = open_in filename in
+    let input = open_in_bin filename in
 
     try
       while true do

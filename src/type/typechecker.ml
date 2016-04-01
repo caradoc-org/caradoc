@@ -93,7 +93,7 @@ module TypeChecker = struct
 
 
   let dump (types : Type.kind_t MapKey.t) (objcount : int) (filename : string) =
-    let out = open_out filename in
+    let out = open_out_bin filename in
 
     let total = ref 0 in
     let count = Hashtbl.create 16 in
