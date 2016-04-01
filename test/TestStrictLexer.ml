@@ -167,8 +167,14 @@ let tests =
       (* +- 2^31 *)
       "(10)" >:: (fun _ -> assert_raises (BoundedInt.IntegerError "integer overflow")
                      (fun () -> get_token Strictlexer.token "2147483648")) ;
-      "(11)" >:: (fun _ -> assert_raises (BoundedInt.IntegerError "integer overflow")
-                     (fun () -> get_token Strictlexer.token "-2147483648")) ;
+      "(11)" >:: (fun _ -> check_token "-2147483648" Strictlexer.token
+                    (INT ((BoundedInt.of_int64 (-2147483648L)), ~:0))) ;
+
+      (* +- (2^31 + 1) *)
+      "(12)" >:: (fun _ -> assert_raises (BoundedInt.IntegerError "integer overflow")
+                     (fun () -> get_token Strictlexer.token "2147483649")) ;
+      "(13)" >:: (fun _ -> assert_raises (BoundedInt.IntegerError "integer overflow")
+                     (fun () -> get_token Strictlexer.token "-2147483649")) ;
     ] ;
 
     "real" >:::

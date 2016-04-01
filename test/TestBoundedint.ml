@@ -43,14 +43,15 @@ let tests =
       "(1)" >:: (fun _ -> assert_equal (BoundedInt.int_of_string "-7") ~:(-7)) ;
       "(2)" >:: (fun _ -> assert_equal (BoundedInt.int_of_string "2147483647") (BoundedInt.of_int64 2147483647L)) ;
       "(3)" >:: (fun _ -> assert_equal (BoundedInt.int_of_string "-2147483647") (BoundedInt.of_int64 (-2147483647L))) ;
+      "(4)" >:: (fun _ -> assert_equal (BoundedInt.int_of_string "-2147483648") (BoundedInt.of_int64 (-2147483648L))) ;
 
-      "(4)" >:: (fun _ -> assert_raises (BoundedInt.IntegerError "integer overflow")
-                    (fun () -> BoundedInt.int_of_string "-2147483648")) ;
       "(5)" >:: (fun _ -> assert_raises (BoundedInt.IntegerError "integer overflow")
-                    (fun () -> BoundedInt.int_of_string "2147483648")) ;
+                    (fun () -> BoundedInt.int_of_string "-2147483649")) ;
       "(6)" >:: (fun _ -> assert_raises (BoundedInt.IntegerError "integer overflow")
+                    (fun () -> BoundedInt.int_of_string "2147483648")) ;
+      "(7)" >:: (fun _ -> assert_raises (BoundedInt.IntegerError "integer overflow")
                     (fun () -> BoundedInt.int_of_string "18446744073709551616")) ;
-      "(7)" >:: (fun _ -> assert_raises (BoundedInt.IntegerError "string contains a non-digit character")
+      "(8)" >:: (fun _ -> assert_raises (BoundedInt.IntegerError "string contains a non-digit character")
                     (fun () -> BoundedInt.int_of_string "blabla")) ;
     ] ;
 
@@ -103,16 +104,18 @@ let tests =
     [
       "(1)" >:: (fun _ -> assert_equal (~:123 -: ~:456) ~:(-333)) ;
       "(2)" >:: (fun _ -> assert_equal (~:(-1073741824) -: ~:1073741823) (BoundedInt.of_int64 (-2147483647L))) ;
+      "(3)" >:: (fun _ -> assert_equal (~:(-1073741824) -: ~:1073741824) (BoundedInt.of_int64 (-2147483648L))) ;
 
-      "(3)" >:: (fun _ -> assert_raises (BoundedInt.IntegerError "integer overflow")
-                    (fun () -> ~:(-1073741824) -: ~:1073741824)) ;
+      "(4)" >:: (fun _ -> assert_raises (BoundedInt.IntegerError "integer overflow")
+                    (fun () -> (BoundedInt.of_int64 (-2147483648L)) -: ~:1)) ;
     ] ;
 
     "mul" >:::
     [
       "(1)" >:: (fun _ -> assert_equal (~:123 *: ~:456) ~:(123 * 456)) ;
+      "(2)" >:: (fun _ -> assert_equal (~:65536 *: ~:(-32768)) (BoundedInt.of_int64 (-2147483648L))) ;
 
-      "(2)" >:: (fun _ -> assert_raises (BoundedInt.IntegerError "integer overflow")
+      "(3)" >:: (fun _ -> assert_raises (BoundedInt.IntegerError "integer overflow")
                     (fun () -> ~:65536 *: ~:65536)) ;
     ] ;
 

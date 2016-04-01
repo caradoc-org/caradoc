@@ -22,7 +22,9 @@ module BoundedInt = struct
   type t = int64
   exception IntegerError of string
 
+  let min = -0x8000_0000L
   let max = 0x7fff_ffffL
+  let max_abs = 0x8000_0000L
 
   let int_of_char (c : char) : t =
     let i = int_of_char c in
@@ -40,7 +42,13 @@ module BoundedInt = struct
     | _ -> (1, 0, l)
 
   let check (i : t) : t =
-    if Int64.abs i > max then
+    if i < min || i > max then
+      raise (IntegerError "integer overflow")
+    else
+      i
+
+  let check_abs (i : t) : t =
+    if Int64.abs i > max_abs then
       raise (IntegerError "integer overflow")
     else
       i
@@ -55,7 +63,7 @@ module BoundedInt = struct
     Int64.to_int (check i)
 
   let to_string (i : t) : string =
-    if Int64.abs i > max then
+    if i < min || i > max then
       "NaN"
     else
       Int64.to_string i
@@ -65,9 +73,9 @@ module BoundedInt = struct
     let sign, start, len = sign_of_string s in
 
     for i = start to len - 1 do
-      result := check (Int64.add (Int64.mul !result 10L) (int_of_char s.[i]))
+      result := check_abs (Int64.add (Int64.mul !result 10L) (int_of_char s.[i]))
     done;
-    Int64.mul !result (Int64.of_int sign)
+    check (Int64.mul !result (Int64.of_int sign))
 
   let uint_of_string (s : string) : t =
     let result = ref Int64.zero in
