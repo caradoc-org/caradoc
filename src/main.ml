@@ -147,9 +147,10 @@ let command_extract =
 
 let command_object =
   let options_filename = ref "" in
+  let raw_stream_filename = ref "" in
+  let decoded_stream_filename = ref "" in
   let num = ref 0 in   (* These two fields describe the object number *)
   let gen = ref 0 in   (* => number + generation number               *)
-  Params.global.Params.expand_streams <- true;
 
   let parse_object filename =
     (* Load more options *)
@@ -159,7 +160,32 @@ let command_object =
     let input = open_in_bin filename in
     let obj = extract_object input (Key.make_gen_i !num !gen) in
     close_in input;
-    Printf.printf "%s\n" (PDFObject.to_string obj)
+
+    Printf.printf "%s\n" (PDFObject.to_string obj);
+
+    if !raw_stream_filename <> "" then (
+      begin
+        match obj with
+        | PDFObject.Stream (_, raw, _) ->
+          let out = open_out_bin !raw_stream_filename in
+          Printf.fprintf out "%s" raw;
+          close_out out
+        | _ ->
+          prerr_endline "Warning: --raw-stream argument was provided but the object is not a stream."
+      end;
+    );
+
+    if !decoded_stream_filename <> "" then (
+      begin
+        match obj with
+        | PDFObject.Stream (_, _, PDFObject.Content c) ->
+          let out = open_out_bin !decoded_stream_filename in
+          Printf.fprintf out "%s" c;
+          close_out out
+        | _ ->
+          prerr_endline "Warning: --decoded-stream argument was provided but the object is not a stream."
+      end;
+    )
   in
 
   let options = [
@@ -167,8 +193,8 @@ let command_object =
     "--num", Arg.Set_int num, "number of the object";
     "--gen", Arg.Set_int gen, "generation number of the object (default : 0)";
     "--sort-dicts", Arg.Unit (fun () -> Params.global.Params.sort_dicts <- true), "sort dictionaries by key";
-    "--decode-streams", Arg.Unit (fun () -> Params.global.Params.decode_streams <- true), "decode content of all streams";
-    "--relax-streams", Arg.Unit (fun () -> Params.global.Params.relax_streams <- true), "relax unsupported filters (warning instead of fatal error)";
+    "--raw-stream", Arg.Set_string raw_stream_filename, "file to dump the raw stream of this object";
+    "--decoded-stream", Arg.String (fun v -> decoded_stream_filename := v; Params.global.Params.decode_streams <- true), "file to dump the decoded stream of this object";
     "--debug", Arg.Unit (fun () -> Params.global.Params.debug <- true), "debug mode";
   ] in
   OneFileCmd (options, "Extract a given object from a PDF file", parse_object)
@@ -176,9 +202,9 @@ let command_object =
 
 let command_trailer =
   let options_filename = ref "" in
-  Params.global.Params.expand_streams <- true;
 
   let parse_trailer filename =
+    Params.global.Params.expand_streams <- true;
     (* Load more options *)
     if !options_filename <> "" then
       Params.load_file Params.global !options_filename;
