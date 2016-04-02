@@ -1,0 +1,17 @@
+- Changed the parameters of the 'object' command for easier extraction of
+  streams: removed --relax-streams and replaced --decode-streams by --raw-stream
+  and --decoded-stream.
+
+- Removed the parameter --stream-errors from the 'extract' command. This
+  parameter was not used in the code.
+
+- Changed the minimum allowed integer to -2^31. Reported by Chimrod.
+
+- Use open_in_bin and open_out_bin instead of open_in and open_out. Suggested by
+  Chimrod.
+
+-------------------
+Version 0.1 (beta):
+-------------------
+
+- Initial public release.
