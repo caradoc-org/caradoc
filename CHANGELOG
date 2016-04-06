@@ -12,7 +12,7 @@ design enforces the semantics of direct and indirect objects.
 consistency between encoded and decoded data.
 
 New features:
-- Added support for ASCII85 stream filter.
+- Added support for ASCII85 and RunLength stream filters.
 - Added --rencode-streams option to the 'cleanup' command to reencode all
 streams with a chosen filter.
 

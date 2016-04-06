@@ -20,6 +20,7 @@
 open OUnit
 open Asciihex
 open Ascii85
+open Runlength
 open Zlib
 open Pdfstream.PDFStream
 open Directobject
@@ -183,6 +184,53 @@ let tests =
                       (Some "")) ;
         "(2)" >:: (fun _ -> assert_equal
                       (ASCII85.decode (ASCII85.encode "foobar"))
+                      (Some "foobar")) ;
+      ] ;
+    ] ;
+
+    "runlength" >:::
+    [
+      "encode" >:::
+      [
+        "(1)" >:: (fun _ -> assert_equal
+                      (RunLength.encode "")
+                      "\x80") ;
+        "(2)" >:: (fun _ -> assert_equal
+                      (RunLength.encode "Hello world")
+                      "\x0AHello world\x80") ;
+      ] ;
+      "decode" >:::
+      [
+        "(1)" >:: (fun _ -> assert_equal
+                      (RunLength.decode "\x04hello\x80")
+                      (Some "hello")) ;
+        "(2)" >:: (fun _ -> assert_equal
+                      (RunLength.decode "\xFFa\x80")
+                      (Some "aa")) ;
+        "(3)" >:: (fun _ -> assert_equal
+                      (RunLength.decode "\xFFa\xF0b\x80")
+                      (Some "aabbbbbbbbbbbbbbbbb")) ;
+
+        "(4)" >:: (fun _ -> assert_equal
+                      (RunLength.decode "foo")
+                      None) ;
+        "(5)" >:: (fun _ -> assert_equal
+                      (RunLength.decode "\x04hello")
+                      None) ;
+        "(6)" >:: (fun _ -> assert_equal
+                      (RunLength.decode "\x04hello\x80foo")
+                      None) ;
+        "(7)" >:: (fun _ -> assert_equal
+                      (RunLength.decode "\x06hello\x80")
+                      None) ;
+      ] ;
+      "encode-decode" >:::
+      [
+        "(1)" >:: (fun _ -> assert_equal
+                      (RunLength.decode (RunLength.encode ""))
+                      (Some "")) ;
+        "(2)" >:: (fun _ -> assert_equal
+                      (RunLength.decode (RunLength.encode "foobar"))
                       (Some "foobar")) ;
       ] ;
     ] ;

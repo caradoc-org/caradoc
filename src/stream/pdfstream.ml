@@ -24,6 +24,7 @@ open Directobject
 open Zlib
 open Asciihex
 open Ascii85
+open Runlength
 open Predictor
 open Params
 
@@ -141,8 +142,16 @@ module PDFStream = struct
           (* TODO : check predictor *)
           d
       end
+    | "RunLengthDecode" ->
+      begin
+        match RunLength.decode content with
+        | None ->
+          raise (Errors.PDFError ("Error in RunLength stream", ctxt))
+        | Some d ->
+          (* TODO : check predictor *)
+          d
+      end
     | "LZWDecode"
-    | "RunLengthDecode"
     | "CCITTFaxDecode"
     | "JBIG2Decode"
     | "DCTDecode"
@@ -212,8 +221,9 @@ module PDFStream = struct
       ASCIIHex.encode content
     | "ASCII85Decode" ->
       ASCII85.encode content
+    | "RunLengthDecode" ->
+      RunLength.encode content
     | "LZWDecode"
-    | "RunLengthDecode"
     | "CCITTFaxDecode"
     | "JBIG2Decode"
     | "DCTDecode"
