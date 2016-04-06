@@ -50,8 +50,6 @@ module Algo = struct
         a::(merge_unique q r cmp)
 
 
-  exception Break
-
   let string_contains (x : string) (y : string) : bool =
     let result = ref false in
     try
@@ -62,11 +60,11 @@ module Algo = struct
             result := false;
         done;
         if !result then
-          raise Break;
+          raise Exit;
       done;
       !result
     with
-    | Break ->
+    | Exit ->
       !result
 
 

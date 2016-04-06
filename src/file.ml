@@ -38,8 +38,6 @@ open Graphchecker
 open Algo
 open Params
 
-exception Break
-
 
 (*   Find version of PDF file and check that it is in [1.0, 1.7]
      Args    :
@@ -89,11 +87,11 @@ let line_before (input : in_channel) (pos : BoundedInt.t) : BoundedInt.t * Bound
           status := c;
           eolbefore := ~:i;
           startline := (~:i) +: ~:1;
-          raise Break
+          raise Exit
         | _ -> ()
       done
     with
-    | Break -> ()
+    | Exit -> ()
   end;
 
   (* Handle CRLF *)
@@ -142,17 +140,17 @@ let find_xref (input : in_channel) (length : BoundedInt.t) (intervals : Key.t In
               Intervals.add intervals (pos, length -: ~:1) Key.Trailer;
               status := 0
             | _ ->
-              raise Break;
+              raise Exit;
           ) else
-            raise Break;
+            raise Exit;
 
           if !status = 0 then
-            raise Break;
+            raise Exit;
 
           eolpos := eolbefore;
         done;
       with
-      | Break -> ()
+      | Exit -> ()
     );
 
   (!status = 0, !result)

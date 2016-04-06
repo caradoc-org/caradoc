@@ -1,3 +1,5 @@
+- Use standard exception Exit where relevant.
+
 - Changed the parameters of the 'object' command for easier extraction of
   streams: removed --relax-streams and replaced --decode-streams by --raw-stream
   and --decoded-stream.
