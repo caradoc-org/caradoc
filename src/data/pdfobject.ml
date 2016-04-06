@@ -100,8 +100,7 @@ module PDFObject = struct
     Hashtbl.fold f x a
 
 
-  let escape_string (x : string) : string =
-    let buf = Buffer.create (String.length x) in
+  let escape_string (buf : Buffer.t) (x : string) : unit =
     for i = 0 to (String.length x) - 1 do
       match x.[i] with
       | '\x0A' -> Buffer.add_string buf "\\n"
@@ -113,11 +112,9 @@ module PDFObject = struct
       | ')' -> Buffer.add_string buf "\\)"
       | '\\' -> Buffer.add_string buf "\\\\"
       | _ as c -> Buffer.add_char buf c
-    done;
-    Buffer.contents buf
+    done
 
-  let escape_name (x : string) : string =
-    let buf = Buffer.create (String.length x) in
+  let escape_name (buf : Buffer.t) (x : string) : unit =
     for i = 0 to (String.length x) - 1 do
       let c = x.[i] in
       match c with
@@ -126,89 +123,110 @@ module PDFObject = struct
     *)
       | '(' | ')' | '<' | '>' | '[' | ']' | '{' | '}' | '/' | '%'
       | '#' ->
-        Buffer.add_string buf ("#" ^ (Convert.hexa_of_char c))
+        Buffer.add_char buf '#';
+        Buffer.add_string buf (Convert.hexa_of_char c)
       | _ when c <= '\x20' || c >= '\x7F' ->
-        Buffer.add_string buf ("#" ^ (Convert.hexa_of_char c))
+        Buffer.add_char buf '#';
+        Buffer.add_string buf (Convert.hexa_of_char c)
       | _ ->
         Buffer.add_char buf c
-    done;
-    Buffer.contents buf
+    done
 
 
-  let rec to_string_impl (x : t) (tab : string) : string =
+  let rec to_string_impl (tab : string) (buf : Buffer.t) (x : t) : unit =
     match x with
-    | Null -> "null"
-    | Bool true -> "true"
-    | Bool false -> "false"
-    | Int i -> BoundedInt.to_string i
-    | Real r -> r
-    | String s -> "(" ^ (escape_string s) ^ ")"
-    | Name n -> "/" ^ (escape_name n)
+    | Null -> Buffer.add_string buf "null"
+    | Bool true -> Buffer.add_string buf "true"
+    | Bool false -> Buffer.add_string buf "false"
+    | Int i -> Buffer.add_string buf (BoundedInt.to_string i)
+    | Real r -> Buffer.add_string buf r
+    | String s ->
+      Buffer.add_char buf '(';
+      escape_string buf s;
+      Buffer.add_char buf ')'
+    | Name n ->
+      Buffer.add_char buf '/';
+      escape_name buf n
     | Array a ->
-      "[" ^ (
-        Algo.join_string List.fold_left (fun x -> to_string_impl x tab) " " a
-      ) ^ "]"
+      Buffer.add_char buf '[';
+      Algo.join_buffer buf List.fold_left (to_string_impl tab) " " a;
+      Buffer.add_char buf ']'
     | Dictionary d ->
-      dict_to_string_impl d tab
+      dict_to_string_impl tab buf d
     | Reference key ->
       let id, gen = Key.get_obj_ref key in
-      (string_of_int id) ^ " " ^ (string_of_int gen) ^ " R"
-    | Stream (d, _raw, Offset off) ->
-      (dict_to_string_impl d tab) ^ "\nstream " ^ (Printf.sprintf "<lex at %d [0x%x]>" (BoundedInt.to_int off) (BoundedInt.to_int off))
+      Buffer.add_string buf (string_of_int id);
+      Buffer.add_char buf ' ';
+      Buffer.add_string buf (string_of_int gen);
+      Buffer.add_string buf " R"
+    | Stream (d, _, Offset off) ->
+      dict_to_string_impl tab buf d;
+      Buffer.add_string buf "\nstream ";
+      Buffer.add_string buf (Printf.sprintf "<lex at %d [0x%x]>" (BoundedInt.to_int off) (BoundedInt.to_int off))
     | Stream (d, raw, Raw) ->
-      stream_to_string_impl d raw false tab
+      stream_to_string_impl tab buf d raw false
     | Stream (d, _, Content c) ->
-      stream_to_string_impl d c true tab
+      stream_to_string_impl tab buf d c true
 
 
-  and stream_to_string_impl (d : dict_t) (c : string) (decoded : bool) (tab : string) : string =
-    let content =
-      let expand =
-        match (Params.global.Params.expand_streams, Params.global.Params.stream_limit) with
-        | true, None ->
-          true
-        | true, (Some limit) when (String.length c) <= limit ->
-          true
-        | _ ->
-          false
-      in
-
-      if expand then
-        "\n" ^ c ^ "\nendstream\n"
-      else
-        ""
+  and stream_to_string_impl (tab : string) (buf : Buffer.t) (d : dict_t) (c : string) (decoded : bool) : unit =
+    let expand =
+      match (Params.global.Params.expand_streams, Params.global.Params.stream_limit) with
+      | true, None ->
+        true
+      | true, (Some limit) when (String.length c) <= limit ->
+        true
+      | _ ->
+        false
     in
 
     let header = Printf.sprintf "stream <%s stream of length %d>" (if decoded then "decoded" else "encoded") (String.length c) in
-    (dict_to_string_impl d tab) ^ "\n" ^ header ^ content
+    dict_to_string_impl tab buf d;
+    Buffer.add_char buf '\n';
+    Buffer.add_string buf header;
+    if expand then (
+      Buffer.add_char buf '\n';
+      Buffer.add_string buf c;
+      Buffer.add_string buf "\nendstream\n"
+    )
 
 
-  and dict_to_string_impl (d : dict_t) (tab : string) : string =
+  and dict_to_string_impl (tab : string) (buf : Buffer.t) (d : dict_t) : unit =
     let tabtab = tab ^ "    " in
 
     let entry_to_string key value =
-      "\n" ^ tabtab ^ "/" ^ (escape_name key) ^ " " ^ (to_string_impl value tabtab)
+      Buffer.add_char buf '\n';
+      Buffer.add_string buf tabtab;
+      Buffer.add_char buf '/';
+      escape_name buf key;
+      Buffer.add_char buf ' ';
+      to_string_impl tabtab buf value
     in
 
-    let content =
+    let content_to_buf () =
       if Params.global.Params.sort_dicts then (
-        Algo.join_string List.fold_left (fun (key, value) -> entry_to_string key value) "" (Algo.sort_hash d)
+        List.iter (fun (key, value) -> entry_to_string key value) (Algo.sort_hash d)
       ) else (
-        dict_fold
-          (fun key value s ->
-             s ^ (entry_to_string key value)
-          ) d ""
+        dict_iter (fun key value -> entry_to_string key value) d
       )
     in
 
-    "<<" ^ content ^ "\n" ^ tab ^ ">>"
+    Buffer.add_string buf "<<";
+    content_to_buf ();
+    Buffer.add_char buf '\n';
+    Buffer.add_string buf tab;
+    Buffer.add_string buf ">>"
 
 
   let to_string (x : t) : string =
-    to_string_impl x ""
+    let buf = Buffer.create 16 in
+    to_string_impl "" buf x;
+    Buffer.contents buf
 
   let dict_to_string (x : dict_t) : string =
-    dict_to_string_impl x ""
+    let buf = Buffer.create 16 in
+    dict_to_string_impl "" buf x;
+    Buffer.contents buf
 
 
   let need_space_before (x : t) : bool =
@@ -242,42 +260,73 @@ module PDFObject = struct
       false
 
 
-  let rec to_pdf (x : t) : string =
+  let rec to_pdf_impl (buf : Buffer.t) (x : t) : unit =
     match x with
-    | Null -> "null"
-    | Bool true -> "true"
-    | Bool false -> "false"
-    | Int i -> BoundedInt.to_string i
-    | Real r -> r
-    | String s -> "(" ^ (escape_string s) ^ ")"
-    | Name n -> "/" ^ (escape_name n)
+    | Null -> Buffer.add_string buf "null"
+    | Bool true -> Buffer.add_string buf "true"
+    | Bool false -> Buffer.add_string buf "false"
+    | Int i -> Buffer.add_string buf (BoundedInt.to_string i)
+    | Real r -> Buffer.add_string buf r
+    | String s ->
+      Buffer.add_char buf '(';
+      escape_string buf s;
+      Buffer.add_char buf ')'
+    | Name n ->
+      Buffer.add_char buf '/';
+      escape_name buf n
     | Array a ->
-      "[" ^ (
-        let s, _ =
-          List.fold_left
-            (fun (s, need_space) x ->
-               s ^ (if need_space && (need_space_before x) then " " else "") ^ (to_pdf x),
-               need_space_after x
-            )
-            ("", false) a in s
-      ) ^ "]"
+      Buffer.add_char buf '[';
+      let (_:bool) = List.fold_left
+          (fun need_space x ->
+             if need_space && (need_space_before x) then
+               Buffer.add_char buf ' ';
+             to_pdf_impl buf x;
+             need_space_after x
+          ) false a in
+      Buffer.add_char buf ']'
     | Dictionary d ->
-      dict_to_pdf d
+      dict_to_pdf_impl buf d
     | Reference key ->
       let id, gen = Key.get_obj_ref key in
-      (string_of_int id) ^ " " ^ (string_of_int gen) ^ " R"
+      Buffer.add_string buf (string_of_int id);
+      Buffer.add_char buf ' ';
+      Buffer.add_string buf (string_of_int gen);
+      Buffer.add_string buf " R"
     | Stream (_, _, Offset _) ->
       raise (Errors.UnexpectedError "Undecoded stream")
     | Stream (d, raw, Raw)
     | Stream (d, raw, Content _) ->
-      Printf.sprintf "%sstream\n%s\nendstream" (dict_to_pdf d) raw
+      dict_to_pdf_impl buf d;
+      Buffer.add_string buf "stream\n";
+      Buffer.add_string buf raw;
+      Buffer.add_string buf "\nendstream"
 
-  and dict_to_pdf (d : dict_t) : string =
-    let content = Algo.join_string List.fold_left (fun (key, value) ->
-        "/" ^ (escape_name key) ^ (if need_space_before value then " " else "") ^ (to_pdf value)
-      ) "" (Algo.sort_hash d) in
+  and dict_to_pdf_impl (buf : Buffer.t) (d : dict_t) : unit =
+    let content_to_buf () =
+      List.iter (fun (key, value) ->
+          Buffer.add_char buf '/';
+          escape_name buf key;
+          if need_space_before value then
+            Buffer.add_char buf ' ';
+          to_pdf_impl buf value
+        ) (Algo.sort_hash d)
+    in
 
-    "<<" ^ content ^ ">>"
+    Buffer.add_string buf "<<";
+    content_to_buf ();
+    Buffer.add_string buf ">>"
+
+
+  let to_pdf (x : t) : string =
+    let buf = Buffer.create 16 in
+    to_pdf_impl buf x;
+    Buffer.contents buf
+
+  let dict_to_pdf (x : dict_t) : string =
+    let buf = Buffer.create 16 in
+    dict_to_pdf_impl buf x;
+    Buffer.contents buf
+
 
 
   let rec refs (x : t) : SetKey.t =

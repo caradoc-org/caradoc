@@ -56,6 +56,16 @@ module Algo : sig
   *)
   val string_contains : string -> string -> bool
 
+  (*   Join into a buffer an iterable object with separators
+       Args    :
+       - buffer
+       - fold_left function of the iterable object
+       - function to append an element of the iterable to a buffer
+       - separator
+       - iterable object (e.g. list, array)
+  *)
+  val join_buffer : Buffer.t -> ((bool -> 'b -> bool) -> bool -> 'a -> bool) -> (Buffer.t -> 'b -> unit) -> string -> 'a -> unit
+
   (*   Join an iterable object with separators
        Args    :
        - fold_left function of the iterable object
@@ -65,7 +75,7 @@ module Algo : sig
        Returns :
        - joined string
   *)
-  val join_string : ((string -> 'b -> string) -> string -> 'a -> string) -> ('b -> string) -> string -> 'a -> string
+  val join_string : ((bool -> 'b -> bool) -> bool -> 'a -> bool) -> ('b -> string) -> string -> 'a -> string
 
 end
 

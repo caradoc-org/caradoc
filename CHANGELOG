@@ -1,3 +1,5 @@
+- Use Buffer module instead of string concatenation to reduce complexity.
+
 - Use standard exception Exit where relevant.
 
 - Changed the parameters of the 'object' command for easier extraction of

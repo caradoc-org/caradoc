@@ -77,84 +77,122 @@ module Type = struct
   }
 
 
-  let rec kind_to_string (kind : kind_t) : string =
+  let rec kind_to_string_impl (buf : Buffer.t) (kind : kind_t) : unit =
     match kind with
-    | Any -> "any"
+    | Any -> Buffer.add_string buf "any"
     | Alias name ->
-      "a\"" ^ name ^ "\""
+      Buffer.add_string buf "a\"";
+      Buffer.add_string buf name;
+      Buffer.add_string buf "\""
     | Class typename ->
-      "c\"" ^ typename ^ "\""
+      Buffer.add_string buf "c\"";
+      Buffer.add_string buf typename;
+      Buffer.add_string buf "\""
     | Stream typename ->
-      "s\"" ^ typename ^ "\""
-    | Null -> "null"
-    | Bool -> "bool"
-    | Int -> "int"
-    | Real -> "real"
-    | String -> "string"
-    | Name -> "name"
-    | Text -> "text"
-    | Date -> "date"
+      Buffer.add_string buf "s\"";
+      Buffer.add_string buf typename;
+      Buffer.add_string buf "\""
+    | Null -> Buffer.add_string buf "null"
+    | Bool -> Buffer.add_string buf "bool"
+    | Int -> Buffer.add_string buf "int"
+    | Real -> Buffer.add_string buf "real"
+    | String -> Buffer.add_string buf "string"
+    | Name -> Buffer.add_string buf "name"
+    | Text -> Buffer.add_string buf "text"
+    | Date -> Buffer.add_string buf "date"
 
     | BoolExact true ->
-      "true"
+      Buffer.add_string buf "true"
     | BoolExact false ->
-      "false"
+      Buffer.add_string buf "false"
     | IntRange (low, high) ->
-      "(int" ^ (
+      Buffer.add_string buf "(int";
+      begin
         match low with
         | Some l ->
-          Printf.sprintf " >= %s" (BoundedInt.to_string l)
+          Buffer.add_string buf " >= ";
+          Buffer.add_string buf (BoundedInt.to_string l)
         | None ->
-          ""
-      ) ^ (
+          ()
+      end;
+      begin
         match high with
         | Some h ->
-          Printf.sprintf " <= %s" (BoundedInt.to_string h)
+          Buffer.add_string buf " <= ";
+          Buffer.add_string buf (BoundedInt.to_string h)
         | None ->
-          ""
-      ) ^ ")"
+          ()
+      end;
+      Buffer.add_char buf ')'
     | IntExact value ->
-      "(int = " ^ (BoundedInt.to_string value) ^ ")"
+      Buffer.add_string buf "(int = ";
+      Buffer.add_string buf (BoundedInt.to_string value);
+      Buffer.add_char buf ')'
     | IntIn values ->
-      "(int = " ^ (
-        Algo.join_string Array.fold_left BoundedInt.to_string " | " values
-      ) ^ ")"
+      Buffer.add_string buf "(int = ";
+      Algo.join_buffer buf Array.fold_left (fun b x -> Buffer.add_string b (BoundedInt.to_string x)) " | " values;
+      Buffer.add_char buf ')'
     | NameExact name ->
-      "(/" ^ name ^ ")"
+      Buffer.add_string buf "(/";
+      Buffer.add_string buf name;
+      Buffer.add_char buf ')'
     | NameIn names ->
-      "(" ^ (
-        Algo.join_string List.fold_left (fun (x, _) -> "/" ^ x) ", " (Algo.sort_hash names)
-      ) ^ ")"
+      Buffer.add_char buf '(';
+      Algo.join_buffer buf List.fold_left (fun b (x, _) ->
+          Buffer.add_char b '/';
+          Buffer.add_string b x
+        ) ", " (Algo.sort_hash names);
+      Buffer.add_char buf ')'
 
     | Array typ ->
-      Printf.sprintf "%s[]" (type_to_string typ)
+      type_to_string_impl buf typ;
+      Buffer.add_string buf "[]"
     | ArrayOrOne typ ->
-      Printf.sprintf "%s[?]" (type_to_string typ)
+      type_to_string_impl buf typ;
+      Buffer.add_string buf "[?]"
     | ArraySized (typ, len) ->
-      Printf.sprintf "%s[%d]" (type_to_string typ) len
+      type_to_string_impl buf typ;
+      Buffer.add_char buf '[';
+      Buffer.add_string buf (string_of_int len);
+      Buffer.add_char buf ']'
     | ArrayVariantSized (typ, lens) ->
-      Printf.sprintf "%s[%s]" (type_to_string typ) (
-        Algo.join_string Array.fold_left string_of_int ", " lens
-      )
+      type_to_string_impl buf typ;
+      Buffer.add_char buf '[';
+      Algo.join_buffer buf Array.fold_left (fun b x -> Buffer.add_string b (string_of_int x)) ", " lens;
+      Buffer.add_char buf ']'
     | ArrayTuples types ->
-      "{" ^ (
-        Algo.join_string Array.fold_left type_to_string ", " types
-      ) ^ "}[]"
+      Buffer.add_char buf '{';
+      Algo.join_buffer buf Array.fold_left type_to_string_impl ", " types;
+      Buffer.add_string buf "}[]"
     | ArrayDifferences ->
-      "differences"
+      Buffer.add_string buf "differences"
     | Tuple types ->
-      "{{" ^ (
-        Algo.join_string Array.fold_left type_to_string ", " types
-      ) ^ "}}"
+      Buffer.add_string buf "{{";
+      Algo.join_buffer buf Array.fold_left type_to_string_impl ", " types;
+      Buffer.add_string buf "}}"
     | Variant options ->
-      "(" ^ (
-        Algo.join_string List.fold_left kind_to_string " | " options
-      ) ^ ")"
+      Buffer.add_char buf '(';
+      Algo.join_buffer buf List.fold_left kind_to_string_impl " | " options;
+      Buffer.add_char buf ')'
     | Dictionary typ ->
-      Printf.sprintf "%s{}" (type_to_string typ)
+      type_to_string_impl buf typ;
+      Buffer.add_string buf "{}"
 
-  and type_to_string (typ : t) : string =
-    (kind_to_string typ.kind) ^ (if typ.allow_ind then "" else "*")
+  and type_to_string_impl (buf : Buffer.t) (typ : t) : unit =
+    kind_to_string_impl buf typ.kind;
+    if not typ.allow_ind then
+      Buffer.add_char buf '*'
+
+
+  let kind_to_string (kind : kind_t) : string =
+    let buf = Buffer.create 16 in
+    kind_to_string_impl buf kind;
+    Buffer.contents buf
+
+  let type_to_string (typ : t) : string =
+    let buf = Buffer.create 16 in
+    type_to_string_impl buf typ;
+    Buffer.contents buf
 
 
   let print_pool (pool : pool_t) : unit =

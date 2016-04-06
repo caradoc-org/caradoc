@@ -68,10 +68,23 @@ module Algo = struct
       !result
 
 
+  let join_buffer (buf : Buffer.t) fold_left to_buffer (separator : string) iterable : unit =
+    let (_:bool) = fold_left (fun started x ->
+        if started then
+          Buffer.add_string buf separator;
+        to_buffer buf x;
+        true
+      ) false iterable
+    in ()
+
   let join_string fold_left to_string (separator : string) iterable : string =
-    fold_left (fun s x ->
-        s ^ (if String.length s > 0 then separator else "") ^ (to_string x)
-      ) "" iterable
+    let to_buffer buf x =
+      Buffer.add_string buf (to_string x)
+    in
+
+    let buf = Buffer.create 16 in
+    join_buffer buf fold_left to_buffer separator iterable;
+    Buffer.contents buf
 
 end
 
