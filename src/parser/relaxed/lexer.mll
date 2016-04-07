@@ -23,6 +23,9 @@ let digit = ['0'-'9']
 let octal = ['0'-'7']
 let hexa = ['0'-'9''A'-'F''a'-'f']
 
+    (***********************)
+    (* PDF reference 7.3.3 *)
+    (***********************)
 let sign = ['+''-']
 let int = sign? digit+
 let real = sign? ((digit+ '.' digit*) | ('.' digit+))

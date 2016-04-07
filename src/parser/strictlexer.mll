@@ -7,7 +7,13 @@
 }
 
 
+    (***********************)
+    (* PDF reference 7.5.2 *)
+    (***********************)
 let version = ['0'-'7']
+    (***********************)
+    (* PDF reference 7.2.2 *)
+    (***********************)
 let cr = '\x0D'
 let lf = '\x0A'
 let sp = '\x20'
@@ -17,6 +23,9 @@ let eolstream = cr lf | lf
 let eol = eolstream | cr
 let nonascii = ['\x80'-'\xFF']
 
+    (***********************)
+    (* PDF reference 7.2.2 *)
+    (***********************)
 let regular = [^ '\x0D' '\x0A' '\x00' '\x09' '\x0C' '\x20' '(' ')' '<' '>' '[' ']' '{' '}' '/' '%']
 
 let digit = ['0'-'9']
@@ -25,15 +34,24 @@ let digits10 = digits5 digits5
 let octal = ['0'-'7']
 let hexa = ['0'-'9''A'-'F''a'-'f']
 
+    (***********************)
+    (* PDF reference 7.3.3 *)
+    (***********************)
 let sign = ['+''-']
 let real = sign? ((digit+ '.' digit*) | ('.' digit+))
 
 
 rule token = parse
+    (***********************)
+    (* PDF reference 7.5.2 *)
+    (***********************)
   | "%PDF-1." (version as v) eol
               { VERSION (1, (int_of_char v) - (int_of_char '0')) }
   | '%' nonascii nonascii nonascii nonascii eol
               { NOTASCII }
+    (***********************)
+    (* PDF reference 7.5.4 *)
+    (***********************)
   | "xref" eol
               { XREF ~:(Lexing.lexeme_start lexbuf) }
   | digits5 as g
@@ -42,12 +60,18 @@ rule token = parse
               { UINT10 (BoundedInt.uint_of_string o, ~:(Lexing.lexeme_start lexbuf)) }
   | "n"       { INUSE true }
   | "f"       { INUSE false }
+    (***********************)
+    (* PDF reference 7.5.5 *)
+    (***********************)
   | "trailer"
               { TRAILER }
   | "startxref"
               { STARTXREF }
   | "%%EOF" eol? eof
               { EOF_MARKER }
+    (***********************)
+    (* PDF reference 7.2.2 *)
+    (***********************)
   | cr        { CR }
   | lf        { LF }
   | sp        { SP }
@@ -125,6 +149,9 @@ and token_test = parse
 
 
 
+    (***********************)
+    (* PDF reference 7.3.8 *)
+    (***********************)
 and token_stream buf = parse
   | "endstream" ['a'-'z''A'-'Z''0'-'9']
               { raise (Errors.LexingError ("unexpected word", ~:(Lexing.lexeme_start lexbuf) +: ~:(String.length "endstream"))) }
@@ -135,6 +162,9 @@ and token_stream buf = parse
                 token_stream buf lexbuf }
 
 
+    (*************************)
+    (* PDF reference 7.3.4.3 *)
+    (*************************)
 and token_string_hex buf = parse
   | whitespace+
               { token_string_hex buf lexbuf }
@@ -146,6 +176,9 @@ and token_string_hex buf = parse
   | _ as c    { raise (Errors.LexingError (Printf.sprintf "unexpected character in hexadecimal string context : 0x%x" (int_of_char c), ~:(Lexing.lexeme_start lexbuf))) }
 
 
+    (***********************)
+    (* PDF reference 7.3.5 *)
+    (***********************)
 and token_name buf = parse
   | '#' (hexa as n1) (hexa as n2)
               { let c = char_of_hexa n1 n2 in
@@ -168,6 +201,9 @@ and token_name buf = parse
                 NAME (Buffer.contents buf) }
 
 
+    (*************************)
+    (* PDF reference 7.3.4.2 *)
+    (*************************)
 and token_string buf nesting = parse
   | ')'       { if nesting > 1 then (
                   Buffer.add_char buf ')';

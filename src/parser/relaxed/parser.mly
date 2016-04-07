@@ -34,10 +34,16 @@
 
 %%
 
+(***********************)
+(* PDF reference 7.5.5 *)
+(***********************)
 trailerdict:
   | ignore_spaces d = dict_without_space
     { d }
 
+(***********************)
+(* PDF reference 7.3.8 *)
+(***********************)
 endstream:
   | ENDSTREAM ignore_spaces ENDOBJ
     { }
@@ -58,23 +64,35 @@ hole:
     { }
 
 
+(***********************)
+(* PDF reference 7.4.2 *)
+(***********************)
 ascii_hex_decode:
   | s = STRINGHEX ignore_spaces EOF
     { s }
 
+indirectobj:
 (************************)
 (* PDF reference 7.3.10 *)
 (************************)
-indirectobj:
   | k = indirectobj_header o = directobj ENDOBJ
     { (k, o) }
+(***********************)
+(* PDF reference 7.3.8 *)
+(***********************)
   | k = indirectobj_header d = dictionary offset = STREAM
     { (k, PDFObject.Stream (d, "", PDFObject.Offset offset)) }
 
+(************************)
+(* PDF reference 7.3.10 *)
+(************************)
 indirectobj_header:
   | id = int_sp gen = int_sp OBJ ignore_spaces
     { Key.make_gen id gen }
 
+(***********************)
+(* PDF reference 7.3.x *)
+(***********************)
 directobj:
   | o = directobj_not_int
     { o }

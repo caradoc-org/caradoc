@@ -31,10 +31,16 @@
 
 %%
 
+(***********************)
+(* PDF reference 7.5.2 *)
+(***********************)
 version:
   x = VERSION { x }
 
 
+(***********************)
+(* PDF reference 7.5.4 *)
+(***********************)
 xref:
   XREF eol { }
 
@@ -47,6 +53,9 @@ xrefentry:
     { g, (XRefTable.make_value o i) }
 
 
+(***********************)
+(* PDF reference 7.5.5 *)
+(***********************)
 trailer:
   ignore_spaces TRAILER { }
 
@@ -66,6 +75,9 @@ eofmarker:
 
 
 
+(***********************)
+(* PDF reference 7.5.4 *)
+(***********************)
 number:
   | o = OFFSET
     { o }

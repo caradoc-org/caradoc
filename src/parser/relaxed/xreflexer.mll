@@ -19,6 +19,9 @@ let version = ['0'-'7']
 
 
 rule token = parse
+    (***********************)
+    (* PDF reference 7.5.4 *)
+    (***********************)
   | eof       { EOF }
   | crlf      { CRLF }
   | space_eol { SPACE_EOL }

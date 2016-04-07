@@ -46,6 +46,9 @@
 xrefsection_test:
   x = xrefsection EOF_TEST { x }
 
+(***********************)
+(* PDF reference 7.5.1 *)
+(***********************)
 file:
   v = VERSION not_ascii_marker b = body x = xref t = trailer EOF_MARKER
     { let doc, xbody = b in
@@ -69,11 +72,17 @@ file:
       Document.Document.add_trailer doc dict;
       v, doc }
 
+(***********************)
+(* PDF reference 7.5.2 *)
+(***********************)
 not_ascii_marker:
   NOTASCII? ignore_spaces
     { }
 
 
+(***********************)
+(* PDF reference 7.5.4 *)
+(***********************)
 xref:
   h = xrefhead s = xrefsection
     { let xrefpos, xstart, headcount = h in
@@ -100,11 +109,17 @@ xrefsection:
       (x, count +: ~:1) }
 
 
+(***********************)
+(* PDF reference 7.5.5 *)
+(***********************)
 trailer:
   TRAILER ignore_spaces d = dict_without_space eol STARTXREF eol pos = anyuint eol
     { (d, pos) }
 
 
+(***********************)
+(* PDF reference 7.5.3 *)
+(***********************)
 body:
   |
     { let x = XRefTable.create () in
@@ -118,17 +133,23 @@ body:
       (doc, x) }
 
 
+indirectobj:
 (************************)
 (* PDF reference 7.3.10 *)
 (************************)
-indirectobj:
   | i = indirectobj_header o = directobj endobj
     { let k, p = i in
       (p, k, o) }
+(***********************)
+(* PDF reference 7.3.8 *)
+(***********************)
   | i = indirectobj_header d = dictionary raw = STREAM ignore_spaces endobj
     { let k, p = i in
       (p, k, PDFObject.Stream (d, raw, PDFObject.Raw)) }
 
+(************************)
+(* PDF reference 7.3.10 *)
+(************************)
 indirectobj_header:
   | i = uint_off_sp gen = uint_sp OBJ ignore_spaces
     { let id, pos = i in
@@ -138,6 +159,9 @@ endobj:
   ENDOBJ ignore_spaces
     { }
 
+(***********************)
+(* PDF reference 7.3.x *)
+(***********************)
 directobj:
   | o = directobj_not_int
     { o }
