@@ -77,5 +77,14 @@ module Algo : sig
   *)
   val join_string : ((bool -> 'b -> bool) -> bool -> 'a -> bool) -> ('b -> string) -> string -> 'a -> string
 
+  (*   Remove from a string the characters verifying a prediate
+       Args    :
+       - predicate on characters to remove
+       - string to transform
+       Returns :
+       - transformed string
+  *)
+  val remove_if : (char -> bool) -> string -> string
+
 end
 

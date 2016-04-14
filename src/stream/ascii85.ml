@@ -18,6 +18,7 @@
 
 
 open Errors
+open Algo
 
 module ASCII85 = struct
 
@@ -76,11 +77,14 @@ module ASCII85 = struct
 
 
   let decode (content : string) : string option =
+    let s = Algo.remove_if (fun c ->
+        c = '\x00' (* NUL *) || c = '\x09' (* HT *) || c = '\x0C' (* FF *) || c = '\x20' (* SP *) || c = '\x0A' (* LF *) || c = '\x0D' (* CR *)
+      ) content in
     try
-      let l = String.length content in
+      let l = String.length s in
       if l < 2 then
         raise Exit;
-      if content.[l-2] <> '\x7E' || content.[l-1] <> '\x3E' then
+      if s.[l-2] <> '\x7E' || s.[l-1] <> '\x3E' then
         raise Exit;
       let ll = l-2 in
 
@@ -88,11 +92,11 @@ module ASCII85 = struct
       let buf = Buffer.create 1 in
 
       while !i < ll do
-        if content.[!i] = 'z' then (
+        if s.[!i] = 'z' then (
           Buffer.add_string buf "\x00\x00\x00\x00";
           i := !i + 1
         ) else (
-          decode_block buf content !i ll;
+          decode_block buf s !i ll;
           let d = ll - !i in
           if d < 5 then
             i := ll

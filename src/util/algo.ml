@@ -86,5 +86,16 @@ module Algo = struct
     join_buffer buf fold_left to_buffer separator iterable;
     Buffer.contents buf
 
+
+  let remove_if (predicate : char -> bool) (x : string) : string =
+    let l = String.length x in
+    let buf = Buffer.create l in
+    for i = 0 to l - 1 do
+      let c = x.[i] in
+      if not (predicate c) then
+        Buffer.add_char buf c
+    done;
+    Buffer.contents buf
+
 end
 
