@@ -23,7 +23,8 @@ open Common
 open Wrap
 open Pdfobject
 open Zlib
-open Ascii
+open Asciihex
+open Ascii85
 open Predictor
 
 
@@ -54,14 +55,22 @@ let decode_filter (content : string) (ctxt : Errors.error_ctxt) (filter : string
     end
   | "ASCIIHexDecode" ->
     begin
-      match ASCII.decode content with
+      match ASCIIHex.decode content with
       | None ->
         raise (Errors.PDFError ("Error in ASCIIHex stream", ctxt))
       | Some d ->
         (* TODO : check predictor *)
         d
     end
-  | "ASCII85Decode"
+  | "ASCII85Decode" ->
+    begin
+      match ASCII85.decode content with
+      | None ->
+        raise (Errors.PDFError ("Error in ASCII85 stream", ctxt))
+      | Some d ->
+        (* TODO : check predictor *)
+        d
+    end
   | "LZWDecode"
   | "RunLengthDecode"
   | "CCITTFaxDecode"

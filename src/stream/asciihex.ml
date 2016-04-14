@@ -19,7 +19,7 @@
 
 open Errors
 
-module ASCII = struct
+module ASCIIHex = struct
 
   let decode (content : string) : string option =
     let lexbuf = Lexing.from_string ("<" ^ content) in

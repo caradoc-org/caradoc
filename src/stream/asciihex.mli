@@ -17,7 +17,7 @@
 (*****************************************************************************)
 
 
-module ASCII : sig
+module ASCIIHex : sig
 
   (*   Decompress an ASCIIHex stream
        Args    :

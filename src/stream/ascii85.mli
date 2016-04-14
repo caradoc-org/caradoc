@@ -17,40 +17,14 @@
 (*****************************************************************************)
 
 
-open OUnit
-open Asciihex
-open Zlib
+module ASCII85 : sig
 
+  (*   Decompress an ASCII85 stream
+       Args    :
+       - input string
+       Returns :
+       - decoded string or None if decoding error
+  *)
+  val decode : string -> string option
 
-let tests =
-  "Stream" >:::
-  [
-    "asciihex" >:::
-    [
-      "(1)" >:: (fun _ -> assert_equal
-                    (ASCIIHex.decode "ABCDEF0123456789>")
-                    (Some "\xAB\xCD\xEF\x01\x23\x45\x67\x89")) ;
-      "(2)" >:: (fun _ -> assert_equal
-                    (ASCIIHex.decode "68656C6C6F>")
-                    (Some "hello")) ;
-
-      "(3)" >:: (fun _ -> assert_equal
-                    (ASCIIHex.decode "ABCDEF0123456789")
-                    None) ;
-    ] ;
-
-    "zlib" >:::
-    [
-      (* TODO *)
-    ] ;
-    "adler32" >:::
-    [
-      "(1)" >:: (fun _ -> assert_equal
-                    (Zlib.adler32 "hello world")
-                    0x1a0b045dl) ;
-      "(2)" >:: (fun _ -> assert_equal
-                    (Zlib.adler32 "")
-                    1l) ;
-    ] ;
-  ]
-
+end
