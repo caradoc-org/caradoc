@@ -27,4 +27,12 @@ module ASCII85 : sig
   *)
   val decode : string -> string option
 
+  (*   Compress an ASCII85 stream
+       Args    :
+       - input string
+       Returns :
+       - encoded string
+  *)
+  val encode : string -> string
+
 end

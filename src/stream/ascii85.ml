@@ -105,4 +105,69 @@ module ASCII85 = struct
     with
     | Exit -> None
 
+
+  let encode_char (x : int) : char =
+    Char.chr (x + 0x21)
+
+  let encode_block_impl (dst : Buffer.t) (a : char) (b : char) (c : char) (d : char) (l : int) : unit =
+    let al = Int64.of_int (Char.code a) in
+    let bl = Int64.of_int (Char.code b) in
+    let cl = Int64.of_int (Char.code c) in
+    let dl = Int64.of_int (Char.code d) in
+    let x =
+      Int64.add dl
+        (Int64.mul 256L
+           (Int64.add cl
+              (Int64.mul 256L
+                 (Int64.add bl
+                    (Int64.mul al 256L)
+                 )
+              )
+           )
+        )
+    in
+
+    if x = 0L && l = 4 then
+      Buffer.add_char dst 'z'
+    else (
+      Buffer.add_char dst (encode_char (Int64.to_int (Int64.rem (Int64.div x 52200625L) 85L)));
+      if l >= 1 then
+        Buffer.add_char dst (encode_char (Int64.to_int (Int64.rem (Int64.div x 614125L) 85L)));
+      if l >= 2 then
+        Buffer.add_char dst (encode_char (Int64.to_int (Int64.rem (Int64.div x   7225L) 85L)));
+      if l >= 3 then
+        Buffer.add_char dst (encode_char (Int64.to_int (Int64.rem (Int64.div x     85L) 85L)));
+      if l >= 4 then
+        Buffer.add_char dst (encode_char (Int64.to_int (Int64.rem            x          85L)))
+    )
+
+  let encode_block (dst : Buffer.t) (s : string) (i : int) (l : int) : unit =
+    let d = l-i in
+    if d = 1 then
+      encode_block_impl dst s.[i] '\x00' '\x00' '\x00' 1
+    else if d = 2 then
+      encode_block_impl dst s.[i] s.[i+1] '\x00' '\x00' 2
+    else if d = 3 then
+      encode_block_impl dst s.[i] s.[i+1] s.[i+2] '\x00' 3
+    else
+      encode_block_impl dst s.[i] s.[i+1] s.[i+2] s.[i+3] 4
+
+
+  let encode (content : string) : string =
+    let l = String.length content in
+    let i = ref 0 in
+    let buf = Buffer.create 1 in
+
+    while !i < l do
+      encode_block buf content !i l;
+      let d = l - !i in
+      if d < 4 then
+        i := l
+      else
+        i := !i + 4
+    done;
+
+    Buffer.add_string buf "\x7E\x3E";
+    Buffer.contents buf
+
 end
