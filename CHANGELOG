@@ -1,3 +1,5 @@
+- Added support for ASCII85 stream filter.
+
 - Use Buffer module instead of string concatenation to reduce complexity.
 
 - Use standard exception Exit where relevant.
