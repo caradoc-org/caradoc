@@ -25,7 +25,7 @@
 
 %start <Pdfobject.PDFObject.t> one_object
 %start <Pdfobject.PDFObject.dict_t> trailerdict
-%start <Key.t * Pdfobject.PDFObject.t> indirectobj
+%start <Key.t * Pdfobject.PDFObject.partial_t> indirectobj
 %start <unit> endstream
 %start <(Boundedint.BoundedInt.t list) * (Boundedint.BoundedInt.t list)> intpair_list
 %start <unit> hole
@@ -76,12 +76,12 @@ indirectobj:
 (* PDF reference 7.3.10 *)
 (************************)
   | k = indirectobj_header o = directobj ENDOBJ
-    { (k, o) }
+    { (k, PDFObject.Object o) }
 (***********************)
 (* PDF reference 7.3.8 *)
 (***********************)
   | k = indirectobj_header d = dictionary offset = STREAM
-    { (k, PDFObject.Stream (d, "", PDFObject.Offset offset)) }
+    { (k, PDFObject.StreamOffset (d, offset)) }
 
 (************************)
 (* PDF reference 7.3.10 *)

@@ -124,9 +124,15 @@ let parsexref_stm xref input offset length doc =
 
   let key, obj = wrap_parser Parser.indirectobj (Some offset) lexbuf in
 
-  let stream_dict, stream_off = PDFObject.get_stream_offset
-      "Invalid xref" (Errors.make_ctxt_pos offset)
-      obj in
+  let stream_dict, stream_off =
+    begin
+      match obj with
+      | PDFObject.StreamOffset (d, o) ->
+        d, o
+      | PDFObject.Object _ ->
+        raise (Errors.PDFError ("Invalid xref", Errors.make_ctxt_pos offset))
+    end
+  in
 
   let value = PDFObject.dict_find stream_dict "Length" in
   let stream_length = PDFObject.get_nonnegative_int ()

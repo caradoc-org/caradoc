@@ -47,7 +47,7 @@ module MakeFetch (FetchComp : FetchCompT) = struct
           raise (Errors.PDFError ("Object definition does not match xref table", Errors.make_ctxt key off));
 
         match o with
-        | PDFObject.Stream (stream_dict, _, PDFObject.Offset offset) ->
+        | PDFObject.StreamOffset (stream_dict, offset) ->
           let stream_length = dereference (PDFObject.dict_find stream_dict "Length") ctxt in
           let len = PDFObject.get_nonnegative_int ()
               "Expected integer for stream /Length" (Errors.make_ctxt key off)
@@ -59,9 +59,9 @@ module MakeFetch (FetchComp : FetchCompT) = struct
           Intervals.add ctxt.FetchCommon.intervals (off, endstreampos) key;
 
           PDFObject.Stream (stream_dict, raw, PDFObject.Raw)
-        | _ ->
+        | PDFObject.Object obj ->
           Intervals.add ctxt.FetchCommon.intervals (off, endobjpos) key;
-          o
+          obj
       )
 
   and dereference (obj : PDFObject.t) (ctxt : FetchCommon.context) : PDFObject.t =

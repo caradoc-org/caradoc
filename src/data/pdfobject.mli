@@ -32,7 +32,6 @@ module PDFObject : sig
 
   type stream_t =
     | Raw
-    | Offset of BoundedInt.t
     | Content of string
 
   type t =
@@ -48,6 +47,13 @@ module PDFObject : sig
     | Stream of t dict * string * stream_t
 
   type dict_t = t dict
+
+  (* Partial object obtained after first step of parsing in relaxed mode *)
+  type partial_t =
+    (* Complete object *)
+    | Object of t
+    (* Incomplete stream (parsed dictionary + offset of data) *)
+    | StreamOffset of dict_t * BoundedInt.t
 
 
   val dict_create : unit -> dict_t
@@ -239,19 +245,6 @@ module PDFObject : sig
     ?default:dict_t -> unit ->
     string -> Errors.error_ctxt ->
     t -> dict_t
-
-  (*   Check and extract a stream from an object, or raise an exception
-       Args    :
-       - error message
-       - error context
-       - object
-       Returns :
-       - stream dictionary
-       - offset of the stream content
-  *)
-  val get_stream_offset :
-    string -> Errors.error_ctxt ->
-    t -> (dict_t * BoundedInt.t)
 
   (*   Check and extract a stream from an object, or raise an exception
        Args    :

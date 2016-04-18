@@ -132,12 +132,9 @@ let tests =
                        to_string (Stream (TestDict.add_all ["Length", Int ~:10], "", Content "stream content")))
                       "<<\n    /Length 10\n>>\nstream <decoded stream of length 14>\nstream content\nendstream\n") ;
         "(3)" >:: (fun _ -> assert_equal
-                      (init_params (); to_string (Stream (TestDict.add_all ["Length", Int ~:10], "", Offset ~:123)))
-                      "<<\n    /Length 10\n>>\nstream <lex at 123 [0x7b]>") ;
-        "(4)" >:: (fun _ -> assert_equal
                       (init_params (); to_string (Stream (TestDict.add_all ["Length", Int ~:15], "encoded content", Raw)))
                       "<<\n    /Length 15\n>>\nstream <encoded stream of length 15>") ;
-        "(5)" >:: (fun _ -> assert_equal
+        "(4)" >:: (fun _ -> assert_equal
                       (init_params ();
                        Params.global.Params.expand_streams <- true;
                        to_string (Stream (TestDict.add_all ["Length", Int ~:15], "encoded content", Raw)))
@@ -347,20 +344,6 @@ let tests =
                     (fun () -> get_dict ~default:(TestDict.add_all ["Param", Name "value"]) () "msg" Errors.ctxt_none (Int ~:123))) ;
     ] ;
 
-    "get_stream_offset" >:::
-    [
-      "(1)" >:: (fun _ -> assert_equal
-                    (get_stream_offset "msg" Errors.ctxt_none (Stream (TestDict.add_all ["Length", Int ~:456], "", Offset ~:123)))
-                    (TestDict.add_all ["Length", Int ~:456], ~:123)) ;
-
-      "(2)" >:: (fun _ -> assert_raises
-                    (Errors.PDFError ("msg", Errors.ctxt_none))
-                    (fun () -> get_stream_offset "msg" Errors.ctxt_none (Stream (TestDict.add_all ["Length", Int ~:7], "", Content "content")))) ;
-      "(3)" >:: (fun _ -> assert_raises
-                    (Errors.PDFError ("msg", Errors.ctxt_none))
-                    (fun () -> get_stream_offset "msg" Errors.ctxt_none (String "blabla"))) ;
-    ] ;
-
     "get_stream_content" >:::
     [
       "(1)" >:: (fun _ -> assert_equal
@@ -369,7 +352,7 @@ let tests =
 
       "(2)" >:: (fun _ -> assert_raises
                     (Errors.PDFError ("msg", Errors.ctxt_none))
-                    (fun () -> get_stream_content "msg" Errors.ctxt_none (Stream (TestDict.add_all ["Length", Int ~:456], "", Offset ~:123)))) ;
+                    (fun () -> get_stream_content "msg" Errors.ctxt_none (Stream (TestDict.add_all ["Length", Int ~:456], "", Raw)))) ;
       "(3)" >:: (fun _ -> assert_raises
                     (Errors.PDFError ("msg", Errors.ctxt_none))
                     (fun () -> get_stream_content "msg" Errors.ctxt_none (String "blabla"))) ;

@@ -34,7 +34,6 @@ module PDFObject = struct
 
   type stream_t =
     | Raw
-    | Offset of BoundedInt.t
     | Content of string
 
   type t =
@@ -50,6 +49,10 @@ module PDFObject = struct
     | Stream of t dict * string * stream_t
 
   type dict_t = t dict
+
+  type partial_t =
+    | Object of t
+    | StreamOffset of dict_t * BoundedInt.t
 
 
   let dict_create () : dict_t =
@@ -159,10 +162,6 @@ module PDFObject = struct
       Buffer.add_char buf ' ';
       Buffer.add_string buf (string_of_int gen);
       Buffer.add_string buf " R"
-    | Stream (d, _, Offset off) ->
-      dict_to_string_impl tab buf d;
-      Buffer.add_string buf "\nstream ";
-      Buffer.add_string buf (Printf.sprintf "<lex at %d [0x%x]>" (BoundedInt.to_int off) (BoundedInt.to_int off))
     | Stream (d, raw, Raw) ->
       stream_to_string_impl tab buf d raw false
     | Stream (d, _, Content c) ->
@@ -292,8 +291,6 @@ module PDFObject = struct
       Buffer.add_char buf ' ';
       Buffer.add_string buf (string_of_int gen);
       Buffer.add_string buf " R"
-    | Stream (_, _, Offset _) ->
-      raise (Errors.UnexpectedError "Undecoded stream")
     | Stream (d, raw, Raw)
     | Stream (d, raw, Content _) ->
       dict_to_pdf_impl buf d;
@@ -453,13 +450,6 @@ module PDFObject = struct
     | (Dictionary d), _
     | Null, (Some d) ->
       d
-    | _ -> raise (Errors.PDFError (error_msg, ctxt))
-
-
-  let get_stream_offset error_msg ctxt x =
-    match x with
-    | Stream (stream_dict, _, Offset stream_offset) ->
-      (stream_dict, stream_offset)
     | _ -> raise (Errors.PDFError (error_msg, ctxt))
 
 
