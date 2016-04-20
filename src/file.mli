@@ -18,7 +18,8 @@
 
 
 open Key
-open Pdfobject
+open Directobject
+open Indirectobject
 open Stats
 open Boundedint
 open Intervals
@@ -44,7 +45,7 @@ val parse_until_xref : in_channel -> Stats.t -> (BoundedInt.t * Key.t Intervals.
      Returns :
      - object
 *)
-val extract_object : in_channel -> Key.t -> PDFObject.t
+val extract_object : in_channel -> Key.t -> IndirectObject.t
 
 (*   Extract the trailer(s) from a PDF file
      Args    :
@@ -52,7 +53,7 @@ val extract_object : in_channel -> Key.t -> PDFObject.t
      Returns :
      - list of trailers
 *)
-val extract_trailers : in_channel -> (PDFObject.dict_t list)
+val extract_trailers : in_channel -> (DirectObject.dict_t list)
 
 (*   Extract statistics from a PDF file
      Args    :

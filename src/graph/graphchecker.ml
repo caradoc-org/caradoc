@@ -22,7 +22,8 @@ open Document
 open Errors
 open Key
 open Boundedint
-open Pdfobject
+open Directobject
+open Indirectobject
 open Params
 
 
@@ -37,19 +38,20 @@ module GraphChecker = struct
         t
     in
 
-    let catalog_k = PDFObject.get_reference
+    let catalog_k = DirectObject.get_reference
         () "Catalog is mandatory and shall be indirect" (Errors.make_ctxt_key Key.Trailer)
-        (PDFObject.dict_find trailer "Root") in
+        (DirectObject.dict_find trailer "Root") in
 
-    let catalog = PDFObject.get_dict
-        () "Catalog shall be a dictionary" (Errors.make_ctxt_key catalog_k)
+    let catalog = IndirectObject.get_direct_of
+        "Catalog shall be a dictionary" (Errors.make_ctxt_key catalog_k)
+        ~transform:(DirectObject.get_dict ())
         (Document.find doc catalog_k) in
 
 
     (* Page tree *)
-    let pageroot = PDFObject.get_reference
+    let pageroot = DirectObject.get_reference
         () "Page root is mandatory and shall be indirect" (Errors.make_ctxt_key catalog_k)
-        (PDFObject.dict_find catalog "Pages") in
+        (DirectObject.dict_find catalog "Pages") in
 
     if Params.global.Params.debug then
       Printf.eprintf "Checking page tree...\n";
@@ -59,14 +61,15 @@ module GraphChecker = struct
 
 
     (* Name trees *)
-    PDFObject.apply_not_null (PDFObject.dict_find catalog "Names") (fun x ->
-        let names = PDFObject.get_dict
-            () "Names shall be a dictionary" Errors.ctxt_none
+    DirectObject.apply_not_null (DirectObject.dict_find catalog "Names") (fun x ->
+        let names = IndirectObject.get_direct_of
+            "Names shall be a dictionary" Errors.ctxt_none
+            ~transform:(DirectObject.get_dict ())
             (Document.remove_ref doc x) in
 
         (* Destination tree *)
-        PDFObject.apply_not_null (PDFObject.dict_find names "Dests") (fun x ->
-            let destroot = PDFObject.get_reference
+        DirectObject.apply_not_null (DirectObject.dict_find names "Dests") (fun x ->
+            let destroot = DirectObject.get_reference
                 () "Dest shall be indirect" Errors.ctxt_none
                 x in
 
@@ -82,8 +85,8 @@ module GraphChecker = struct
 
 
     (* Outlines *)
-    PDFObject.apply_not_null (PDFObject.dict_find catalog "Outlines") (fun x ->
-        let outlineroot = PDFObject.get_reference
+    DirectObject.apply_not_null (DirectObject.dict_find catalog "Outlines") (fun x ->
+        let outlineroot = DirectObject.get_reference
             () "Outlines shall be indirect" Errors.ctxt_none
             x in
 

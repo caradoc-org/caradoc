@@ -19,7 +19,7 @@
 
 open Boundedint
 open Key
-open Pdfobject
+open Directobject
 open Errors
 
 module Predictor : sig
@@ -44,7 +44,7 @@ module Predictor : sig
        Returns :
        - predictor
   *)
-  val extract_predictor : Errors.error_ctxt -> PDFObject.dict_t -> t
+  val extract_predictor : Errors.error_ctxt -> DirectObject.dict_t -> t
 
   (*   Compute the PNG Paeth predicting function
        Args    :

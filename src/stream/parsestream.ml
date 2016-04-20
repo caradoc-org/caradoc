@@ -21,14 +21,14 @@ open Boundedint
 open Errors
 open Common
 open Wrap
-open Pdfobject
+open Directobject
 open Zlib
 open Asciihex
 open Ascii85
 open Predictor
 
 
-let decode_filter (content : string) (ctxt : Errors.error_ctxt) (filter : string) (params : PDFObject.dict_t) : string =
+let decode_filter (content : string) (ctxt : Errors.error_ctxt) (filter : string) (params : DirectObject.dict_t) : string =
   match filter with
   | "FlateDecode" ->
     let predictor = Predictor.extract_predictor ctxt params in
@@ -84,7 +84,7 @@ let decode_filter (content : string) (ctxt : Errors.error_ctxt) (filter : string
     raise (Errors.PDFError (Printf.sprintf "Invalid stream filter method : %s" filter, ctxt))
 
 
-let rec decode_filters (content : string) (ctxt : Errors.error_ctxt) (filters : string array) (params : PDFObject.dict_t array) (i : int) (count : int) : string =
+let rec decode_filters (content : string) (ctxt : Errors.error_ctxt) (filters : string array) (params : DirectObject.dict_t array) (i : int) (count : int) : string =
   if i < count then (
     let decoded = decode_filter content ctxt filters.(i) params.(i) in
     decode_filters decoded ctxt filters params (i + 1) count
@@ -92,20 +92,20 @@ let rec decode_filters (content : string) (ctxt : Errors.error_ctxt) (filters : 
     content
 
 
-let decode (content : string) (ctxt : Errors.error_ctxt) (stream_dict : PDFObject.dict_t) (relax : bool) : string * bool =
-  let filters = PDFObject.get_array_of
+let decode (content : string) (ctxt : Errors.error_ctxt) (stream_dict : DirectObject.dict_t) (relax : bool) : string * bool =
+  let filters = DirectObject.get_array_of
       ~default:[] ~accept_one:true ()
       "Invalid value for stream /Filter" ctxt
-      ~transform:(PDFObject.get_name ())
-      (PDFObject.dict_find stream_dict "Filter") in
+      ~transform:(DirectObject.get_name ())
+      (DirectObject.dict_find stream_dict "Filter") in
 
   let count = Array.length filters in
-  let def = Array.to_list (Array.make count PDFObject.Null) in
-  let params = PDFObject.get_array_of
+  let def = Array.to_list (Array.make count DirectObject.Null) in
+  let params = DirectObject.get_array_of
       ~default:def ~length:count ~accept_one:true()
       "Invalid value for stream /DecodeParms" ctxt
-      ~transform:(PDFObject.get_dict ~default:(PDFObject.dict_create ()) ())
-      (PDFObject.dict_find stream_dict "DecodeParms") in
+      ~transform:(DirectObject.get_dict ~default:(DirectObject.dict_create ()) ())
+      (DirectObject.dict_find stream_dict "DecodeParms") in
 
   let f = fun () ->
     let decoded = decode_filters content ctxt filters params 0 count in
@@ -132,7 +132,7 @@ let parsestream (key : Key.t) (offset : BoundedInt.t) (stream_length : BoundedIn
   rawcontent, endstreampos
 
 
-let parsedecodestream (key : Key.t) (stream_dict : PDFObject.dict_t) (offset : BoundedInt.t) (stream_length : BoundedInt.t) (input : in_channel) (length : BoundedInt.t) (relax : bool) : string * string * bool * BoundedInt.t =
+let parsedecodestream (key : Key.t) (stream_dict : DirectObject.dict_t) (offset : BoundedInt.t) (stream_length : BoundedInt.t) (input : in_channel) (length : BoundedInt.t) (relax : bool) : string * string * bool * BoundedInt.t =
   let rawcontent, endstreampos = parsestream key offset stream_length input length in
   let decoded, success = decode rawcontent (Errors.make_ctxt key offset) stream_dict relax in
   rawcontent, decoded, success, endstreampos

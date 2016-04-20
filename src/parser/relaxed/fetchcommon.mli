@@ -22,7 +22,8 @@ open Boundedint
 open Xref
 open Mapkey
 open Key
-open Pdfobject
+open Directobject
+open Indirectobject
 open Intervals
 
 
@@ -40,7 +41,7 @@ module FetchCommon : sig
     (* Set of traversed objects *)
     mutable traversed : bool MapKey.t;
     (* Set of objects inside object streams *)
-    mutable decompressed : ((PDFObject.t * BoundedInt.t) MapKey.t) MapKey.t;
+    mutable decompressed : ((DirectObject.t * BoundedInt.t) MapKey.t) MapKey.t;
     (* Intervals of objects in file *)
     intervals : Key.t Intervals.t;
   }
@@ -70,7 +71,7 @@ module type FetchT = sig
        Returns :
        - object
   *)
-  val fetchobject : Key.t -> BoundedInt.t -> FetchCommon.context -> PDFObject.t
+  val fetchobject : Key.t -> BoundedInt.t -> FetchCommon.context -> IndirectObject.t
 
   (*   Dereference an object if it is a reference, or do nothing
        Args    :
@@ -79,7 +80,7 @@ module type FetchT = sig
        Returns :
        - dereferenced object
   *)
-  val dereference : PDFObject.t -> FetchCommon.context -> PDFObject.t
+  val dereference : DirectObject.t -> FetchCommon.context -> IndirectObject.t
 
   (*   Fetch an object and decode it if it is a stream
        Args    :
@@ -90,7 +91,7 @@ module type FetchT = sig
        Returns :
        - object
   *)
-  val fetchdecodestream : Key.t -> BoundedInt.t -> FetchCommon.context -> bool -> PDFObject.t
+  val fetchdecodestream : Key.t -> BoundedInt.t -> FetchCommon.context -> bool -> IndirectObject.t
 
 end
 
@@ -105,7 +106,7 @@ module type FetchCompT = sig
        Returns :
        - object
   *)
-  val fetchcompressed : Key.t -> BoundedInt.t -> BoundedInt.t -> FetchCommon.context -> PDFObject.t
+  val fetchcompressed : Key.t -> BoundedInt.t -> BoundedInt.t -> FetchCommon.context -> IndirectObject.t
 
   (*   Extract all objects from an object stream
        Args    :
@@ -118,7 +119,7 @@ module type FetchCompT = sig
        Returns :
        - bag of objects contained in the stream
   *)
-  val parseobjstm : string -> Key.t -> BoundedInt.t -> BoundedInt.t -> BoundedInt.t -> FetchCommon.context -> ((PDFObject.t * BoundedInt.t) MapKey.t)
+  val parseobjstm : string -> Key.t -> BoundedInt.t -> BoundedInt.t -> BoundedInt.t -> FetchCommon.context -> ((DirectObject.t * BoundedInt.t) MapKey.t)
 
   (*   Fetch an object stream and extract its objects
        Args    :
@@ -127,7 +128,7 @@ module type FetchCompT = sig
        Returns :
        - bag of objects contained in the stream
   *)
-  val fetchobjstm : BoundedInt.t -> FetchCommon.context -> ((PDFObject.t * BoundedInt.t) MapKey.t)
+  val fetchobjstm : BoundedInt.t -> FetchCommon.context -> ((DirectObject.t * BoundedInt.t) MapKey.t)
 
 end
 
@@ -141,5 +142,5 @@ end
      Returns :
      - content of object
 *)
-val traverse_object : Key.t -> BoundedInt.t -> FetchCommon.context -> (Key.t -> BoundedInt.t -> FetchCommon.context -> PDFObject.t) -> PDFObject.t
+val traverse_object : Key.t -> BoundedInt.t -> FetchCommon.context -> (Key.t -> BoundedInt.t -> FetchCommon.context -> IndirectObject.t) -> IndirectObject.t
 

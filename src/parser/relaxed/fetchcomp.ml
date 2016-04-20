@@ -24,14 +24,15 @@ open Wrap
 open Mapkey
 open Document
 open Xref
-open Pdfobject
+open Directobject
+open Indirectobject
 open Key
 open Params
 
 
 module MakeFetchComp (Fetch : FetchT) = struct
 
-  let parseobjstm (content : string) (key : Key.t) (off : BoundedInt.t) (first : BoundedInt.t) (n : BoundedInt.t) (ctxt : FetchCommon.context) : (PDFObject.t * BoundedInt.t) MapKey.t =
+  let parseobjstm (content : string) (key : Key.t) (off : BoundedInt.t) (first : BoundedInt.t) (n : BoundedInt.t) (ctxt : FetchCommon.context) : (DirectObject.t * BoundedInt.t) MapKey.t =
     if Params.global.Params.debug then
       Printf.eprintf "Parse object stream %s\n" (Key.to_string key);
 
@@ -113,7 +114,7 @@ module MakeFetchComp (Fetch : FetchT) = struct
     !bag
 
 
-  let fetchobjstm (id : BoundedInt.t) (ctxt : FetchCommon.context) : (PDFObject.t * BoundedInt.t) MapKey.t =
+  let fetchobjstm (id : BoundedInt.t) (ctxt : FetchCommon.context) : (DirectObject.t * BoundedInt.t) MapKey.t =
     let key = Key.make_0 id in
 
     try
@@ -130,23 +131,23 @@ module MakeFetchComp (Fetch : FetchT) = struct
       end;
 
       let obj = Fetch.fetchdecodestream key entry.XRefTable.off ctxt false in
-      let dict, content = PDFObject.get_stream_content
+      let dict, content = IndirectObject.get_stream_content
           "Object stream must be a decoded stream" (Errors.make_ctxt key entry.XRefTable.off)
           obj in
 
       (* TODO : handle dereference ? *)
-      let first = PDFObject.get_nonnegative_int ()
+      let first = DirectObject.get_nonnegative_int ()
           "Expected integer for object stream /First" (Errors.make_ctxt key entry.XRefTable.off)
-          (PDFObject.dict_find dict "First") in
+          (DirectObject.dict_find dict "First") in
 
-      let n = PDFObject.get_nonnegative_int ()
+      let n = DirectObject.get_nonnegative_int ()
           "Expected integer for object stream /N" (Errors.make_ctxt key entry.XRefTable.off)
-          (PDFObject.dict_find dict "N") in
+          (DirectObject.dict_find dict "N") in
 
       parseobjstm content key entry.XRefTable.off first n ctxt
 
 
-  let fetchcompressed (key : Key.t) (off : BoundedInt.t) (idx : BoundedInt.t) (ctxt : FetchCommon.context) : PDFObject.t =
+  let fetchcompressed (key : Key.t) (off : BoundedInt.t) (idx : BoundedInt.t) (ctxt : FetchCommon.context) : IndirectObject.t =
     traverse_object key off ctxt (fun key off ctxt ->
         let bag = fetchobjstm off ctxt in
         if not (MapKey.mem key bag) then
@@ -156,7 +157,7 @@ module MakeFetchComp (Fetch : FetchT) = struct
         if index <> idx then
           raise (Errors.PDFError ("Compressed object index does not match object stream", Errors.make_ctxt key off));
 
-        obj
+        IndirectObject.Direct obj
       )
 
 end

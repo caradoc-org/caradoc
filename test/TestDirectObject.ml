@@ -18,7 +18,7 @@
 
 
 open OUnit
-open Pdfobject.PDFObject
+open Directobject.DirectObject
 open Mapkey
 open Errors
 open Boundedint
@@ -30,7 +30,7 @@ let init_params () =
   Params.global.Params.sort_dicts <- true
 
 let tests =
-  "PDFObject" >:::
+  "DirectObject" >:::
   [
     "to_string" >:::
     [
@@ -120,26 +120,6 @@ let tests =
                       (init_params (); to_string (Reference (Key.make_gen ~:3 ~:2)))
                       "3 2 R") ;
       ] ;
-
-      "stream" >:::
-      [
-        "(1)" >:: (fun _ -> assert_equal
-                      (init_params (); to_string (Stream (TestDict.add_all ["Length", Int ~:10], "", Content "stream content")))
-                      "<<\n    /Length 10\n>>\nstream <decoded stream of length 14>") ;
-        "(2)" >:: (fun _ -> assert_equal
-                      (init_params ();
-                       Params.global.Params.expand_streams <- true;
-                       to_string (Stream (TestDict.add_all ["Length", Int ~:10], "", Content "stream content")))
-                      "<<\n    /Length 10\n>>\nstream <decoded stream of length 14>\nstream content\nendstream\n") ;
-        "(3)" >:: (fun _ -> assert_equal
-                      (init_params (); to_string (Stream (TestDict.add_all ["Length", Int ~:15], "encoded content", Raw)))
-                      "<<\n    /Length 15\n>>\nstream <encoded stream of length 15>") ;
-        "(4)" >:: (fun _ -> assert_equal
-                      (init_params ();
-                       Params.global.Params.expand_streams <- true;
-                       to_string (Stream (TestDict.add_all ["Length", Int ~:15], "encoded content", Raw)))
-                      "<<\n    /Length 15\n>>\nstream <encoded stream of length 15>\nencoded content\nendstream\n") ;
-      ] ;
     ] ;
 
     "to_pdf" >:::
@@ -195,9 +175,6 @@ let tests =
       "(17)" >:: (fun _ -> assert_equal
                      (to_pdf (Reference (Key.make_gen ~:3 ~:2)))
                      "3 2 R") ;
-      "(18)" >:: (fun _ -> assert_equal
-                     (to_pdf (Stream (TestDict.add_all ["Length", Int ~:14], "raw content", Content "stream content")))
-                     "<</Length 14>>stream\nraw content\nendstream") ;
     ] ;
 
     "refs" >:::
@@ -242,12 +219,8 @@ let tests =
                     (relink (TestMapkey.add_all [Key.make_0 ~:2, Key.make_0 ~:1]) Key.Trailer
                        (Reference (Key.make_0 ~:2)))
                     (Reference (Key.make_0 ~:1))) ;
-      "(10)" >:: (fun _ -> assert_equal
-                     (relink (TestMapkey.add_all [Key.make_0 ~:2, Key.make_0 ~:1]) Key.Trailer
-                        (Stream (TestDict.add_all ["Key", Reference (Key.make_0 ~:2)], "raw content", Content "stream content")))
-                     (Stream (TestDict.add_all ["Key", Reference (Key.make_0 ~:1)], "raw content", Content "stream content"))) ;
 
-      "(11)" >:: (fun _ -> assert_raises
+      "(10)" >:: (fun _ -> assert_raises
                      (Errors.PDFError ("Reference to unknown object : 2", Errors.make_ctxt_key Key.Trailer))
                      (fun () -> relink MapKey.empty Key.Trailer (Reference (Key.make_0 ~:2)))) ;
     ] ;
@@ -342,20 +315,6 @@ let tests =
       "(5)" >:: (fun _ -> assert_raises
                     (Errors.PDFError ("msg", Errors.ctxt_none))
                     (fun () -> get_dict ~default:(TestDict.add_all ["Param", Name "value"]) () "msg" Errors.ctxt_none (Int ~:123))) ;
-    ] ;
-
-    "get_stream_content" >:::
-    [
-      "(1)" >:: (fun _ -> assert_equal
-                    (get_stream_content "msg" Errors.ctxt_none (Stream (TestDict.add_all ["Length", Int ~:7], "", Content "content")))
-                    (TestDict.add_all ["Length", Int ~:7], "content")) ;
-
-      "(2)" >:: (fun _ -> assert_raises
-                    (Errors.PDFError ("msg", Errors.ctxt_none))
-                    (fun () -> get_stream_content "msg" Errors.ctxt_none (Stream (TestDict.add_all ["Length", Int ~:456], "", Raw)))) ;
-      "(3)" >:: (fun _ -> assert_raises
-                    (Errors.PDFError ("msg", Errors.ctxt_none))
-                    (fun () -> get_stream_content "msg" Errors.ctxt_none (String "blabla"))) ;
     ] ;
 
     "get_array" >:::

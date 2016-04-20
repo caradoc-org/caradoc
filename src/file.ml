@@ -24,7 +24,8 @@ open Xref
 open Document
 open Intset
 open Extractxref
-open Pdfobject
+open Directobject
+open Indirectobject
 open Extractobjects
 open Graph
 open Intervals
@@ -240,12 +241,12 @@ let parse_until_xref (input : in_channel) (stats : Stats.t) : (BoundedInt.t * Ke
      - key
      - object
 *)
-let objdecodestream (relax_streams : bool) (key : Key.t) (obj : PDFObject.t) : PDFObject.t =
+let objdecodestream (relax_streams : bool) (key : Key.t) (obj : IndirectObject.t) : IndirectObject.t =
   match obj with
-  | PDFObject.Stream (stream_dict, raw, PDFObject.Raw) ->
+  | IndirectObject.Stream (stream_dict, raw, IndirectObject.Raw) ->
     let decoded, success = Parsestream.decode raw (Errors.make_ctxt_key key) stream_dict relax_streams in
     if success then
-      PDFObject.Stream (stream_dict, raw, PDFObject.Content decoded)
+      IndirectObject.Stream (stream_dict, raw, IndirectObject.Content decoded)
     else
       obj
   | _ ->
@@ -261,7 +262,7 @@ let docdecodestreams (doc : Document.t) (relax_streams : bool) : unit =
   Document.map_objects (objdecodestream relax_streams) doc
 
 
-let extract_object (input : in_channel) (key : Key.t) : PDFObject.t =
+let extract_object (input : in_channel) (key : Key.t) : IndirectObject.t =
   let length, intervals, xref, doc = parse_until_xref input (Stats.create ()) in
 
   let entry = XRefTable.find xref key "Object not found in xref table" in
@@ -284,7 +285,7 @@ let extract_object (input : in_channel) (key : Key.t) : PDFObject.t =
     obj
 
 
-let extract_trailers (input : in_channel) : PDFObject.dict_t list =
+let extract_trailers (input : in_channel) : DirectObject.dict_t list =
   let _length, _intervals, _xref, doc = parse_until_xref input (Stats.create ()) in
   close_in input;
 
@@ -324,7 +325,7 @@ let parse_until_objects (input : in_channel) (stats : Stats.t) : (BoundedInt.t *
     ) xref;
 
   let trailer = List.hd (Document.trailers doc) in
-  PDFObject.apply_not_null (PDFObject.dict_find trailer "Encrypt") (fun _ ->
+  DirectObject.apply_not_null (DirectObject.dict_find trailer "Encrypt") (fun _ ->
       stats.Stats.encrypted <- true;
       raise (Errors.PDFError ("Encrypted document", Errors.make_ctxt_key Key.Trailer))
     );
@@ -377,10 +378,11 @@ let parse_strict (input : in_channel) (stats : Stats.t) : Document.t =
   let keywords = ["endstream" ; "endobj" ; "trailer"] in
   Document.iter_objects (fun key obj ->
       match obj with
-      | PDFObject.Stream (stream_dict, raw, _) ->
-        let stream_length = Document.remove_ref doc (PDFObject.dict_find stream_dict "Length") in
-        let len = PDFObject.get_nonnegative_int ()
+      | IndirectObject.Stream (stream_dict, raw, _) ->
+        let stream_length = Document.remove_ref doc (DirectObject.dict_find stream_dict "Length") in
+        let len = IndirectObject.get_direct_of
             "Expected integer for stream /Length" (Errors.make_ctxt_key key)
+            ~transform:(DirectObject.get_nonnegative_int ())
             stream_length in
 
         let real_len = ~:(String.length raw) in
@@ -425,14 +427,14 @@ let record_filter (filter_hash : (string, int) Hashtbl.t) (filter_name : string)
   with Not_found ->
     Hashtbl.replace filter_hash filter_name 1
 
-let extract_filters (filter_hash : (string, int) Hashtbl.t) (key : Key.t) (obj : PDFObject.t) : unit =
+let extract_filters (filter_hash : (string, int) Hashtbl.t) (key : Key.t) (obj : IndirectObject.t) : unit =
   match obj with
-  | PDFObject.Stream (stream_dict, _, _) ->
-    let filters = PDFObject.get_array_of
+  | IndirectObject.Stream (stream_dict, _, _) ->
+    let filters = DirectObject.get_array_of
         ~default:[] ~accept_one:true ()
         "Invalid value for stream /Filter" (Errors.make_ctxt_key key)
-        ~transform:(PDFObject.get_name ())
-        (PDFObject.dict_find stream_dict "Filter") in
+        ~transform:(DirectObject.get_name ())
+        (DirectObject.dict_find stream_dict "Filter") in
 
     if Array.length filters = 0 then
       record_filter filter_hash "Raw"

@@ -22,7 +22,8 @@ open Boundedint
 open Xref
 open Mapkey
 open Key
-open Pdfobject
+open Directobject
+open Indirectobject
 open Errors
 open Intervals
 open Params
@@ -36,7 +37,7 @@ module FetchCommon = struct
     length : BoundedInt.t;
     xref : XRefTable.t;
     mutable traversed : bool MapKey.t;
-    mutable decompressed : ((PDFObject.t * BoundedInt.t) MapKey.t) MapKey.t;
+    mutable decompressed : ((DirectObject.t * BoundedInt.t) MapKey.t) MapKey.t;
     intervals : Key.t Intervals.t;
   }
 
@@ -55,19 +56,19 @@ end
 
 
 module type FetchT = sig
-  val fetchobject : Key.t -> BoundedInt.t -> FetchCommon.context -> PDFObject.t
-  val dereference : PDFObject.t -> FetchCommon.context -> PDFObject.t
-  val fetchdecodestream : Key.t -> BoundedInt.t -> FetchCommon.context -> bool -> PDFObject.t
+  val fetchobject : Key.t -> BoundedInt.t -> FetchCommon.context -> IndirectObject.t
+  val dereference : DirectObject.t -> FetchCommon.context -> IndirectObject.t
+  val fetchdecodestream : Key.t -> BoundedInt.t -> FetchCommon.context -> bool -> IndirectObject.t
 end
 
 module type FetchCompT = sig
-  val fetchcompressed : Key.t -> BoundedInt.t -> BoundedInt.t -> FetchCommon.context -> PDFObject.t
-  val parseobjstm : string -> Key.t -> BoundedInt.t -> BoundedInt.t -> BoundedInt.t -> FetchCommon.context -> ((PDFObject.t * BoundedInt.t) MapKey.t)
-  val fetchobjstm : BoundedInt.t -> FetchCommon.context -> ((PDFObject.t * BoundedInt.t) MapKey.t)
+  val fetchcompressed : Key.t -> BoundedInt.t -> BoundedInt.t -> FetchCommon.context -> IndirectObject.t
+  val parseobjstm : string -> Key.t -> BoundedInt.t -> BoundedInt.t -> BoundedInt.t -> FetchCommon.context -> ((DirectObject.t * BoundedInt.t) MapKey.t)
+  val fetchobjstm : BoundedInt.t -> FetchCommon.context -> ((DirectObject.t * BoundedInt.t) MapKey.t)
 end
 
 
-let traverse_object (key : Key.t) (off : BoundedInt.t) (ctxt : FetchCommon.context) (fetch : Key.t -> BoundedInt.t -> FetchCommon.context -> PDFObject.t) : PDFObject.t =
+let traverse_object (key : Key.t) (off : BoundedInt.t) (ctxt : FetchCommon.context) (fetch : Key.t -> BoundedInt.t -> FetchCommon.context -> IndirectObject.t) : IndirectObject.t =
   try
     let traversed = MapKey.find key ctxt.FetchCommon.traversed in
     if traversed then

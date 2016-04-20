@@ -24,7 +24,8 @@ open Errors
 open Boundedint
 open Pdftypes
 open Mapkey
-open Pdfobject
+open Directobject
+open Indirectobject
 open Stats
 open Params
 
@@ -49,7 +50,7 @@ module TypeChecker = struct
 
     if Params.global.Params.verbose then
       Printf.eprintf "\nChecking trailer\n";
-    let (_:Type.t) = CheckObjectType.check_alias ctxt (PDFObject.Dictionary trailer) "trailer" false Key.Trailer "" in
+    let (_:Type.t) = CheckObjectType.check_alias ctxt (IndirectObject.Direct (DirectObject.Dictionary trailer)) "trailer" false Key.Trailer "" in
 
     Document.iter_stms
       (fun key kind ->

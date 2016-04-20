@@ -18,7 +18,8 @@
 
 
 open Type.Type
-open Pdfobject
+open Directobject
+open Indirectobject
 open Mapkey
 open Intervals
 open Boundedint
@@ -32,33 +33,33 @@ module CheckObjectType = struct
   exception Break of t
 
 
-  let rec check_object (ctxt : context) (x : PDFObject.t) (typ : t) (indobj : Key.t) (entry : string) : t =
+  let rec check_object (ctxt : context) (x : IndirectObject.t) (typ : t) (indobj : Key.t) (entry : string) : t =
     match (x, typ.kind) with
     | (_, Alias name) ->
       check_alias ctxt x name typ.allow_ind indobj entry
 
-    | (PDFObject.Reference key, _) when typ.allow_ind ->
+    | (IndirectObject.Direct (DirectObject.Reference key), _) when typ.allow_ind ->
       check_indirect ctxt key typ indobj entry
 
-    | (PDFObject.Null, Null)
-    | (PDFObject.Bool _, Bool)
-    | (PDFObject.Int _, Int)
-    | (PDFObject.Real _, Real)
-    | (PDFObject.String _, String)
-    | (PDFObject.Name _, Name) ->
+    | (IndirectObject.Direct DirectObject.Null, Null)
+    | (IndirectObject.Direct (DirectObject.Bool _), Bool)
+    | (IndirectObject.Direct (DirectObject.Int _), Int)
+    | (IndirectObject.Direct (DirectObject.Real _), Real)
+    | (IndirectObject.Direct (DirectObject.String _), String)
+    | (IndirectObject.Direct (DirectObject.Name _), Name) ->
       typ
 
-    | (PDFObject.String _, Text)
-    | (PDFObject.String _, Date) ->
+    | (IndirectObject.Direct (DirectObject.String _), Text)
+    | (IndirectObject.Direct (DirectObject.String _), Date) ->
       (* TODO : check *)
       typ
 
-    | (PDFObject.Bool x, BoolExact expected) ->
+    | (IndirectObject.Direct (DirectObject.Bool x), BoolExact expected) ->
       if x <> expected then
         raise (Errors.TypeError (Printf.sprintf "Boolean value %B is not the expected one (%B)" x expected, indobj, entry));
       typ
 
-    | (PDFObject.Int x, IntRange (low, high)) ->
+    | (IndirectObject.Direct (DirectObject.Int x), IntRange (low, high)) ->
       begin
         match low with
         | Some l ->
@@ -74,65 +75,65 @@ module CheckObjectType = struct
         | None -> ()
       end;
       typ
-    | (PDFObject.Int x, IntExact expected) ->
+    | (IndirectObject.Direct (DirectObject.Int x), IntExact expected) ->
       if x <> expected then
         raise (Errors.TypeError (Printf.sprintf "Integer value %s is not the expected one (%s)" (BoundedInt.to_string x) (BoundedInt.to_string expected), indobj, entry));
       typ
-    | (PDFObject.Int x, IntIn expected) ->
+    | (IndirectObject.Direct (DirectObject.Int x), IntIn expected) ->
       if not (Algo.array_contains expected x) then (
         let expected_str = Algo.join_string Array.fold_left BoundedInt.to_string ", " expected in
         raise (Errors.TypeError (Printf.sprintf "Integer value %s is not among the expected ones (%s)" (BoundedInt.to_string x) expected_str, indobj, entry))
       );
       typ
 
-    | (PDFObject.Name name, NameExact expected) ->
+    | (IndirectObject.Direct (DirectObject.Name name), NameExact expected) ->
       if name <> expected then
         raise (Errors.TypeError (Printf.sprintf "Name value /%s is not the expected one (/%s)" name expected, indobj, entry));
       typ
-    | (PDFObject.Name name, NameIn expected) ->
+    | (IndirectObject.Direct (DirectObject.Name name), NameIn expected) ->
       if not (Hashtbl.mem expected name) then (
         let expected_str = Algo.join_string List.fold_left (fun (x, _) -> "/" ^ x) ", " (Algo.sort_hash expected) in
         raise (Errors.TypeError (Printf.sprintf "Name value /%s is not among the expected ones (%s)" name expected_str, indobj, entry))
       );
       typ
 
-    | (PDFObject.Array l, Array elemtype)
-    | (PDFObject.Array l, ArrayOrOne elemtype) ->
+    | (IndirectObject.Direct (DirectObject.Array l), Array elemtype)
+    | (IndirectObject.Direct (DirectObject.Array l), ArrayOrOne elemtype) ->
       check_array ctxt l elemtype indobj entry;
       {kind = Array elemtype; allow_ind = typ.allow_ind;}
 
     | (_, ArrayOrOne elemtype) ->
       check_object ctxt x elemtype indobj (entry ^ "[?]")
 
-    | (PDFObject.Array l, ArraySized (elemtype, len)) ->
+    | (IndirectObject.Direct (DirectObject.Array l), ArraySized (elemtype, len)) ->
       check_array_sized ctxt l elemtype len indobj entry;
       typ
 
-    | (PDFObject.Array l, ArrayVariantSized (elemtype, lens)) ->
+    | (IndirectObject.Direct (DirectObject.Array l), ArrayVariantSized (elemtype, lens)) ->
       check_array_variant_sized ctxt l elemtype lens indobj entry;
       typ
 
-    | (PDFObject.Array l, ArrayTuples types) ->
+    | (IndirectObject.Direct (DirectObject.Array l), ArrayTuples types) ->
       check_array_tuples ctxt l types indobj entry;
       typ
 
-    | (PDFObject.Array l, ArrayDifferences) ->
+    | (IndirectObject.Direct (DirectObject.Array l), ArrayDifferences) ->
       check_array_differences ctxt l indobj entry;
       typ
 
-    | (PDFObject.Array l, Tuple types) ->
+    | (IndirectObject.Direct (DirectObject.Array l), Tuple types) ->
       check_tuple ctxt l types indobj entry;
       typ
 
     | (_, Variant options) ->
       check_variant ctxt x options indobj entry
 
-    | (PDFObject.Dictionary dict, Dictionary elemtype) ->
+    | (IndirectObject.Direct (DirectObject.Dictionary dict), Dictionary elemtype) ->
       check_dict ctxt dict elemtype indobj entry;
       typ
 
-    | (PDFObject.Dictionary dict, Class typename)
-    | (PDFObject.Stream (dict, _, _), Stream typename) ->
+    | (IndirectObject.Direct (DirectObject.Dictionary dict), Class typename)
+    | (IndirectObject.Stream (dict, _, _), Stream typename) ->
       check_class ctxt dict typename indobj entry;
       typ
 
@@ -153,7 +154,11 @@ module CheckObjectType = struct
       raise (Errors.TypeError (Printf.sprintf "Invalid type : expected %s" (kind_to_string typ.kind), indobj, entry))
 
 
-  and check_alias (ctxt : context) (x : PDFObject.t) (name : string) (allow_ind : bool) (indobj : Key.t) (entry : string) : t =
+  and check_object_direct (ctxt : context) (x : DirectObject.t) (typ : t) (indobj : Key.t) (entry : string) : t =
+    check_object ctxt (IndirectObject.Direct x) typ indobj entry
+
+
+  and check_alias (ctxt : context) (x : IndirectObject.t) (name : string) (allow_ind : bool) (indobj : Key.t) (entry : string) : t =
     let kind =
       try
         Hashtbl.find (snd ctxt.pool) name
@@ -163,31 +168,31 @@ module CheckObjectType = struct
     check_object ctxt x {kind = kind; allow_ind = allow_ind;} indobj entry
 
 
-  and check_dict (ctxt : context) (dict : PDFObject.dict_t) (elemtype : t) (indobj : Key.t) (entry : string) : unit =
-    PDFObject.dict_iter
+  and check_dict (ctxt : context) (dict : DirectObject.dict_t) (elemtype : t) (indobj : Key.t) (entry : string) : unit =
+    DirectObject.dict_iter
       (fun name x ->
-         let (_:t) = check_object ctxt x elemtype indobj (entry ^ "/" ^ name) in
+         let (_:t) = check_object_direct ctxt x elemtype indobj (entry ^ "/" ^ name) in
          ()
       ) dict
 
 
-  and check_array (ctxt : context) (l : PDFObject.t list) (elemtype : t) (indobj : Key.t) (entry : string) : unit =
+  and check_array (ctxt : context) (l : DirectObject.t list) (elemtype : t) (indobj : Key.t) (entry : string) : unit =
     let (_:int) = List.fold_left
         (fun i y ->
-           let (_:t) = check_object ctxt y elemtype indobj (Printf.sprintf "%s[%d]" entry i) in
+           let (_:t) = check_object_direct ctxt y elemtype indobj (Printf.sprintf "%s[%d]" entry i) in
            i + 1
         ) 0 l
     in ()
 
 
-  and check_array_sized (ctxt : context) (l : PDFObject.t list) (elemtype : t) (len : int) (indobj : Key.t) (entry : string) : unit =
+  and check_array_sized (ctxt : context) (l : DirectObject.t list) (elemtype : t) (len : int) (indobj : Key.t) (entry : string) : unit =
     let list_len = List.length l in
     if list_len <> len then
       raise (Errors.TypeError (Printf.sprintf "Array size (%d) is not the expected one (%d)" list_len len, indobj, entry));
     check_array ctxt l elemtype indobj entry
 
 
-  and check_array_variant_sized (ctxt : context) (l : PDFObject.t list) (elemtype : t) (lens : int array) (indobj : Key.t) (entry : string) : unit =
+  and check_array_variant_sized (ctxt : context) (l : DirectObject.t list) (elemtype : t) (lens : int array) (indobj : Key.t) (entry : string) : unit =
     let list_len = List.length l in
     if not (Algo.array_contains lens list_len) then (
       let expected_str = Algo.join_string Array.fold_left string_of_int ", " lens in
@@ -196,25 +201,25 @@ module CheckObjectType = struct
     check_array ctxt l elemtype indobj entry
 
 
-  and check_array_tuples (ctxt : context) (l : PDFObject.t list) (types : t array) (indobj : Key.t) (entry : string) : unit =
+  and check_array_tuples (ctxt : context) (l : DirectObject.t list) (types : t array) (indobj : Key.t) (entry : string) : unit =
     let list_len = List.length l in
     let tuple_len = Array.length types in
     if list_len mod tuple_len <> 0 then
       raise (Errors.TypeError (Printf.sprintf "Array size (%d) is not among the expected ones (multiples of %d) for this array of tuples" list_len tuple_len, indobj, entry));
     let (_:int) = List.fold_left
         (fun i y ->
-           let (_:t) = check_object ctxt y types.(i mod (Array.length types)) indobj (Printf.sprintf "%s[%d]" entry i) in
+           let (_:t) = check_object_direct ctxt y types.(i mod (Array.length types)) indobj (Printf.sprintf "%s[%d]" entry i) in
            i + 1
         ) 0 l
     in ()
 
 
-  and check_array_differences (_ctxt : context) (l : PDFObject.t list) (indobj : Key.t) (entry : string) : unit =
+  and check_array_differences (_ctxt : context) (l : DirectObject.t list) (indobj : Key.t) (entry : string) : unit =
     let i = Intervals.create () in
     let (low, high) = List.fold_left
         (fun (low, high) o ->
            match o with
-           | PDFObject.Int c ->
+           | DirectObject.Int c ->
              begin
                match low, high with
                | (Some l, Some h) ->
@@ -223,7 +228,7 @@ module CheckObjectType = struct
              end;
              (* TODO : check *)
              (Some c, Some (c -: ~:1))
-           | PDFObject.Name _ ->
+           | DirectObject.Name _ ->
              (* TODO : check character code ? *)
              begin
                match low, high with
@@ -247,20 +252,20 @@ module CheckObjectType = struct
       raise (Errors.TypeError ("Overlapping differences", indobj, entry))
 
 
-  and check_tuple (ctxt : context) (l : PDFObject.t list) (types : t array) (indobj : Key.t) (entry : string) : unit =
+  and check_tuple (ctxt : context) (l : DirectObject.t list) (types : t array) (indobj : Key.t) (entry : string) : unit =
     let list_len = List.length l in
     let tuple_len = Array.length types in
     if list_len <> tuple_len then
       raise (Errors.TypeError (Printf.sprintf "Array size (%d) is not the expected one (%d) for this tuple" list_len tuple_len, indobj, entry));
     let (_:int) = List.fold_left
         (fun i y ->
-           let (_:t) = check_object ctxt y types.(i) indobj (Printf.sprintf "%s[%d]" entry i) in
+           let (_:t) = check_object_direct ctxt y types.(i) indobj (Printf.sprintf "%s[%d]" entry i) in
            i + 1
         ) 0 l
     in ()
 
 
-  and check_variant (ctxt : context) (x : PDFObject.t) (options : kind_t list) (indobj : Key.t) (entry : string) : t =
+  and check_variant (ctxt : context) (x : IndirectObject.t) (options : kind_t list) (indobj : Key.t) (entry : string) : t =
     try
       List.iter
         (fun kind ->
@@ -311,9 +316,9 @@ module CheckObjectType = struct
     )
 
 
-  and check_class (ctxt : context) (dict : PDFObject.dict_t) (typename : string) (indobj : Key.t) (entry : string) : unit =
-    let entries = Hashtbl.create (PDFObject.dict_length dict) in
-    PDFObject.dict_iter
+  and check_class (ctxt : context) (dict : DirectObject.dict_t) (typename : string) (indobj : Key.t) (entry : string) : unit =
+    let entries = Hashtbl.create (DirectObject.dict_length dict) in
+    DirectObject.dict_iter
       (fun name _ ->
          Hashtbl.add entries name true
       ) dict;
@@ -340,7 +345,7 @@ module CheckObjectType = struct
          )
       ) entries
 
-  and check_subclass (ctxt : context) (dict : PDFObject.dict_t) (typename : string) (indobj : Key.t) (entry : string) (entries : (string, bool) Hashtbl.t) : bool =
+  and check_subclass (ctxt : context) (dict : DirectObject.dict_t) (typename : string) (indobj : Key.t) (entry : string) (entries : (string, bool) Hashtbl.t) : bool =
     let class_type, includes, strict =
       try
         Hashtbl.find (fst ctxt.pool) typename
@@ -350,9 +355,9 @@ module CheckObjectType = struct
     (* Check entries of this class *)
     Hashtbl.iter
       (fun name entry_type ->
-         if PDFObject.dict_mem dict name then (
-           let obj = PDFObject.dict_find dict name in
-           let (_:t) = check_object ctxt obj entry_type.typ indobj (entry ^ "/" ^ name) in
+         if DirectObject.dict_mem dict name then (
+           let obj = DirectObject.dict_find dict name in
+           let (_:t) = check_object_direct ctxt obj entry_type.typ indobj (entry ^ "/" ^ name) in
            Hashtbl.remove entries name
          ) else if not entry_type.optional then
            raise (Errors.TypeError (Printf.sprintf "Mandatory entry /%s was not found in instance of class %s" name typename, indobj, entry))

@@ -18,7 +18,7 @@
 
 
 open OUnit
-open Pdfobject.PDFObject
+open Directobject.DirectObject
 open Key
 open Boundedint
 open Errors

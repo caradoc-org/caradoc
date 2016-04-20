@@ -21,7 +21,8 @@ open Fetchcommon
 open Boundedint
 open Errors
 open Wrap
-open Pdfobject
+open Directobject
+open Indirectobject
 open Parsestream
 open Xref
 open Intervals
@@ -47,10 +48,11 @@ module MakeFetch (FetchComp : FetchCompT) = struct
           raise (Errors.PDFError ("Object definition does not match xref table", Errors.make_ctxt key off));
 
         match o with
-        | PDFObject.StreamOffset (stream_dict, offset) ->
-          let stream_length = dereference (PDFObject.dict_find stream_dict "Length") ctxt in
-          let len = PDFObject.get_nonnegative_int ()
+        | IndirectObject.StreamOffset (stream_dict, offset) ->
+          let stream_length = dereference (DirectObject.dict_find stream_dict "Length") ctxt in
+          let len = IndirectObject.get_direct_of
               "Expected integer for stream /Length" (Errors.make_ctxt key off)
+              ~transform:(DirectObject.get_nonnegative_int ())
               stream_length in
 
           let raw, endstreampos =
@@ -58,15 +60,15 @@ module MakeFetch (FetchComp : FetchCompT) = struct
           in
           Intervals.add ctxt.FetchCommon.intervals (off, endstreampos) key;
 
-          PDFObject.Stream (stream_dict, raw, PDFObject.Raw)
-        | PDFObject.Object obj ->
+          IndirectObject.Stream (stream_dict, raw, IndirectObject.Raw)
+        | IndirectObject.Complete obj ->
           Intervals.add ctxt.FetchCommon.intervals (off, endobjpos) key;
-          obj
+          IndirectObject.Direct obj
       )
 
-  and dereference (obj : PDFObject.t) (ctxt : FetchCommon.context) : PDFObject.t =
+  and dereference (obj : DirectObject.t) (ctxt : FetchCommon.context) : IndirectObject.t =
     match obj with
-    | PDFObject.Reference key ->
+    | DirectObject.Reference key ->
       let entry = XRefTable.find ctxt.FetchCommon.xref key "Reference to undeclared object" in
 
       begin
@@ -82,18 +84,18 @@ module MakeFetch (FetchComp : FetchCompT) = struct
         | XRefTable.Free ->
           raise (Errors.PDFError ("Reference to free object", Errors.make_ctxt_key key))
       end
-    | _ -> obj
+    | _ -> IndirectObject.Direct obj
 
 
-  let fetchdecodestream (key : Key.t) (off : BoundedInt.t) (ctxt : FetchCommon.context) (relax : bool) : PDFObject.t =
+  let fetchdecodestream (key : Key.t) (off : BoundedInt.t) (ctxt : FetchCommon.context) (relax : bool) : IndirectObject.t =
     let obj = fetchobject key off ctxt in
     match obj with
-    | PDFObject.Stream (stream_dict, raw, PDFObject.Raw) ->
+    | IndirectObject.Stream (stream_dict, raw, IndirectObject.Raw) ->
       (* lock object *)
       ctxt.FetchCommon.traversed <- MapKey.add key false ctxt.FetchCommon.traversed;
 
       let decoded, _ = decode raw (Errors.make_ctxt key off) stream_dict relax in
-      let result = PDFObject.Stream (stream_dict, raw, PDFObject.Content decoded) in
+      let result = IndirectObject.Stream (stream_dict, raw, IndirectObject.Content decoded) in
       Document.set ctxt.FetchCommon.doc key result;
 
       (* unlock object *)

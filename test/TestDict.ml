@@ -21,16 +21,16 @@ open OUnit
 open Errors
 open Key
 open Boundedint
-open Pdfobject
+open Directobject
 
 
 let add_all l =
-  let x = PDFObject.dict_create () in
-  List.iter (fun y -> PDFObject.dict_add false x y) l;
+  let x = DirectObject.dict_create () in
+  List.iter (fun y -> DirectObject.dict_add false x y) l;
   x
 
 let make_pages () =
-  add_all ["Type", PDFObject.Name "Pages" ; "Parent", PDFObject.Reference (Key.make_0 ~:1)]
+  add_all ["Type", DirectObject.Name "Pages" ; "Parent", DirectObject.Reference (Key.make_0 ~:1)]
 
 
 let tests =
@@ -39,41 +39,41 @@ let tests =
     "singleton" >:::
     [
       "(1)" >:: (fun _ -> assert_equal
-                    (PDFObject.dict_singleton ("Key", PDFObject.String "Value"))
-                    (add_all ["Key", PDFObject.String "Value"])) ;
+                    (DirectObject.dict_singleton ("Key", DirectObject.String "Value"))
+                    (add_all ["Key", DirectObject.String "Value"])) ;
       "(2)" >:: (fun _ -> assert_equal
-                    (PDFObject.dict_singleton ("Key", PDFObject.String "Value"))
-                    (add_all ["Key", PDFObject.String "Other"]) ~cmp:(<>)) ;
+                    (DirectObject.dict_singleton ("Key", DirectObject.String "Value"))
+                    (add_all ["Key", DirectObject.String "Other"]) ~cmp:(<>)) ;
     ] ;
 
     "add" >:::
     [
       "(1)" >:: (fun _ -> assert_equal
-                    (add_all ["Key", PDFObject.Bool true ; "Param", PDFObject.Bool false])
-                    (add_all ["Param", PDFObject.Bool false ; "Key", PDFObject.Bool true])) ;
+                    (add_all ["Key", DirectObject.Bool true ; "Param", DirectObject.Bool false])
+                    (add_all ["Param", DirectObject.Bool false ; "Key", DirectObject.Bool true])) ;
       "(2)" >:: (fun _ -> assert_equal
-                    (add_all ["Key", PDFObject.Bool true ; "Param", PDFObject.Null])
-                    (add_all ["Key", PDFObject.Bool true])) ;
+                    (add_all ["Key", DirectObject.Bool true ; "Param", DirectObject.Null])
+                    (add_all ["Key", DirectObject.Bool true])) ;
 
       "(3)" >:: (fun _ -> assert_raises
                     (Errors.PDFError ("The same name appears several times in dictionary : Key", Errors.ctxt_none))
-                    (fun () -> add_all ["Key", PDFObject.Bool true ; "Key", PDFObject.Bool false])) ;
+                    (fun () -> add_all ["Key", DirectObject.Bool true ; "Key", DirectObject.Bool false])) ;
       "(4)" >:: (fun _ -> assert_raises
                     (Errors.PDFError ("The same name appears several times in dictionary : Key", Errors.ctxt_none))
-                    (fun () -> add_all ["Key", PDFObject.Bool true ; "Key", PDFObject.Bool true])) ;
+                    (fun () -> add_all ["Key", DirectObject.Bool true ; "Key", DirectObject.Bool true])) ;
     ] ;
 
     "find" >:::
     [
       "(1)" >:: (fun _ -> assert_equal
-                    (PDFObject.dict_find (make_pages ()) "Parent")
-                    (PDFObject.Reference (Key.make_0 ~:1))) ;
+                    (DirectObject.dict_find (make_pages ()) "Parent")
+                    (DirectObject.Reference (Key.make_0 ~:1))) ;
       "(2)" >:: (fun _ -> assert_equal
-                    (PDFObject.dict_find (make_pages ()) "Kids")
-                    (PDFObject.Null)) ;
+                    (DirectObject.dict_find (make_pages ()) "Kids")
+                    (DirectObject.Null)) ;
       "(3)" >:: (fun _ -> assert_equal
-                    (PDFObject.dict_find (make_pages ()) "Type")
-                    (PDFObject.Name "Pages")) ;
+                    (DirectObject.dict_find (make_pages ()) "Type")
+                    (DirectObject.Name "Pages")) ;
     ] ;
   ]
 

@@ -26,7 +26,8 @@ open Xref
 open Parsestream
 open Intervals
 open Document
-open Pdfobject
+open Directobject
+open Indirectobject
 open Key
 open Stats
 open Params
@@ -127,15 +128,15 @@ let parsexref_stm xref input offset length doc =
   let stream_dict, stream_off =
     begin
       match obj with
-      | PDFObject.StreamOffset (d, o) ->
+      | IndirectObject.StreamOffset (d, o) ->
         d, o
-      | PDFObject.Object _ ->
+      | IndirectObject.Complete _ ->
         raise (Errors.PDFError ("Invalid xref", Errors.make_ctxt_pos offset))
     end
   in
 
-  let value = PDFObject.dict_find stream_dict "Length" in
-  let stream_length = PDFObject.get_nonnegative_int ()
+  let value = DirectObject.dict_find stream_dict "Length" in
+  let stream_length = DirectObject.get_nonnegative_int ()
       "Expected integer for stream /Length" (Errors.make_ctxt key offset)
       value in
 
@@ -144,21 +145,21 @@ let parsexref_stm xref input offset length doc =
   (*************************)
   (* PDF reference 7.5.8.2 *)
   (*************************)
-  let w = PDFObject.get_array_of
+  let w = DirectObject.get_array_of
       ~length:3 ()
       "Expected array of 3 ints for xref stream /W" (Errors.make_ctxt key offset)
-      ~transform:(PDFObject.get_nonnegative_int ())
-      (PDFObject.dict_find stream_dict "W") in
+      ~transform:(DirectObject.get_nonnegative_int ())
+      (DirectObject.dict_find stream_dict "W") in
 
-  let size = PDFObject.get_nonnegative_int ()
+  let size = DirectObject.get_nonnegative_int ()
       "Expected integer for xref stream /Size" (Errors.make_ctxt key offset)
-      (PDFObject.dict_find stream_dict "Size") in
+      (DirectObject.dict_find stream_dict "Size") in
 
-  let index = PDFObject.get_array_of
-      ~default:[PDFObject.Int ~:0 ; PDFObject.Int size] ()
+  let index = DirectObject.get_array_of
+      ~default:[DirectObject.Int ~:0 ; DirectObject.Int size] ()
       "Expected array of ints for xref stream /Index" (Errors.make_ctxt key offset)
-      ~transform:(PDFObject.get_nonnegative_int ())
-      (PDFObject.dict_find stream_dict "Index") in
+      ~transform:(DirectObject.get_nonnegative_int ())
+      (DirectObject.dict_find stream_dict "Index") in
 
   let idxlen = ~:(Array.length index) in
   if (BoundedInt.rem idxlen ~:2) <> ~:0 || idxlen <=: ~:0 then
@@ -219,7 +220,7 @@ let rec parsetrailer offset trailer xref input length setpos intervals doc stats
 
   (* Generic function to handle hybrid-reference files. *)
   let f name x =
-    let startxref = PDFObject.get_positive_int ()
+    let startxref = DirectObject.get_positive_int ()
         (Printf.sprintf "/%s field in trailer is not an integer" name) (Errors.make_ctxt_pos offset)
         x in
 
@@ -234,6 +235,6 @@ let rec parsetrailer offset trailer xref input length setpos intervals doc stats
   (*************************)
   (* PDF reference 7.5.8.4 *)
   (*************************)
-  PDFObject.apply_not_null (PDFObject.dict_find trailer "XRefStm") (f "XRefStm");
-  PDFObject.apply_not_null (PDFObject.dict_find trailer "Prev") (f "Prev")
+  DirectObject.apply_not_null (DirectObject.dict_find trailer "XRefStm") (f "XRefStm");
+  DirectObject.apply_not_null (DirectObject.dict_find trailer "Prev") (f "Prev")
 

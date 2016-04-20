@@ -22,15 +22,28 @@ open Document
 open Key
 open Errors
 open Boundedint
-open Pdfobject.PDFObject
+open Directobject.DirectObject
+open Indirectobject.IndirectObject
 open Graph
 
+
+let make_doc_objs_direct objs =
+  let doc = Document.create () in
+  List.iter (fun (key, o) ->
+      Document.add doc key (Direct o)
+    ) objs;
+  doc
 
 let make_doc_objs objs =
   let doc = Document.create () in
   List.iter (fun (key, o) ->
       Document.add doc key o
     ) objs;
+  doc
+
+let make_doc_trailer_direct objs trailer =
+  let doc = make_doc_objs_direct objs in
+  Document.add_trailer doc trailer;
   doc
 
 let make_doc_trailer objs trailer =
@@ -41,7 +54,7 @@ let make_doc_trailer objs trailer =
 let make_doc id =
   match id with
   | 1 ->
-    make_doc_objs [
+    make_doc_objs_direct [
       Key.make_0 ~:1, Array [Reference (Key.make_0 ~:3) ; Reference (Key.make_0 ~:4)] ;
       Key.make_0 ~:2, Array [Reference (Key.make_0 ~:6) ; Reference (Key.make_0 ~:5)] ;
       Key.make_0 ~:3, Array [Reference (Key.make_0 ~:5)] ;
@@ -50,7 +63,7 @@ let make_doc id =
       Key.make_0 ~:6, Array [Reference (Key.make_0 ~:2) ; Reference (Key.make_0 ~:5)] ;
     ]
   | 2 ->
-    make_doc_trailer [
+    make_doc_trailer_direct [
       Key.make_0 ~:1, Array [Reference (Key.make_0 ~:2)] ;
       Key.make_0 ~:2, Array [Reference (Key.make_0 ~:1)] ;
     ] (TestDict.add_all [
@@ -59,7 +72,7 @@ let make_doc id =
         "Size", Int ~:3 ;
       ])
   | 3 ->
-    make_doc_trailer [
+    make_doc_trailer_direct [
       Key.make_0 ~:1, Array [Reference (Key.make_gen ~:3 ~:1)] ;
       Key.make_0 ~:2, Int ~:123 ;
       Key.make_gen ~:3 ~:1, Int ~:456 ;
@@ -70,7 +83,7 @@ let make_doc id =
         "ID", Null ;
       ])
   | 13 ->
-    make_doc_trailer [
+    make_doc_trailer_direct [
       Key.make_0 ~:1, Array [Reference (Key.make_0 ~:3)] ;
       Key.make_0 ~:2, Int ~:123 ;
       Key.make_0 ~:3, Int ~:456 ;
@@ -80,7 +93,7 @@ let make_doc id =
         "Size", Int ~:4 ;
       ])
   | 23 ->
-    make_doc_trailer [
+    make_doc_trailer_direct [
       Key.make_0 ~:1, Array [Int ~:456] ;
       Key.make_0 ~:2, Int ~:123 ;
       Key.make_gen ~:3 ~:1, Int ~:456 ;
@@ -91,7 +104,7 @@ let make_doc id =
         "ID", Null ;
       ])
   | 4 ->
-    make_doc_trailer [
+    make_doc_trailer_direct [
       Key.make_0 ~:1, Array [Reference (Key.make_0 ~:3)] ;
       Key.make_0 ~:2, Int ~:123 ;
       Key.make_0 ~:3, Array [Int ~:456 ; Dictionary (TestDict.add_all ["Key", String "Value" ; "None", Null])] ;
@@ -100,7 +113,7 @@ let make_doc id =
         "Size", Int ~:4 ;
       ])
   | 14 ->
-    make_doc_trailer [
+    make_doc_trailer_direct [
       Key.make_0 ~:1, Array [Reference (Key.make_0 ~:2)] ;
       Key.make_0 ~:2, Array [Int ~:456 ; Dictionary (TestDict.add_all ["Key", String "Value"])] ;
     ] (TestDict.add_all [
@@ -109,62 +122,62 @@ let make_doc id =
       ])
   | 5 ->
     make_doc_trailer [
-      Key.make_0 ~:1, Array [
-        Reference (Key.make_0 ~:2) ;
-        Reference (Key.make_0 ~:3) ;
-        Reference (Key.make_0 ~:4) ;
-        Reference (Key.make_0 ~:5) ;
-        Reference (Key.make_0 ~:6) ;
-        Reference (Key.make_0 ~:7) ;
-        Reference (Key.make_0 ~:8) ;
-        Reference (Key.make_0 ~:9) ;
-        Reference (Key.make_0 ~:10) ;
-        Reference (Key.make_0 ~:11) ;
-        Reference (Key.make_0 ~:12) ;
-      ] ;
-      Key.make_0 ~:2, Null ;
-      Key.make_0 ~:3, Bool false ;
-      Key.make_0 ~:4, Int ~:123 ;
-      Key.make_0 ~:5, Real "456.789" ;
-      Key.make_0 ~:6, String "test" ;
-      Key.make_0 ~:7, Name "foo" ;
-      Key.make_0 ~:8, Array [Reference (Key.make_0 ~:4)] ;
-      Key.make_0 ~:9, Array [Reference (Key.make_0 ~:9)] ;
-      Key.make_0 ~:10, Dictionary (TestDict.add_all ["Key", String "Value" ; "Foo", Reference (Key.make_0 ~:6)]) ;
-      Key.make_0 ~:11, Reference (Key.make_0 ~:11) ;
+      Key.make_0 ~:1, Direct (Array [
+          Reference (Key.make_0 ~:2) ;
+          Reference (Key.make_0 ~:3) ;
+          Reference (Key.make_0 ~:4) ;
+          Reference (Key.make_0 ~:5) ;
+          Reference (Key.make_0 ~:6) ;
+          Reference (Key.make_0 ~:7) ;
+          Reference (Key.make_0 ~:8) ;
+          Reference (Key.make_0 ~:9) ;
+          Reference (Key.make_0 ~:10) ;
+          Reference (Key.make_0 ~:11) ;
+          Reference (Key.make_0 ~:12) ;
+        ]) ;
+      Key.make_0 ~:2, Direct Null ;
+      Key.make_0 ~:3, Direct (Bool false) ;
+      Key.make_0 ~:4, Direct (Int ~:123) ;
+      Key.make_0 ~:5, Direct (Real "456.789") ;
+      Key.make_0 ~:6, Direct (String "test") ;
+      Key.make_0 ~:7, Direct (Name "foo") ;
+      Key.make_0 ~:8, Direct (Array [Reference (Key.make_0 ~:4)]) ;
+      Key.make_0 ~:9, Direct (Array [Reference (Key.make_0 ~:9)]) ;
+      Key.make_0 ~:10, Direct (Dictionary (TestDict.add_all ["Key", String "Value" ; "Foo", Reference (Key.make_0 ~:6)])) ;
+      Key.make_0 ~:11, Direct (Reference (Key.make_0 ~:11)) ;
       Key.make_0 ~:12, Stream (TestDict.add_all ["Length", Reference (Key.make_0 ~:4)], "", Raw) ;
     ] (TestDict.add_all [
       ])
   | 15 ->
     make_doc_trailer [
-      Key.make_0 ~:1, Array [
-        Null ;
-        Bool false ;
-        Int ~:123 ;
-        Real "456.789" ;
-        String "test" ;
-        Name "foo" ;
-        Reference (Key.make_0 ~:8) ;
-        Reference (Key.make_0 ~:9) ;
-        Reference (Key.make_0 ~:10) ;
-        Reference (Key.make_0 ~:11) ;
-        Reference (Key.make_0 ~:12) ;
-      ] ;
-      Key.make_0 ~:2, Null ;
-      Key.make_0 ~:3, Bool false ;
-      Key.make_0 ~:4, Int ~:123 ;
-      Key.make_0 ~:5, Real "456.789" ;
-      Key.make_0 ~:6, String "test" ;
-      Key.make_0 ~:7, Name "foo" ;
-      Key.make_0 ~:8, Array [Int ~:123] ;
-      Key.make_0 ~:9, Array [Reference (Key.make_0 ~:9)] ;
-      Key.make_0 ~:10, Dictionary (TestDict.add_all ["Key", String "Value" ; "Foo", String "test"]) ;
-      Key.make_0 ~:11, Reference (Key.make_0 ~:11) ;
+      Key.make_0 ~:1, Direct (Array [
+          Null ;
+          Bool false ;
+          Int ~:123 ;
+          Real "456.789" ;
+          String "test" ;
+          Name "foo" ;
+          Reference (Key.make_0 ~:8) ;
+          Reference (Key.make_0 ~:9) ;
+          Reference (Key.make_0 ~:10) ;
+          Reference (Key.make_0 ~:11) ;
+          Reference (Key.make_0 ~:12) ;
+        ]) ;
+      Key.make_0 ~:2, Direct Null ;
+      Key.make_0 ~:3, Direct (Bool false) ;
+      Key.make_0 ~:4, Direct (Int ~:123) ;
+      Key.make_0 ~:5, Direct (Real "456.789") ;
+      Key.make_0 ~:6, Direct (String "test") ;
+      Key.make_0 ~:7, Direct (Name "foo") ;
+      Key.make_0 ~:8, Direct (Array [Int ~:123]) ;
+      Key.make_0 ~:9, Direct (Array [Reference (Key.make_0 ~:9)]) ;
+      Key.make_0 ~:10, Direct (Dictionary (TestDict.add_all ["Key", String "Value" ; "Foo", String "test"])) ;
+      Key.make_0 ~:11, Direct (Reference (Key.make_0 ~:11)) ;
       Key.make_0 ~:12, Stream (TestDict.add_all ["Length", Int ~:123], "", Raw) ;
     ] (TestDict.add_all [
       ])
   | 6 ->
-    make_doc_trailer [
+    make_doc_trailer_direct [
       Key.make_0 ~:1, Array [Reference (Key.make_0 ~:2) ; Reference (Key.make_0 ~:4)] ;
       Key.make_0 ~:2, Int ~:123 ;
       Key.make_gen ~:3 ~:1, Dictionary (TestDict.add_all ["Foo", Reference (Key.make_0 ~:4)]) ;
@@ -172,12 +185,12 @@ let make_doc id =
     ] (TestDict.add_all [
       ])
   | -1 ->
-    make_doc_objs [
+    make_doc_objs_direct [
       Key.make_0 ~:1, Array [Reference (Key.make_0 ~:2)] ;
       Key.make_0 ~:2, Array [Reference (Key.make_0 ~:3)] ;
     ]
   | -2 ->
-    make_doc_trailer [
+    make_doc_trailer_direct [
       Key.make_0 ~:1, Array [Reference (Key.make_0 ~:2)] ;
       Key.make_0 ~:2, Array [Reference (Key.make_0 ~:3)] ;
     ] (TestDict.add_all [
@@ -192,21 +205,21 @@ let tests =
     "ref_closure" >:::
     [
       "(1)" >:: (fun _ -> assert_equal
-                    (Document.ref_closure (make_doc 0) (Array [Int ~:123 ; Bool true ; Null]) Key.Trailer)
+                    (Document.ref_closure (make_doc 0) (Direct (Array [Int ~:123 ; Bool true ; Null])) Key.Trailer)
                     (TestSetkey.add_all [])) ;
       "(2)" >:: (fun _ -> assert_equal
-                    (Document.ref_closure (make_doc 1) (Reference (Key.make_0 ~:1)) Key.Trailer)
+                    (Document.ref_closure (make_doc 1) (Direct (Reference (Key.make_0 ~:1))) Key.Trailer)
                     (TestSetkey.add_all [Key.make_0 ~:1 ; Key.make_0 ~:3 ; Key.make_0 ~:4 ; Key.make_0 ~:5])) ;
       "(3)" >:: (fun _ -> assert_equal
-                    (Document.ref_closure (make_doc 1) (Reference (Key.make_0 ~:3)) Key.Trailer)
+                    (Document.ref_closure (make_doc 1) (Direct (Reference (Key.make_0 ~:3))) Key.Trailer)
                     (TestSetkey.add_all [Key.make_0 ~:3 ; Key.make_0 ~:5])) ;
 
       "(4)" >:: (fun _ -> assert_raises
                     (Errors.PDFError ("Reference to unknown object : 3", Errors.make_ctxt_key (Key.make_0 ~:2)))
-                    (fun () -> Document.ref_closure (make_doc (-1)) (Reference (Key.make_0 ~:1)) Key.Trailer)) ;
+                    (fun () -> Document.ref_closure (make_doc (-1)) (Direct (Reference (Key.make_0 ~:1))) Key.Trailer)) ;
       "(5)" >:: (fun _ -> assert_raises
                     (Errors.PDFError ("Reference to unknown object : 1", Errors.make_ctxt_key Key.Trailer))
-                    (fun () -> Document.ref_closure (make_doc 0) (Reference (Key.make_0 ~:1)) Key.Trailer)) ;
+                    (fun () -> Document.ref_closure (make_doc 0) (Direct (Reference (Key.make_0 ~:1))) Key.Trailer)) ;
     ] ;
 
     "graph" >:::

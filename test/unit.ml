@@ -25,8 +25,9 @@ let tests =
   [
     (* data/ *)
     TestDocument.tests;
-    TestObject.tests;
     TestDict.tests;
+    TestDirectObject.tests;
+    TestIndirectObject.tests;
 
     (* parse/ *)
     TestCommon.tests;

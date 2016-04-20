@@ -19,7 +19,8 @@
 
 open File
 open Xref
-open Pdfobject
+open Directobject
+open Indirectobject
 open Boundedint
 open Extractxref
 open Type
@@ -161,12 +162,12 @@ let command_object =
     let obj = extract_object input (Key.make_gen_i !num !gen) in
     close_in input;
 
-    Printf.printf "%s\n" (PDFObject.to_string obj);
+    Printf.printf "%s\n" (IndirectObject.to_string obj);
 
     if !raw_stream_filename <> "" then (
       begin
         match obj with
-        | PDFObject.Stream (_, raw, _) ->
+        | IndirectObject.Stream (_, raw, _) ->
           let out = open_out_bin !raw_stream_filename in
           Printf.fprintf out "%s" raw;
           close_out out
@@ -178,7 +179,7 @@ let command_object =
     if !decoded_stream_filename <> "" then (
       begin
         match obj with
-        | PDFObject.Stream (_, _, PDFObject.Content c) ->
+        | IndirectObject.Stream (_, _, IndirectObject.Content c) ->
           let out = open_out_bin !decoded_stream_filename in
           Printf.fprintf out "%s" c;
           close_out out
@@ -213,7 +214,7 @@ let command_trailer =
     let trailers = extract_trailers input in
     List.iter (
       fun obj ->
-        Printf.printf "%s\n" (PDFObject.dict_to_string obj)
+        Printf.printf "%s\n" (DirectObject.dict_to_string obj)
     ) trailers
   in
 

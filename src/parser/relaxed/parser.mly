@@ -1,5 +1,6 @@
 %{
-  open Pdfobject
+  open Directobject
+  open Indirectobject
   open Boundedint
   open Params
 %}
@@ -23,9 +24,9 @@
 %token <string> STRINGHEX
 %token <string> NAME
 
-%start <Pdfobject.PDFObject.t> one_object
-%start <Pdfobject.PDFObject.dict_t> trailerdict
-%start <Key.t * Pdfobject.PDFObject.partial_t> indirectobj
+%start <Directobject.DirectObject.t> one_object
+%start <Directobject.DirectObject.dict_t> trailerdict
+%start <Key.t * Indirectobject.IndirectObject.partial_t> indirectobj
 %start <unit> endstream
 %start <(Boundedint.BoundedInt.t list) * (Boundedint.BoundedInt.t list)> intpair_list
 %start <unit> hole
@@ -76,12 +77,12 @@ indirectobj:
 (* PDF reference 7.3.10 *)
 (************************)
   | k = indirectobj_header o = directobj ENDOBJ
-    { (k, PDFObject.Object o) }
+    { (k, IndirectObject.Complete o) }
 (***********************)
 (* PDF reference 7.3.8 *)
 (***********************)
   | k = indirectobj_header d = dictionary offset = STREAM
-    { (k, PDFObject.StreamOffset (d, offset)) }
+    { (k, IndirectObject.StreamOffset (d, offset)) }
 
 (************************)
 (* PDF reference 7.3.10 *)
@@ -101,26 +102,26 @@ directobj:
 
 directobj_not_int:
   | null_sp
-    { PDFObject.Null }
+    { DirectObject.Null }
   | b = bool_sp
-    { PDFObject.Bool b }
+    { DirectObject.Bool b }
   | r = real_sp
-    { PDFObject.Real r }
+    { DirectObject.Real r }
   | s = string_sp
-    { PDFObject.String s }
+    { DirectObject.String s }
   | n = name_sp
-    { PDFObject.Name n }
+    { DirectObject.Name n }
   (***********************)
   (* PDF reference 7.3.6 *)
   (***********************)
   | LSQUAREBRACKET ignore_spaces a = array_content RSQUAREBRACKET ignore_spaces
-    { PDFObject.Array a }
+    { DirectObject.Array a }
   | d = dictionary
-    { PDFObject.Dictionary d }
+    { DirectObject.Dictionary d }
 
 int_or_ref:
   | i = int_sp
-    { PDFObject.Int i }
+    { DirectObject.Int i }
   | r = ref
     { r }
 
@@ -129,7 +130,7 @@ int_or_ref:
 (************************)
 ref:
   | id = int_sp gen = int_sp R ignore_spaces
-    { PDFObject.Reference (Key.make_gen id gen) }
+    { DirectObject.Reference (Key.make_gen id gen) }
 
 (***********************)
 (* PDF reference 7.3.6 *)
@@ -145,21 +146,21 @@ array_content:
 
 array_of_ints:
   | i = int_sp
-    { [PDFObject.Int i] }
+    { [DirectObject.Int i] }
 
   | r = ref
     { [r] }
   | i = int_sp j = int_sp
-    { [PDFObject.Int i ; PDFObject.Int j] }
+    { [DirectObject.Int i ; DirectObject.Int j] }
   | i = int_sp r = ref
-    { [PDFObject.Int i ; r] }
+    { [DirectObject.Int i ; r] }
 
   | r = ref a = array_of_ints
     { r::a }
   | i = int_sp j = int_sp a = array_of_ints
-    { (PDFObject.Int i)::(PDFObject.Int j)::a }
+    { (DirectObject.Int i)::(DirectObject.Int j)::a }
   | i = int_sp r = ref a = array_of_ints
-    { (PDFObject.Int i)::r::a }
+    { (DirectObject.Int i)::r::a }
 
 
 (***********************)
@@ -174,9 +175,9 @@ dict_without_space:
     { d }
 
 dict_content:
-  | { PDFObject.dict_create () }
+  | { DirectObject.dict_create () }
   | d = dict_content x = key_value
-    { PDFObject.dict_add Params.global.Params.allow_dict_duplicates d x;
+    { DirectObject.dict_add Params.global.Params.allow_dict_duplicates d x;
       d }
 
 key_value:

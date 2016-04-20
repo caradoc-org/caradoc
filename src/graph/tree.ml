@@ -20,7 +20,8 @@
 open Key
 open Setkey
 open Boundedint
-open Pdfobject
+open Directobject
+open Indirectobject
 open Document
 open Errors
 open Params
@@ -36,9 +37,9 @@ module Tree = struct
         (fun _ _ _ -> ())
       | Some s ->
         (fun node node_k parent_k ->
-           let p = PDFObject.get_reference
+           let p = DirectObject.get_reference
                () (Printf.sprintf "Graph error : Expected a reference in /%s entry" s) (Errors.make_ctxt_key node_k)
-               (PDFObject.dict_find node s) in
+               (DirectObject.dict_find node s) in
 
            if p <> parent_k then
              raise (Errors.PDFError ("Graph error : Invalid parent in tree structure", Errors.make_ctxt_key node_k))
@@ -46,11 +47,11 @@ module Tree = struct
     in
 
 
-    let rec checkchildren (doc : Document.t) (visited : SetKey.t ref) (node : PDFObject.dict_t) (node_k : Key.t) =
-      let children = PDFObject.get_array_of
+    let rec checkchildren (doc : Document.t) (visited : SetKey.t ref) (node : DirectObject.dict_t) (node_k : Key.t) =
+      let children = DirectObject.get_array_of
           ~default:[] () (Printf.sprintf "Graph error : Expected an array of references in /%s entry" children_s) (Errors.make_ctxt_key node_k)
-          ~transform:(PDFObject.get_reference ())
-          (PDFObject.dict_find node children_s) in
+          ~transform:(DirectObject.get_reference ())
+          (DirectObject.dict_find node children_s) in
 
       Array.iter (fun child_k ->
           checksubtree doc visited child_k node_k
@@ -67,8 +68,9 @@ module Tree = struct
       else
         visited := SetKey.add node_k !visited;
 
-      let node = PDFObject.get_dict
-          () "Graph error : Expected a dictionary" (Errors.make_ctxt_key node_k)
+      let node = IndirectObject.get_direct_of
+          "Graph error : Expected a dictionary" (Errors.make_ctxt_key node_k)
+          ~transform:(DirectObject.get_dict ())
           (Document.find doc node_k) in
 
       (* Check parent *)
@@ -85,8 +87,9 @@ module Tree = struct
       let visited = ref SetKey.empty in
       visited := SetKey.add root_k !visited;
 
-      let root = PDFObject.get_dict
-          () "Graph error : Expected a dictionary" (Errors.make_ctxt_key root_k)
+      let root = IndirectObject.get_direct_of
+          "Graph error : Expected a dictionary" (Errors.make_ctxt_key root_k)
+          ~transform:(DirectObject.get_dict ())
           (Document.find doc root_k) in
 
       (* Check children *)
@@ -98,22 +101,22 @@ module Tree = struct
 
   let checklist (parent_s : string) (first_s : string) (last_s : string) (next_s : string) (prev_s : string) (doc : Document.t) (root_k : Key.t) =
 
-    let checkparent (node : PDFObject.dict_t) (node_k : Key.t) (parent_k : Key.t) =
-      let k = PDFObject.get_reference
+    let checkparent (node : DirectObject.dict_t) (node_k : Key.t) (parent_k : Key.t) =
+      let k = DirectObject.get_reference
           () (Printf.sprintf "Graph error : Expected a reference in /%s entry" parent_s) (Errors.make_ctxt_key node_k)
-          (PDFObject.dict_find node parent_s) in
+          (DirectObject.dict_find node parent_s) in
 
       if k <> parent_k then
         raise (Errors.PDFError ("Graph error : Invalid parent in tree structure", Errors.make_ctxt_key node_k))
     in
 
-    let checkprev (node : PDFObject.dict_t) (node_k : Key.t) (prev_k : Key.t option) (first_k : Key.t) =
-      let prev_entry = PDFObject.dict_find node prev_s in
+    let checkprev (node : DirectObject.dict_t) (node_k : Key.t) (prev_k : Key.t option) (first_k : Key.t) =
+      let prev_entry = DirectObject.dict_find node prev_s in
       if node_k = first_k then (
-        if prev_entry <> PDFObject.Null then
+        if prev_entry <> DirectObject.Null then
           raise (Errors.PDFError (Printf.sprintf "Graph error : Node is %s element but has %s element" first_s prev_s, Errors.make_ctxt_key node_k))
       ) else (
-        let k = PDFObject.get_reference
+        let k = DirectObject.get_reference
             () (Printf.sprintf "Graph error : Expected a reference in /%s entry" prev_s) (Errors.make_ctxt_key node_k)
             prev_entry in
 
@@ -126,16 +129,16 @@ module Tree = struct
     in
 
 
-    let rec checkchildren (doc : Document.t) (visited : SetKey.t ref) (node : PDFObject.dict_t) (node_k : Key.t) =
-      let first_entry = PDFObject.dict_find node first_s in
-      let last_entry = PDFObject.dict_find node last_s in
+    let rec checkchildren (doc : Document.t) (visited : SetKey.t ref) (node : DirectObject.dict_t) (node_k : Key.t) =
+      let first_entry = DirectObject.dict_find node first_s in
+      let last_entry = DirectObject.dict_find node last_s in
 
-      if first_entry <> PDFObject.Null || last_entry <> PDFObject.Null then (
-        let first_k = PDFObject.get_reference
+      if first_entry <> DirectObject.Null || last_entry <> DirectObject.Null then (
+        let first_k = DirectObject.get_reference
             () (Printf.sprintf "Graph error : Expected a reference in /%s entry" first_s) (Errors.make_ctxt_key node_k)
             first_entry in
 
-        let last_k = PDFObject.get_reference
+        let last_k = DirectObject.get_reference
             () (Printf.sprintf "Graph error : Expected a reference in /%s entry" last_s) (Errors.make_ctxt_key node_k)
             last_entry in
 
@@ -145,13 +148,13 @@ module Tree = struct
     and checksubtree (doc : Document.t) (visited : SetKey.t ref) (first_k : Key.t) (last_k : Key.t) (parent_k : Key.t) =
       checknode doc visited first_k None first_k last_k parent_k
 
-    and checknext (doc : Document.t) (visited : SetKey.t ref) (node : PDFObject.dict_t) (node_k : Key.t) (first_k : Key.t) (last_k : Key.t) (parent_k : Key.t) =
-      let next_entry = PDFObject.dict_find node next_s in
+    and checknext (doc : Document.t) (visited : SetKey.t ref) (node : DirectObject.dict_t) (node_k : Key.t) (first_k : Key.t) (last_k : Key.t) (parent_k : Key.t) =
+      let next_entry = DirectObject.dict_find node next_s in
       if node_k = last_k then (
-        if next_entry <> PDFObject.Null then
+        if next_entry <> DirectObject.Null then
           raise (Errors.PDFError (Printf.sprintf "Graph error : Node is %s element but has %s element" last_s next_s, Errors.make_ctxt_key node_k))
       ) else (
-        let next_k = PDFObject.get_reference
+        let next_k = DirectObject.get_reference
             () (Printf.sprintf "Graph error : Expected a reference in /%s entry" next_s) (Errors.make_ctxt_key node_k)
             next_entry in
         checknode doc visited next_k (Some node_k) first_k last_k parent_k
@@ -168,8 +171,9 @@ module Tree = struct
       else
         visited := SetKey.add node_k !visited;
 
-      let node = PDFObject.get_dict
-          () "Graph error : Expected a dictionary" (Errors.make_ctxt_key node_k)
+      let node = IndirectObject.get_direct_of
+          "Graph error : Expected a dictionary" (Errors.make_ctxt_key node_k)
+          ~transform:(DirectObject.get_dict ())
           (Document.find doc node_k) in
 
       (* Check parent *)
@@ -190,8 +194,9 @@ module Tree = struct
       let visited = ref SetKey.empty in
       visited := SetKey.add root_k !visited;
 
-      let root = PDFObject.get_dict
-          () "Graph error : Expected a dictionary" (Errors.make_ctxt_key root_k)
+      let root = IndirectObject.get_direct_of
+          "Graph error : Expected a dictionary" (Errors.make_ctxt_key root_k)
+          ~transform:(DirectObject.get_dict ())
           (Document.find doc root_k) in
 
       (* Check children *)

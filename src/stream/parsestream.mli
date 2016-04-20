@@ -19,7 +19,7 @@
 
 open Key
 open Boundedint
-open Pdfobject
+open Directobject
 open Errors
 
 (*   Decode a stream content with a given filter
@@ -31,7 +31,7 @@ open Errors
      Returns :
      - decoded stream
 *)
-val decode_filter : string -> Errors.error_ctxt -> string -> PDFObject.dict_t -> string
+val decode_filter : string -> Errors.error_ctxt -> string -> DirectObject.dict_t -> string
 
 (*   Decode a stream content with given chained filters
      Args    :
@@ -44,7 +44,7 @@ val decode_filter : string -> Errors.error_ctxt -> string -> PDFObject.dict_t ->
      Returns :
      - decoded stream
 *)
-val decode_filters : string -> Errors.error_ctxt -> (string array) -> (PDFObject.dict_t array) -> int -> int -> string
+val decode_filters : string -> Errors.error_ctxt -> (string array) -> (DirectObject.dict_t array) -> int -> int -> string
 
 (*   Decode a stream content
      Args    :
@@ -56,7 +56,7 @@ val decode_filters : string -> Errors.error_ctxt -> (string array) -> (PDFObject
      - decoded stream
      - success
 *)
-val decode : string -> Errors.error_ctxt -> PDFObject.dict_t -> bool -> (string * bool)
+val decode : string -> Errors.error_ctxt -> DirectObject.dict_t -> bool -> (string * bool)
 
 (*   Parse a stream
      Args    :
@@ -86,5 +86,5 @@ val parsestream : Key.t -> BoundedInt.t -> BoundedInt.t -> in_channel -> Bounded
      - success
      - offset of end of object in file
 *)
-val parsedecodestream : Key.t -> PDFObject.dict_t -> BoundedInt.t -> BoundedInt.t -> in_channel -> BoundedInt.t -> bool -> (string * string * bool * BoundedInt.t)
+val parsedecodestream : Key.t -> DirectObject.dict_t -> BoundedInt.t -> BoundedInt.t -> in_channel -> BoundedInt.t -> bool -> (string * string * bool * BoundedInt.t)
 

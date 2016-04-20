@@ -1,7 +1,8 @@
 %{
   open Xref
   open Boundedint
-  open Pdfobject
+  open Directobject
+  open Indirectobject
 %}
 
 %token <int * int> VERSION
@@ -139,13 +140,13 @@ indirectobj:
 (************************)
   | i = indirectobj_header o = directobj endobj
     { let k, p = i in
-      (p, k, o) }
+      (p, k, IndirectObject.Direct o) }
 (***********************)
 (* PDF reference 7.3.8 *)
 (***********************)
   | i = indirectobj_header d = dictionary raw = STREAM ignore_spaces endobj
     { let k, p = i in
-      (p, k, PDFObject.Stream (d, raw, PDFObject.Raw)) }
+      (p, k, IndirectObject.Stream (d, raw, IndirectObject.Raw)) }
 
 (************************)
 (* PDF reference 7.3.10 *)
@@ -170,26 +171,26 @@ directobj:
 
 directobj_not_int:
   | null_sp
-    { PDFObject.Null }
+    { DirectObject.Null }
   | b = bool_sp
-    { PDFObject.Bool b }
+    { DirectObject.Bool b }
   | r = real_sp
-    { PDFObject.Real r }
+    { DirectObject.Real r }
   | s = string_sp
-    { PDFObject.String s }
+    { DirectObject.String s }
   | n = name_sp
-    { PDFObject.Name n }
+    { DirectObject.Name n }
   (***********************)
   (* PDF reference 7.3.6 *)
   (***********************)
   | LSQUAREBRACKET ignore_spaces a = array_content RSQUAREBRACKET ignore_spaces
-    { PDFObject.Array a }
+    { DirectObject.Array a }
   | d = dictionary
-    { PDFObject.Dictionary d }
+    { DirectObject.Dictionary d }
 
 int_or_ref:
   | i = int_sp
-    { PDFObject.Int i }
+    { DirectObject.Int i }
   | r = ref
     { r }
 
@@ -198,7 +199,7 @@ int_or_ref:
 (************************)
 ref:
   | id = int_sp gen = int_sp R ignore_spaces
-    { PDFObject.Reference (Key.make_gen id gen) }
+    { DirectObject.Reference (Key.make_gen id gen) }
 
 (***********************)
 (* PDF reference 7.3.6 *)
@@ -214,21 +215,21 @@ array_content:
 
 array_of_ints:
   | i = int_sp
-    { [PDFObject.Int i] }
+    { [DirectObject.Int i] }
 
   | r = ref
     { [r] }
   | i = int_sp j = int_sp
-    { [PDFObject.Int i ; PDFObject.Int j] }
+    { [DirectObject.Int i ; DirectObject.Int j] }
   | i = int_sp r = ref
-    { [PDFObject.Int i ; r] }
+    { [DirectObject.Int i ; r] }
 
   | r = ref a = array_of_ints
     { r::a }
   | i = int_sp j = int_sp a = array_of_ints
-    { (PDFObject.Int i)::(PDFObject.Int j)::a }
+    { (DirectObject.Int i)::(DirectObject.Int j)::a }
   | i = int_sp r = ref a = array_of_ints
-    { (PDFObject.Int i)::r::a }
+    { (DirectObject.Int i)::r::a }
 
 
 (***********************)
@@ -243,10 +244,10 @@ dict_without_space:
     { d }
 
 dict_content:
-  | { PDFObject.dict_create () }
+  | { DirectObject.dict_create () }
   | d = dict_content x = key_value
     { (* TODO : enable user to choose to allow dictionary duplicates even in strict mode? *)
-      PDFObject.dict_add false d x;
+      DirectObject.dict_add false d x;
       d }
 
 key_value:

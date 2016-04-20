@@ -18,7 +18,8 @@
 
 
 open Type.Type
-open Pdfobject
+open Directobject
+open Indirectobject
 
 
 module CheckObjectType : sig
@@ -33,7 +34,19 @@ module CheckObjectType : sig
        Returns :
        - real type of object (modified if object is an alias, variant or indirect object)
   *)
-  val check_object : context -> PDFObject.t -> t -> Key.t -> string -> t
+  val check_object : context -> IndirectObject.t -> t -> Key.t -> string -> t
+
+  (*   Check type of an object
+       Args    :
+       - context
+       - object
+       - expected type
+       - object number
+       - entry in object
+       Returns :
+       - real type of object (modified if object is an alias, variant or indirect object)
+  *)
+  val check_object_direct : context -> DirectObject.t -> t -> Key.t -> string -> t
 
   (*   Check type (alias) of an object
        Args    :
@@ -46,7 +59,7 @@ module CheckObjectType : sig
        Returns :
        - real type of object
   *)
-  val check_alias : context -> PDFObject.t -> string -> bool -> Key.t -> string -> t
+  val check_alias : context -> IndirectObject.t -> string -> bool -> Key.t -> string -> t
 
   (*   Check type of a dictionary
        Args    :
@@ -56,7 +69,7 @@ module CheckObjectType : sig
        - object number
        - entry in object
   *)
-  val check_dict : context -> PDFObject.dict_t -> t -> Key.t -> string -> unit
+  val check_dict : context -> DirectObject.dict_t -> t -> Key.t -> string -> unit
 
   (*   Check type of an array
        Args    :
@@ -66,7 +79,7 @@ module CheckObjectType : sig
        - object number
        - entry in object
   *)
-  val check_array : context -> PDFObject.t list -> t -> Key.t -> string -> unit
+  val check_array : context -> DirectObject.t list -> t -> Key.t -> string -> unit
 
   (*   Check type of a sized array
        Args    :
@@ -77,7 +90,7 @@ module CheckObjectType : sig
        - object number
        - entry in object
   *)
-  val check_array_sized : context -> PDFObject.t list -> t -> int -> Key.t -> string -> unit
+  val check_array_sized : context -> DirectObject.t list -> t -> int -> Key.t -> string -> unit
 
   (*   Check type of a sized array
        Args    :
@@ -88,7 +101,7 @@ module CheckObjectType : sig
        - object number
        - entry in object
   *)
-  val check_array_variant_sized : context -> PDFObject.t list -> t -> int array -> Key.t -> string -> unit
+  val check_array_variant_sized : context -> DirectObject.t list -> t -> int array -> Key.t -> string -> unit
 
   (*   Check type of a tuple array
        Args    :
@@ -98,7 +111,7 @@ module CheckObjectType : sig
        - object number
        - entry in object
   *)
-  val check_array_tuples : context -> PDFObject.t list -> t array -> Key.t -> string -> unit
+  val check_array_tuples : context -> DirectObject.t list -> t array -> Key.t -> string -> unit
 
   (*   Check type of a difference array
        Args    :
@@ -107,7 +120,7 @@ module CheckObjectType : sig
        - object number
        - entry in object
   *)
-  val check_array_differences : context -> PDFObject.t list -> Key.t -> string -> unit
+  val check_array_differences : context -> DirectObject.t list -> Key.t -> string -> unit
 
   (*   Check type of a tuple
        Args    :
@@ -117,7 +130,7 @@ module CheckObjectType : sig
        - object number
        - entry in object
   *)
-  val check_tuple : context -> PDFObject.t list -> t array -> Key.t -> string -> unit
+  val check_tuple : context -> DirectObject.t list -> t array -> Key.t -> string -> unit
 
   (*   Check type (variant) of an object
        Args    :
@@ -129,7 +142,7 @@ module CheckObjectType : sig
        Returns :
        - real type of object
   *)
-  val check_variant : context -> PDFObject.t -> kind_t list -> Key.t -> string -> t
+  val check_variant : context -> IndirectObject.t -> kind_t list -> Key.t -> string -> t
 
   (*   Check type of an indirect object
        Args    :
@@ -151,7 +164,7 @@ module CheckObjectType : sig
        - object number
        - entry in object
   *)
-  val check_class : context -> PDFObject.dict_t -> string -> Key.t -> string -> unit
+  val check_class : context -> DirectObject.dict_t -> string -> Key.t -> string -> unit
 
   (*   Check all entries of a class (and included subclasses)
        Args    :
@@ -164,7 +177,7 @@ module CheckObjectType : sig
        Returns :
        - whether subclass is strict or not
   *)
-  val check_subclass : context -> PDFObject.dict_t -> string -> Key.t -> string -> (string, bool) Hashtbl.t -> bool
+  val check_subclass : context -> DirectObject.dict_t -> string -> Key.t -> string -> (string, bool) Hashtbl.t -> bool
 
 end
 

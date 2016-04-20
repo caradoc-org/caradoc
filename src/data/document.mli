@@ -20,7 +20,8 @@
 open Mapkey
 open Key
 open Setkey
-open Pdfobject
+open Directobject
+open Indirectobject
 open Graph
 
 (* Set of objects and trailers extracted from a file *)
@@ -31,21 +32,21 @@ module Document : sig
 
   val create : unit -> t
   val mem : t -> Key.t -> bool
-  val find : t -> Key.t -> PDFObject.t
-  val remove_ref : t -> PDFObject.t -> PDFObject.t
+  val find : t -> Key.t -> IndirectObject.t
+  val remove_ref : t -> DirectObject.t -> IndirectObject.t
 
   val finalize_trailers : t -> unit
-  val trailers : t -> (PDFObject.dict_t list)
-  val main_trailer : t -> PDFObject.dict_t
-  val add : t -> Key.t -> PDFObject.t -> unit
-  val set : t -> Key.t -> PDFObject.t -> unit
-  val add_trailer : t -> PDFObject.dict_t -> unit
+  val trailers : t -> (DirectObject.dict_t list)
+  val main_trailer : t -> DirectObject.dict_t
+  val add : t -> Key.t -> IndirectObject.t -> unit
+  val set : t -> Key.t -> IndirectObject.t -> unit
+  val add_trailer : t -> DirectObject.dict_t -> unit
   val add_objstm : t -> Key.t -> unit
   val add_xrefstm : t -> Key.t -> unit
 
-  val iter_objects : (Key.t -> PDFObject.t -> unit) -> t -> unit
-  val fold_objects : (Key.t -> PDFObject.t -> 'a -> 'a) -> t -> 'a -> 'a
-  val map_objects : (Key.t -> PDFObject.t -> PDFObject.t) -> t -> unit
+  val iter_objects : (Key.t -> IndirectObject.t -> unit) -> t -> unit
+  val fold_objects : (Key.t -> IndirectObject.t -> 'a -> 'a) -> t -> 'a -> 'a
+  val map_objects : (Key.t -> IndirectObject.t -> IndirectObject.t) -> t -> unit
   val iter_stms : (Key.t -> kind_t -> unit) -> t -> unit
 
   (*   Get the closure of objects referenced by an object
@@ -56,7 +57,7 @@ module Document : sig
        Returns :
        - set of references
   *)
-  val ref_closure : t -> PDFObject.t -> Key.t -> SetKey.t
+  val ref_closure : t -> IndirectObject.t -> Key.t -> SetKey.t
 
   (*   Get the graph of references of a document
        Args    :
@@ -82,7 +83,7 @@ module Document : sig
        Returns :
        - sanitized version of the trailer
   *)
-  val sanitize_trailer : Key.t MapKey.t -> PDFObject.dict_t -> PDFObject.dict_t
+  val sanitize_trailer : Key.t MapKey.t -> DirectObject.dict_t -> DirectObject.dict_t
 
   (*   Remove references to simple direct objects
        Args    :

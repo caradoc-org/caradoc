@@ -1,20 +1,25 @@
-- Added support for ASCII85 stream filter.
-
-- Use Buffer module instead of string concatenation to reduce complexity.
-
-- Use standard exception Exit where relevant.
-
+Breaking changes:
+- Removed the parameter --stream-errors from the 'extract' command. This
+  parameter was not used in the code.
 - Changed the parameters of the 'object' command for easier extraction of
   streams: removed --relax-streams and replaced --decode-streams by --raw-stream
   and --decoded-stream.
 
-- Removed the parameter --stream-errors from the 'extract' command. This
-  parameter was not used in the code.
+API Changes:
+- Split the PDFObject module into DirectObject and IndirectObject modules. This
+design enforces the semantics of direct and indirect objects.
 
-- Changed the minimum allowed integer to -2^31. Reported by Chimrod.
+New features:
+- Added support for ASCII85 stream filter.
 
+Bugfixes:
 - Use open_in_bin and open_out_bin instead of open_in and open_out. Suggested by
   Chimrod.
+- Changed the minimum allowed integer to -2^31. Reported by Chimrod.
+
+Misc:
+- Use standard exception Exit where relevant.
+- Use Buffer module instead of string concatenation to reduce complexity.
 
 -------------------
 Version 0.1 (beta):

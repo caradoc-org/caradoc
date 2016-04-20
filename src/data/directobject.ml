@@ -25,16 +25,12 @@ open Algo
 open Convert
 open Params
 
-module PDFObject = struct
+module DirectObject = struct
 
   type int_t = BoundedInt.t
   type real_t = string
 
   type 'a dict = (string, 'a) Hashtbl.t
-
-  type stream_t =
-    | Raw
-    | Content of string
 
   type t =
     | Null
@@ -46,13 +42,8 @@ module PDFObject = struct
     | Array of t list
     | Dictionary of t dict
     | Reference of Key.t
-    | Stream of t dict * string * stream_t
 
   type dict_t = t dict
-
-  type partial_t =
-    | Object of t
-    | StreamOffset of dict_t * BoundedInt.t
 
 
   let dict_create () : dict_t =
@@ -162,32 +153,6 @@ module PDFObject = struct
       Buffer.add_char buf ' ';
       Buffer.add_string buf (string_of_int gen);
       Buffer.add_string buf " R"
-    | Stream (d, raw, Raw) ->
-      stream_to_string_impl tab buf d raw false
-    | Stream (d, _, Content c) ->
-      stream_to_string_impl tab buf d c true
-
-
-  and stream_to_string_impl (tab : string) (buf : Buffer.t) (d : dict_t) (c : string) (decoded : bool) : unit =
-    let expand =
-      match (Params.global.Params.expand_streams, Params.global.Params.stream_limit) with
-      | true, None ->
-        true
-      | true, (Some limit) when (String.length c) <= limit ->
-        true
-      | _ ->
-        false
-    in
-
-    let header = Printf.sprintf "stream <%s stream of length %d>" (if decoded then "decoded" else "encoded") (String.length c) in
-    dict_to_string_impl tab buf d;
-    Buffer.add_char buf '\n';
-    Buffer.add_string buf header;
-    if expand then (
-      Buffer.add_char buf '\n';
-      Buffer.add_string buf c;
-      Buffer.add_string buf "\nendstream\n"
-    )
 
 
   and dict_to_string_impl (tab : string) (buf : Buffer.t) (d : dict_t) : unit =
@@ -222,9 +187,12 @@ module PDFObject = struct
     to_string_impl "" buf x;
     Buffer.contents buf
 
+  let dict_to_string_buf (buf : Buffer.t) (x : dict_t) : unit =
+    dict_to_string_impl "" buf x
+
   let dict_to_string (x : dict_t) : string =
     let buf = Buffer.create 16 in
-    dict_to_string_impl "" buf x;
+    dict_to_string_buf buf x;
     Buffer.contents buf
 
 
@@ -239,8 +207,7 @@ module PDFObject = struct
     | String _
     | Name _
     | Array _
-    | Dictionary _
-    | Stream _ ->
+    | Dictionary _ ->
       false
 
   let need_space_after (x : t) : bool =
@@ -250,8 +217,7 @@ module PDFObject = struct
     | Int _
     | Real _
     | Name _
-    | Reference _
-    | Stream _ ->
+    | Reference _ ->
       true
     | String _
     | Array _
@@ -284,21 +250,15 @@ module PDFObject = struct
           ) false a in
       Buffer.add_char buf ']'
     | Dictionary d ->
-      dict_to_pdf_impl buf d
+      dict_to_pdf_buf buf d
     | Reference key ->
       let id, gen = Key.get_obj_ref key in
       Buffer.add_string buf (string_of_int id);
       Buffer.add_char buf ' ';
       Buffer.add_string buf (string_of_int gen);
       Buffer.add_string buf " R"
-    | Stream (d, raw, Raw)
-    | Stream (d, raw, Content _) ->
-      dict_to_pdf_impl buf d;
-      Buffer.add_string buf "stream\n";
-      Buffer.add_string buf raw;
-      Buffer.add_string buf "\nendstream"
 
-  and dict_to_pdf_impl (buf : Buffer.t) (d : dict_t) : unit =
+  and dict_to_pdf_buf (buf : Buffer.t) (d : dict_t) : unit =
     let content_to_buf () =
       List.iter (fun (key, value) ->
           Buffer.add_char buf '/';
@@ -321,7 +281,7 @@ module PDFObject = struct
 
   let dict_to_pdf (x : dict_t) : string =
     let buf = Buffer.create 16 in
-    dict_to_pdf_impl buf x;
+    dict_to_pdf_buf buf x;
     Buffer.contents buf
 
 
@@ -332,10 +292,14 @@ module PDFObject = struct
       SetKey.singleton key
     | Array a ->
       List.fold_left (fun s o -> SetKey.union s (refs o)) SetKey.empty a
-    | Dictionary d
-    | Stream (d, _, _) ->
-      dict_fold (fun _ obj set -> SetKey.union set (refs obj)) d SetKey.empty
+    | Dictionary d ->
+      refs_dict d
     | Null | Bool _ | Int _ | Real _ | String _ | Name _ -> SetKey.empty
+
+  and refs_dict (d : dict_t) : SetKey.t =
+    dict_fold (fun _ obj set ->
+        SetKey.union set (refs obj)
+      ) d SetKey.empty
 
 
   let rec relink (newkeys : Key.t MapKey.t) (indobj : Key.t) (x : t) : t =
@@ -362,8 +326,6 @@ module PDFObject = struct
           ) else
             raise (Errors.PDFError (Printf.sprintf "Reference to unknown object : %s" (Key.to_string key), Errors.make_ctxt_key indobj))
       end
-    | Stream (d, raw, s) ->
-      Stream (relink_dict newkeys indobj d, raw, s)
 
   and relink_dict (newkeys : Key.t MapKey.t) (indobj : Key.t) (d : dict_t) : dict_t =
     let dd = dict_create_len (dict_length d) in
@@ -376,35 +338,7 @@ module PDFObject = struct
   let simple_ref (key : Key.t) (x : t) : t =
     match x with
     | Null | Bool _ | Int _ | Real _ | String _ | Name _ -> x
-    | Array _ | Dictionary _ | Reference _ | Stream _    -> Reference key
-
-  let rec simplify_refs (objects : t MapKey.t) (indobj : Key.t) (x : t) : t =
-    match x with
-    | Reference key ->
-      begin
-        try
-          simple_ref key (MapKey.find key objects)
-        with Not_found ->
-          if Params.global.Params.undefined_ref_as_null then (
-            Printf.eprintf "Warning : Reference to unknown object %s in object %s\n" (Key.to_string key) (Key.to_string indobj);
-            Null
-          ) else
-            raise (Errors.PDFError (Printf.sprintf "Reference to unknown object : %s" (Key.to_string key), Errors.make_ctxt_key indobj))
-      end
-    | Array l ->
-      Array (List.map (simplify_refs objects indobj) l)
-    | Dictionary d ->
-      Dictionary (dict_simplify_refs objects indobj d)
-    | Stream (d, raw, s) ->
-      Stream (dict_simplify_refs objects indobj d, raw, s)
-    | Null | Bool _ | Int _ | Real _ | String _ | Name _ ->  x
-
-  and dict_simplify_refs (objects : t MapKey.t) (indobj : Key.t) (d : dict_t) : dict_t =
-    let dd = dict_create_len (dict_length d) in
-    dict_iter (fun name o ->
-        dict_set dd (name, (simplify_refs objects indobj o))
-      ) d;
-    dd
+    | Array _ | Dictionary _ | Reference _               -> Reference key
 
 
   let apply_not_null x fn =
@@ -450,13 +384,6 @@ module PDFObject = struct
     | (Dictionary d), _
     | Null, (Some d) ->
       d
-    | _ -> raise (Errors.PDFError (error_msg, ctxt))
-
-
-  let get_stream_content error_msg ctxt x =
-    match x with
-    | Stream (stream_dict, _, Content stream_content) ->
-      (stream_dict, stream_content)
     | _ -> raise (Errors.PDFError (error_msg, ctxt))
 
 

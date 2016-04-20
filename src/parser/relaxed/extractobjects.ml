@@ -23,7 +23,7 @@ open Xref
 open Fetchcommon
 open Fetchimpl
 open Key
-open Pdfobject
+open Indirectobject
 open Params
 open Boundedint
 
@@ -38,11 +38,11 @@ let parseobjects (input : in_channel) (length : BoundedInt.t) (xref : XRefTable.
          | XRefTable.Inuse ->
            if Params.global.Params.debug then
              Printf.eprintf "Extracting in-use object %s\n" (Key.to_string key);
-           let (_:PDFObject.t) = FetchImpl.fetchobject key entry.XRefTable.off ctxt in ()
+           let (_:IndirectObject.t) = FetchImpl.fetchobject key entry.XRefTable.off ctxt in ()
          | XRefTable.Compressed index ->
            if Params.global.Params.debug then
              Printf.eprintf "Extracting compressed object %s\n" (Key.to_string key);
-           let (_:PDFObject.t) = FetchCompImpl.fetchcompressed key entry.XRefTable.off index ctxt in ()
+           let (_:IndirectObject.t) = FetchCompImpl.fetchcompressed key entry.XRefTable.off index ctxt in ()
          | XRefTable.Free ->
            if Params.global.Params.debug then
              Printf.eprintf "Free object %s\n" (Key.to_string key);

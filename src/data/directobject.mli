@@ -23,16 +23,12 @@ open Key
 open Mapkey
 open Errors
 
-module PDFObject : sig
+module DirectObject : sig
 
   type int_t = BoundedInt.t
   type real_t = string
 
   type 'a dict
-
-  type stream_t =
-    | Raw
-    | Content of string
 
   type t =
     | Null
@@ -44,16 +40,8 @@ module PDFObject : sig
     | Array of t list
     | Dictionary of t dict
     | Reference of Key.t
-    | Stream of t dict * string * stream_t
 
   type dict_t = t dict
-
-  (* Partial object obtained after first step of parsing in relaxed mode *)
-  type partial_t =
-    (* Complete object *)
-    | Object of t
-    (* Incomplete stream (parsed dictionary + offset of data) *)
-    | StreamOffset of dict_t * BoundedInt.t
 
 
   val dict_create : unit -> dict_t
@@ -83,6 +71,12 @@ module PDFObject : sig
        - string representation of this object
   *)
   val dict_to_string : dict_t -> string
+  (*   Convert a dictionary to a string and append it to a buffer
+       Args    :
+       - buffer
+       - dictionary
+  *)
+  val dict_to_string_buf : Buffer.t -> dict_t -> unit
 
   (*   Check if an object needs a space before it in a PDF file
        Args    :
@@ -113,6 +107,13 @@ module PDFObject : sig
        - string representation of this object
   *)
   val dict_to_pdf : dict_t -> string
+  (*   Convert a dictionary to its representation in PDF syntax and append it to a buffer
+       Args    :
+       - buffer
+       - dictionary
+       Returns :
+  *)
+  val dict_to_pdf_buf : Buffer.t -> dict_t -> unit
 
   (*   Get objects referenced by an object
        Args    :
@@ -121,6 +122,13 @@ module PDFObject : sig
        - set of references
   *)
   val refs : t -> SetKey.t
+  (*   Get objects referenced by a dictionary
+       Args    :
+       - dictionary
+       Returns :
+       - set of references
+  *)
+  val refs_dict : dict_t -> SetKey.t
 
   (*   Change all references according to a conversion table
        Args    :
@@ -149,24 +157,6 @@ module PDFObject : sig
        - simplified reference
   *)
   val simple_ref : Key.t -> t -> t
-  (*   Simplify all references in an object
-       Args    :
-       - table of objects
-       - object number
-       - object
-       Returns :
-       - simplified object
-  *)
-  val simplify_refs : t MapKey.t -> Key.t -> t -> t
-  (*   Simplify all references in a dictionary
-       Args    :
-       - table of objects
-       - object number
-       - dictionary
-       Returns :
-       - simplified dictionary
-  *)
-  val dict_simplify_refs : t MapKey.t -> Key.t -> dict_t -> dict_t
 
 
   (*   Apply function if object is non-null
@@ -245,19 +235,6 @@ module PDFObject : sig
     ?default:dict_t -> unit ->
     string -> Errors.error_ctxt ->
     t -> dict_t
-
-  (*   Check and extract a stream from an object, or raise an exception
-       Args    :
-       - error message
-       - error context
-       - object
-       Returns :
-       - stream dictionary
-       - stream content
-  *)
-  val get_stream_content :
-    string -> Errors.error_ctxt ->
-    t -> (dict_t * string)
 
   (*   Check and extract an array from an object, or raise an exception
        Args    :

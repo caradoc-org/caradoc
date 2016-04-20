@@ -19,7 +19,7 @@
 
 open Boundedint
 open Errors
-open Pdfobject
+open Directobject
 
 module Predictor = struct
 
@@ -31,12 +31,12 @@ module Predictor = struct
     early: BoundedInt.t;
   }
 
-  let extract_predictor (ctxt : Errors.error_ctxt) (params : PDFObject.dict_t) : t =
+  let extract_predictor (ctxt : Errors.error_ctxt) (params : DirectObject.dict_t) : t =
     let f name def =
-      PDFObject.get_positive_int
+      DirectObject.get_positive_int
         ~default:(~:def) ()
         (Printf.sprintf "Invalid value for filter /%s" name) ctxt
-        (PDFObject.dict_find params name)
+        (DirectObject.dict_find params name)
     in
 
     {p = f "Predictor" 1 ; colors = f "Colors" 1 ; bpc = f "BitsPerComponent" 8 ; cols = f "Columns" 1 ; early = f "Early" 1}

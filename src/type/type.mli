@@ -17,7 +17,6 @@
 (*****************************************************************************)
 
 
-open Pdfobject
 open Mapkey
 open Key
 open Boundedint

@@ -21,7 +21,8 @@ open Mapkey
 open Key
 open Setkey
 open Errors
-open Pdfobject
+open Indirectobject
+open Directobject
 open Boundedint
 open Common
 open Graph
@@ -32,8 +33,8 @@ module Document = struct
   type kind_t = Objstm | Xrefstm
 
   type t = {
-    mutable objects : PDFObject.t MapKey.t;
-    mutable trailers : PDFObject.dict_t list;
+    mutable objects : IndirectObject.t MapKey.t;
+    mutable trailers : DirectObject.dict_t list;
     mutable special_streams : kind_t MapKey.t;
   }
 
@@ -47,33 +48,33 @@ module Document = struct
   let mem (x : t) (k : Key.t) : bool =
     MapKey.mem k x.objects
 
-  let find (x : t) (k : Key.t) : PDFObject.t =
+  let find (x : t) (k : Key.t) : IndirectObject.t =
     MapKey.find k x.objects
 
-  let remove_ref (x : t) (o : PDFObject.t) : PDFObject.t =
+  let remove_ref (x : t) (o : DirectObject.t) : IndirectObject.t =
     match o with
-    | PDFObject.Reference k ->
+    | DirectObject.Reference k ->
       begin
         try
           find x k
         with Not_found ->
-          PDFObject.Null
+          IndirectObject.Direct DirectObject.Null
       end
-    | _ -> o
+    | _ -> IndirectObject.Direct o
 
 
   let finalize_trailers (x : t) : unit =
     x.trailers <- List.rev x.trailers
 
-  let trailers (x : t) : PDFObject.dict_t list =
+  let trailers (x : t) : DirectObject.dict_t list =
     x.trailers
 
-  let main_trailer (x : t) : PDFObject.dict_t =
+  let main_trailer (x : t) : DirectObject.dict_t =
     match x.trailers with
     | [] -> raise (Errors.UnexpectedError "No trailer found in document")
     | t::_ -> t
 
-  let add (x : t) (k : Key.t) (v : PDFObject.t) : unit =
+  let add (x : t) (k : Key.t) (v : IndirectObject.t) : unit =
     (* TODO : check unicity *)
     if MapKey.mem k x.objects then
       Printf.eprintf "Several declarations of object %s in xref table\n" (Key.to_string k)
@@ -83,10 +84,10 @@ module Document = struct
     raise (Common.PDFError "Several declarations of object in xref table")
   *)
 
-  let set (x : t) (k : Key.t) (v : PDFObject.t) : unit =
+  let set (x : t) (k : Key.t) (v : IndirectObject.t) : unit =
     x.objects <- MapKey.add k v x.objects
 
-  let add_trailer (x : t) (v : PDFObject.dict_t) : unit =
+  let add_trailer (x : t) (v : DirectObject.dict_t) : unit =
     x.trailers <- v::x.trailers
 
   let add_objstm (x : t) (k : Key.t) : unit =
@@ -111,7 +112,7 @@ module Document = struct
     MapKey.iter f x.special_streams
 
 
-  let check_refs (x : PDFObject.t MapKey.t) (s : SetKey.t) (indobj : Key.t) : SetKey.t =
+  let check_refs (x : IndirectObject.t MapKey.t) (s : SetKey.t) (indobj : Key.t) : SetKey.t =
     if Params.global.Params.undefined_ref_as_null then (
       let unknown_refs = SetKey.fold (fun key unknown_refs ->
           if not (MapKey.mem key x) then (
@@ -130,9 +131,9 @@ module Document = struct
       s
     )
 
-  let ref_closure (x : t) (o : PDFObject.t) (k : Key.t) : SetKey.t =
+  let ref_closure (x : t) (o : IndirectObject.t) (k : Key.t) : SetKey.t =
     let result = ref (SetKey.empty) in
-    let queue = ref (check_refs x.objects (PDFObject.refs o) k) in
+    let queue = ref (check_refs x.objects (IndirectObject.refs o) k) in
 
     while not (SetKey.is_empty !queue) do
       let key = SetKey.min_elt !queue in
@@ -140,7 +141,7 @@ module Document = struct
       queue := SetKey.remove key !queue;
 
       let obj = MapKey.find key x.objects in
-      let refs = SetKey.diff (check_refs x.objects (PDFObject.refs obj) key) !result in
+      let refs = SetKey.diff (check_refs x.objects (IndirectObject.refs obj) key) !result in
       queue := SetKey.union refs !queue
     done;
     !result
@@ -150,7 +151,7 @@ module Document = struct
     let g = Graph.create () in
 
     let f key obj =
-      let refs = PDFObject.refs obj in
+      let refs = IndirectObject.refs obj in
       SetKey.iter
         (fun k ->
            Graph.add_edge g (key, k)
@@ -161,7 +162,7 @@ module Document = struct
 
     let trailer = main_trailer x in
     iter_objects f x;
-    f Key.Trailer (PDFObject.Dictionary trailer);
+    f Key.Trailer (IndirectObject.Direct (DirectObject.Dictionary trailer));
     g
 
 
@@ -169,13 +170,13 @@ module Document = struct
     List.iter
       (fun obj ->
          Printf.fprintf out "trailer\n";
-         Printf.fprintf out "%s\n\n" (PDFObject.dict_to_string obj)
+         Printf.fprintf out "%s\n\n" (DirectObject.dict_to_string obj)
       ) x.trailers;
     MapKey.iter
       (fun key obj ->
          let id, gen = Key.get_obj_ref key in
          Printf.fprintf out "obj(%d, %d)\n" id gen;
-         Printf.fprintf out "%s\n\n" (PDFObject.to_string obj)
+         Printf.fprintf out "%s\n\n" (IndirectObject.to_string obj)
       ) x.objects
 
 
@@ -191,7 +192,7 @@ module Document = struct
     MapKey.iter
       (fun key obj ->
          let id, gen = Key.get_obj_ref key in
-         let content = Printf.sprintf "%d %d obj%s%s%sendobj\n" id gen (if PDFObject.need_space_before obj then " " else "") (PDFObject.to_pdf obj) (if PDFObject.need_space_after obj then " " else "") in
+         let content = Printf.sprintf "%d %d obj%s%s%sendobj\n" id gen (if IndirectObject.need_space_before obj then " " else "") (IndirectObject.to_pdf obj) (if IndirectObject.need_space_after obj then " " else "") in
          Printf.fprintf out "%s" content;
 
          positions := MapKey.add key !offset !positions;
@@ -206,25 +207,25 @@ module Document = struct
          Printf.fprintf out "%010d 00000 n \n" pos
       ) !positions;
 
-    Printf.fprintf out "trailer\n%s\n" (PDFObject.dict_to_pdf trailer);
+    Printf.fprintf out "trailer\n%s\n" (DirectObject.dict_to_pdf trailer);
     Printf.fprintf out "startxref\n%d\n%%%%EOF" !offset
 
 
-  let sanitize_trailer (newkeys : Key.t MapKey.t) (trailer : PDFObject.dict_t) : PDFObject.dict_t =
-    let tmp = PDFObject.relink_dict newkeys Key.Trailer trailer in
+  let sanitize_trailer (newkeys : Key.t MapKey.t) (trailer : DirectObject.dict_t) : DirectObject.dict_t =
+    let tmp = DirectObject.relink_dict newkeys Key.Trailer trailer in
     let size = 1 + (MapKey.cardinal newkeys) in
-    let root = PDFObject.dict_find tmp "Root" in
-    let info = PDFObject.dict_find tmp "Info" in
-    let id = PDFObject.dict_find tmp "ID" in
+    let root = DirectObject.dict_find tmp "Root" in
+    let info = DirectObject.dict_find tmp "Info" in
+    let id = DirectObject.dict_find tmp "ID" in
 
-    let result = PDFObject.dict_create () in
-    if root <> PDFObject.Null then
-      PDFObject.dict_set result ("Root", root);
-    if info <> PDFObject.Null then
-      PDFObject.dict_set result ("Info", info);
-    if id <> PDFObject.Null then
-      PDFObject.dict_set result ("ID", id);
-    PDFObject.dict_set result ("Size", PDFObject.Int ~:size);
+    let result = DirectObject.dict_create () in
+    if root <> DirectObject.Null then
+      DirectObject.dict_set result ("Root", root);
+    if info <> DirectObject.Null then
+      DirectObject.dict_set result ("Info", info);
+    if id <> DirectObject.Null then
+      DirectObject.dict_set result ("ID", id);
+    DirectObject.dict_set result ("Size", DirectObject.Int ~:size);
     result
 
 
@@ -232,19 +233,19 @@ module Document = struct
     let trailer = main_trailer x in
     let xx = ref MapKey.empty in
     MapKey.iter (fun key obj ->
-        xx := MapKey.add key (PDFObject.simplify_refs x.objects key obj) !xx
+        xx := MapKey.add key (IndirectObject.simplify_refs x.objects key obj) !xx
       ) x.objects;
 
     {
       objects = !xx;
-      trailers = [PDFObject.dict_simplify_refs x.objects Key.Trailer trailer];
+      trailers = [IndirectObject.simplify_refs_dict x.objects Key.Trailer trailer];
       special_streams = MapKey.empty;
     }
 
 
   let sanitize_nums (x : t) : t =
     let trailer = main_trailer x in
-    let used = ref_closure x (PDFObject.Dictionary trailer) Key.Trailer in
+    let used = ref_closure x (IndirectObject.Direct (DirectObject.Dictionary trailer)) Key.Trailer in
 
     let newkeys = ref MapKey.empty in
     let next = ref 1 in
@@ -256,7 +257,7 @@ module Document = struct
     let xx = ref MapKey.empty in
     SetKey.iter (fun key ->
         let o = MapKey.find key x.objects in
-        xx := MapKey.add (MapKey.find key !newkeys) (PDFObject.relink !newkeys key o) !xx
+        xx := MapKey.add (MapKey.find key !newkeys) (IndirectObject.relink !newkeys key o) !xx
       ) used;
 
     {
