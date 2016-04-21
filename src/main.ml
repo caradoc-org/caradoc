@@ -28,6 +28,7 @@ open Typechecker
 open Stats
 open Params
 open Errors
+open Pdfstream
 
 
 (***************)
@@ -159,7 +160,8 @@ let command_object =
       Params.load_file Params.global !options_filename;
 
     let input = open_in_bin filename in
-    let obj = extract_object input (Key.make_gen_i !num !gen) in
+    let key = Key.make_gen_i !num !gen in
+    let obj = extract_object input key in
     close_in input;
 
     Printf.printf "%s\n" (IndirectObject.to_string obj);
@@ -167,9 +169,9 @@ let command_object =
     if !raw_stream_filename <> "" then (
       begin
         match obj with
-        | IndirectObject.Stream (_, raw, _) ->
+        | IndirectObject.Stream s ->
           let out = open_out_bin !raw_stream_filename in
-          Printf.fprintf out "%s" raw;
+          Printf.fprintf out "%s" (PDFStream.get_encoded s);
           close_out out
         | _ ->
           prerr_endline "Warning: --raw-stream argument was provided but the object is not a stream."
@@ -179,9 +181,9 @@ let command_object =
     if !decoded_stream_filename <> "" then (
       begin
         match obj with
-        | IndirectObject.Stream (_, _, IndirectObject.Content c) ->
+        | IndirectObject.Stream s ->
           let out = open_out_bin !decoded_stream_filename in
-          Printf.fprintf out "%s" c;
+          Printf.fprintf out "%s" (PDFStream.get_decoded s (Errors.make_ctxt_key key));
           close_out out
         | _ ->
           prerr_endline "Warning: --decoded-stream argument was provided but the object is not a stream."

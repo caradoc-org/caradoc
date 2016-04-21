@@ -3,6 +3,7 @@
   open Boundedint
   open Directobject
   open Indirectobject
+  open Pdfstream
 %}
 
 %token <int * int> VERSION
@@ -146,7 +147,7 @@ indirectobj:
 (***********************)
   | i = indirectobj_header d = dictionary raw = STREAM ignore_spaces endobj
     { let k, p = i in
-      (p, k, IndirectObject.Stream (d, raw, IndirectObject.Raw)) }
+      (p, k, IndirectObject.Stream (PDFStream.make_encoded d raw)) }
 
 (************************)
 (* PDF reference 7.3.10 *)

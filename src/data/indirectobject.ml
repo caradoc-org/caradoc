@@ -23,56 +23,25 @@ open Params
 open Setkey
 open Mapkey
 open Errors
+open Pdfstream
 
 module IndirectObject = struct
 
-  type stream_t =
-    | Raw
-    | Content of string
-
   type t =
     | Direct of DirectObject.t
-    | Stream of DirectObject.dict_t * string * stream_t
+    | Stream of PDFStream.t
 
   type partial_t =
     | Complete of DirectObject.t
     | StreamOffset of DirectObject.dict_t * BoundedInt.t
 
 
-  let stream_to_string (d : DirectObject.dict_t) (c : string) (decoded : bool) : string =
-    let buf = Buffer.create 16 in
-
-    let expand =
-      match (Params.global.Params.expand_streams, Params.global.Params.stream_limit) with
-      | true, None ->
-        true
-      | true, (Some limit) when (String.length c) <= limit ->
-        true
-      | _ ->
-        false
-    in
-
-    let header = Printf.sprintf "stream <%s stream of length %d>" (if decoded then "decoded" else "encoded") (String.length c) in
-    DirectObject.dict_to_string_buf buf d;
-    Buffer.add_char buf '\n';
-    Buffer.add_string buf header;
-    if expand then (
-      Buffer.add_char buf '\n';
-      Buffer.add_string buf c;
-      Buffer.add_string buf "\nendstream\n"
-    );
-
-    Buffer.contents buf
-
-
   let to_string (x : t) : string =
     match x with
     | Direct y ->
       DirectObject.to_string y
-    | Stream (d, raw, Raw) ->
-      stream_to_string d raw false
-    | Stream (d, _, Content c) ->
-      stream_to_string d c true
+    | Stream s ->
+      PDFStream.to_string s
 
 
   let need_space_before (x : t) : bool =
@@ -94,29 +63,25 @@ module IndirectObject = struct
     match x with
     | Direct y ->
       DirectObject.to_pdf y
-    | Stream (d, raw, _) ->
-      let buf = Buffer.create 16 in
-      DirectObject.dict_to_pdf_buf buf d;
-      Buffer.add_string buf "stream\n";
-      Buffer.add_string buf raw;
-      Buffer.add_string buf "\nendstream";
-      Buffer.contents buf
+    | Stream s ->
+      PDFStream.to_pdf s
 
 
   let refs (x : t) : SetKey.t =
     match x with
     | Direct y ->
       DirectObject.refs y
-    | Stream (d, _, _) ->
-      DirectObject.refs_dict d
+    | Stream s ->
+      DirectObject.refs_dict (PDFStream.get_dict s)
 
 
   let rec relink (newkeys : Key.t MapKey.t) (indobj : Key.t) (x : t) : t =
     match x with
     | Direct y ->
       Direct (DirectObject.relink newkeys indobj y)
-    | Stream (d, raw, s) ->
-      Stream (DirectObject.relink_dict newkeys indobj d, raw, s)
+    | Stream s ->
+      let d = (DirectObject.relink_dict newkeys indobj (PDFStream.get_dict s)) in
+      Stream (PDFStream.set_dict s d)
 
 
   let simple_ref (key : Key.t) (x : t) : DirectObject.t =
@@ -130,8 +95,9 @@ module IndirectObject = struct
     match x with
     | Direct y ->
       Direct (simplify_refs_direct objects indobj y)
-    | Stream (d, raw, s) ->
-      Stream (simplify_refs_dict objects indobj d, raw, s)
+    | Stream s ->
+      let d = (simplify_refs_dict objects indobj (PDFStream.get_dict s)) in
+      Stream (PDFStream.set_dict s d)
 
   and simplify_refs_direct (objects : t MapKey.t) (indobj : Key.t) (x : DirectObject.t) : DirectObject.t =
     match x with
@@ -171,10 +137,10 @@ module IndirectObject = struct
     transform error_msg ctxt (get_direct error_msg ctxt x)
 
 
-  let get_stream_content error_msg ctxt x =
+  let get_stream error_msg ctxt x =
     match x with
-    | Stream (stream_dict, _, Content stream_content) ->
-      (stream_dict, stream_content)
+    | Stream s ->
+      s
     | _ -> raise (Errors.PDFError (error_msg, ctxt))
 
 end

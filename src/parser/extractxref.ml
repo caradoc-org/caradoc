@@ -23,7 +23,7 @@ open Common
 open Intset
 open Wrap
 open Xref
-open Parsestream
+open Pdfstream
 open Intervals
 open Document
 open Directobject
@@ -31,6 +31,7 @@ open Indirectobject
 open Key
 open Stats
 open Params
+open Fetchcommon
 
 
 let seek_xref input startxref length =
@@ -140,7 +141,8 @@ let parsexref_stm xref input offset length doc =
       "Expected integer for stream /Length" (Errors.make_ctxt key offset)
       value in
 
-  let _raw, content, _success, _endstreampos = parsedecodestream key stream_dict (offset +: stream_off) stream_length input length false in
+  let stream, _ = parsestream key (offset +: stream_off) stream_length input length stream_dict in
+  let content = PDFStream.get_decoded stream (Errors.make_ctxt key offset) in
 
   (*************************)
   (* PDF reference 7.5.8.2 *)

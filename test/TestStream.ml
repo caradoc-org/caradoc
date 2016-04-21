@@ -21,6 +21,22 @@ open OUnit
 open Asciihex
 open Ascii85
 open Zlib
+open Pdfstream.PDFStream
+open Directobject
+open Boundedint
+open Errors
+
+
+let make_raw (s : string) : t =
+  make_encoded (TestDict.add_all ["Length", DirectObject.Int ~:(String.length s)]) s
+
+let make_raw_dict (d : (string * DirectObject.t) list) (s : string) : t =
+  make_encoded (TestDict.add_all (("Length", DirectObject.Int ~:(String.length s)) :: d)) s
+
+let make_decoded (s : string) : t =
+  let stream = make_encoded (TestDict.add_all ["Length", DirectObject.Int ~:(String.length s)]) s in
+  let (_:bool) = decode stream Errors.ctxt_none false in
+  stream
 
 
 let tests =

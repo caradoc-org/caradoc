@@ -38,6 +38,7 @@ open Mapkey
 open Graphchecker
 open Algo
 open Params
+open Pdfstream
 
 
 (*   Find version of PDF file and check that it is in [1.0, 1.7]
@@ -243,10 +244,10 @@ let parse_until_xref (input : in_channel) (stats : Stats.t) : (BoundedInt.t * Ke
 *)
 let objdecodestream (relax_streams : bool) (key : Key.t) (obj : IndirectObject.t) : IndirectObject.t =
   match obj with
-  | IndirectObject.Stream (stream_dict, raw, IndirectObject.Raw) ->
-    let decoded, success = Parsestream.decode raw (Errors.make_ctxt_key key) stream_dict relax_streams in
+  | IndirectObject.Stream s ->
+    let success = PDFStream.decode s (Errors.make_ctxt_key key) relax_streams in
     if success then
-      IndirectObject.Stream (stream_dict, raw, IndirectObject.Content decoded)
+      IndirectObject.Stream s
     else
       obj
   | _ ->
@@ -378,14 +379,15 @@ let parse_strict (input : in_channel) (stats : Stats.t) : Document.t =
   let keywords = ["endstream" ; "endobj" ; "trailer"] in
   Document.iter_objects (fun key obj ->
       match obj with
-      | IndirectObject.Stream (stream_dict, raw, _) ->
-        let stream_length = Document.remove_ref doc (DirectObject.dict_find stream_dict "Length") in
+      | IndirectObject.Stream stream ->
+        let stream_length = Document.remove_ref doc (DirectObject.dict_find (PDFStream.get_dict stream) "Length") in
         let len = IndirectObject.get_direct_of
             "Expected integer for stream /Length" (Errors.make_ctxt_key key)
             ~transform:(DirectObject.get_nonnegative_int ())
             stream_length in
 
-        let real_len = ~:(String.length raw) in
+        let encoded = PDFStream.get_encoded stream in
+        let real_len = ~:(String.length encoded) in
         (* TODO : move this to the lexer code ? *)
         let length_match =
           (* Length match *)
@@ -393,12 +395,12 @@ let parse_strict (input : in_channel) (stats : Stats.t) : Document.t =
             true
             (* CR or LF after raw data *)
           else if len = real_len -: ~:1 then (
-            let last = raw.[BoundedInt.to_int len] in
+            let last = encoded.[BoundedInt.to_int len] in
             last = '\x0A' || last = '\x0D'
             (* CRLF after raw data *)
           ) else if len = real_len -: ~:2 then (
-            raw.[BoundedInt.to_int len] = '\x0D' &&
-            raw.[(BoundedInt.to_int len) + 1] = '\x0A'
+            encoded.[BoundedInt.to_int len] = '\x0D' &&
+            encoded.[(BoundedInt.to_int len) + 1] = '\x0A'
             (* Does not match *)
           ) else
             false
@@ -408,7 +410,7 @@ let parse_strict (input : in_channel) (stats : Stats.t) : Document.t =
           raise (Errors.PDFError (Printf.sprintf "Length (%d) of stream does not match reported length (%d)" (BoundedInt.to_int real_len) (BoundedInt.to_int len), Errors.make_ctxt_key key));
 
         List.iter (fun keyword ->
-            if Algo.string_contains raw keyword then
+            if Algo.string_contains encoded keyword then
               raise (Errors.PDFError (Printf.sprintf "Stream contains unallowed keyword \"%s\"" keyword, Errors.make_ctxt_key key));
           ) keywords;
       | _ ->
@@ -429,12 +431,12 @@ let record_filter (filter_hash : (string, int) Hashtbl.t) (filter_name : string)
 
 let extract_filters (filter_hash : (string, int) Hashtbl.t) (key : Key.t) (obj : IndirectObject.t) : unit =
   match obj with
-  | IndirectObject.Stream (stream_dict, _, _) ->
+  | IndirectObject.Stream stream ->
     let filters = DirectObject.get_array_of
         ~default:[] ~accept_one:true ()
         "Invalid value for stream /Filter" (Errors.make_ctxt_key key)
         ~transform:(DirectObject.get_name ())
-        (DirectObject.dict_find stream_dict "Filter") in
+        (DirectObject.dict_find (PDFStream.get_dict stream) "Filter") in
 
     if Array.length filters = 0 then
       record_filter filter_hash "Raw"

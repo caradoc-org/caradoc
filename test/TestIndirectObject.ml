@@ -24,6 +24,7 @@ open Mapkey
 open Errors
 open Boundedint
 open Params
+open Pdfstream
 
 
 let init_params () =
@@ -69,20 +70,20 @@ let tests =
       "stream" >:::
       [
         "(1)" >:: (fun _ -> assert_equal
-                      (init_params (); to_string (Stream (TestDict.add_all ["Length", DirectObject.Int ~:10], "", Content "stream content")))
-                      "<<\n    /Length 10\n>>\nstream <decoded stream of length 14>") ;
+                      (init_params (); to_string (Stream (TestStream.make_decoded "stream content")))
+                      "<<\n    /Length 14\n>>\nstream <decoded stream of length 14>") ;
         "(2)" >:: (fun _ -> assert_equal
                       (init_params ();
                        Params.global.Params.expand_streams <- true;
-                       to_string (Stream (TestDict.add_all ["Length", DirectObject.Int ~:10], "", Content "stream content")))
-                      "<<\n    /Length 10\n>>\nstream <decoded stream of length 14>\nstream content\nendstream\n") ;
+                       to_string (Stream (TestStream.make_decoded "stream content")))
+                      "<<\n    /Length 14\n>>\nstream <decoded stream of length 14>\nstream content\nendstream\n") ;
         "(3)" >:: (fun _ -> assert_equal
-                      (init_params (); to_string (Stream (TestDict.add_all ["Length", DirectObject.Int ~:15], "encoded content", Raw)))
-                      "<<\n    /Length 15\n>>\nstream <encoded stream of length 15>") ;
+                      (init_params (); to_string (Stream (TestStream.make_raw_dict ["foo", DirectObject.String "bar"] "encoded content")))
+                      "<<\n    /Length 15\n    /foo (bar)\n>>\nstream <encoded stream of length 15>") ;
         "(4)" >:: (fun _ -> assert_equal
                       (init_params ();
                        Params.global.Params.expand_streams <- true;
-                       to_string (Stream (TestDict.add_all ["Length", DirectObject.Int ~:15], "encoded content", Raw)))
+                       to_string (Stream (TestStream.make_raw "encoded content")))
                       "<<\n    /Length 15\n>>\nstream <encoded stream of length 15>\nencoded content\nendstream\n") ;
       ] ;
     ] ;
@@ -123,8 +124,8 @@ let tests =
       "stream" >:::
       [
         "(1)" >:: (fun _ -> assert_equal
-                      (to_pdf (Stream (TestDict.add_all ["Length", DirectObject.Int ~:14], "raw content", Content "stream content")))
-                      "<</Length 14>>stream\nraw content\nendstream") ;
+                      (to_pdf (Stream (TestStream.make_raw "raw content")))
+                      "<</Length 11>>stream\nraw content\nendstream") ;
       ] ;
     ] ;
 
@@ -140,7 +141,7 @@ let tests =
       "stream" >:::
       [
         "(1)" >:: (fun _ -> assert_equal
-                      (refs (Stream (TestDict.add_all ["Key", DirectObject.Reference (Key.make_0 ~:2)], "raw content", Content "stream content")))
+                      (refs (Stream (TestStream.make_raw_dict ["Key", DirectObject.Reference (Key.make_0 ~:2)] "raw content")))
                       (TestSetkey.add_all [Key.make_0 ~:2])) ;
       ] ;
     ] ;
@@ -167,8 +168,8 @@ let tests =
       [
         "(1)" >:: (fun _ -> assert_equal
                       (relink (TestMapkey.add_all [Key.make_0 ~:2, Key.make_0 ~:1]) Key.Trailer
-                         (Stream (TestDict.add_all ["Key", DirectObject.Reference (Key.make_0 ~:2)], "raw content", Content "stream content")))
-                      (Stream (TestDict.add_all ["Key", DirectObject.Reference (Key.make_0 ~:1)], "raw content", Content "stream content"))) ;
+                         (Stream (TestStream.make_raw_dict ["Key", DirectObject.Reference (Key.make_0 ~:2)] "raw content")))
+                      (Stream (TestStream.make_raw_dict ["Key", DirectObject.Reference (Key.make_0 ~:1)] "raw content"))) ;
       ] ;
     ] ;
 
@@ -183,10 +184,7 @@ let tests =
 
       "(3)" >:: (fun _ -> assert_raises
                     (Errors.PDFError ("msg", Errors.ctxt_none))
-                    (fun () -> get_direct "msg" Errors.ctxt_none (Stream (TestDict.add_all ["Length", DirectObject.Int ~:456], "", Raw)))) ;
-      "(4)" >:: (fun _ -> assert_raises
-                    (Errors.PDFError ("msg", Errors.ctxt_none))
-                    (fun () -> get_direct "msg" Errors.ctxt_none (Stream (TestDict.add_all ["Length", DirectObject.Int ~:456], "", Content "content")))) ;
+                    (fun () -> get_direct "msg" Errors.ctxt_none (Stream (TestStream.make_raw "")))) ;
     ] ;
 
     "get_direct_of" >:::
@@ -203,21 +201,18 @@ let tests =
                     (fun () -> get_direct_of "msg" Errors.ctxt_none ~transform:(DirectObject.get_name ()) (Direct (DirectObject.String "foo")))) ;
       "(4)" >:: (fun _ -> assert_raises
                     (Errors.PDFError ("msg", Errors.ctxt_none))
-                    (fun () -> get_direct_of "msg" Errors.ctxt_none ~transform:(DirectObject.get_name ()) (Stream (TestDict.add_all ["Length", DirectObject.Int ~:456], "", Raw)))) ;
+                    (fun () -> get_direct_of "msg" Errors.ctxt_none ~transform:(DirectObject.get_name ()) (Stream (TestStream.make_raw "content")))) ;
     ] ;
 
-    "get_stream_content" >:::
+    "get_stream" >:::
     [
       "(1)" >:: (fun _ -> assert_equal
-                    (get_stream_content "msg" Errors.ctxt_none (Stream (TestDict.add_all ["Length", DirectObject.Int ~:7], "", Content "content")))
-                    (TestDict.add_all ["Length", DirectObject.Int ~:7], "content")) ;
+                    (get_stream "msg" Errors.ctxt_none (Stream (TestStream.make_raw "content")))
+                    (TestStream.make_raw "content")) ;
 
       "(2)" >:: (fun _ -> assert_raises
                     (Errors.PDFError ("msg", Errors.ctxt_none))
-                    (fun () -> get_stream_content "msg" Errors.ctxt_none (Stream (TestDict.add_all ["Length", DirectObject.Int ~:456], "", Raw)))) ;
-      "(3)" >:: (fun _ -> assert_raises
-                    (Errors.PDFError ("msg", Errors.ctxt_none))
-                    (fun () -> get_stream_content "msg" Errors.ctxt_none (Direct (DirectObject.String "blabla")))) ;
+                    (fun () -> get_stream "msg" Errors.ctxt_none (Direct (DirectObject.String "blabla")))) ;
     ] ;
   ]
 

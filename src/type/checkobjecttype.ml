@@ -26,6 +26,7 @@ open Boundedint
 open Errors
 open Algo
 open Params
+open Pdfstream
 
 
 module CheckObjectType = struct
@@ -132,9 +133,12 @@ module CheckObjectType = struct
       check_dict ctxt dict elemtype indobj entry;
       typ
 
-    | (IndirectObject.Direct (DirectObject.Dictionary dict), Class typename)
-    | (IndirectObject.Stream (dict, _, _), Stream typename) ->
+    | (IndirectObject.Direct (DirectObject.Dictionary dict), Class typename) ->
       check_class ctxt dict typename indobj entry;
+      typ
+
+    | (IndirectObject.Stream s, Stream typename) ->
+      check_class ctxt (PDFStream.get_dict s) typename indobj entry;
       typ
 
     | (_, Any) ->

@@ -8,6 +8,8 @@ Breaking changes:
 API Changes:
 - Split the PDFObject module into DirectObject and IndirectObject modules. This
 design enforces the semantics of direct and indirect objects.
+- Created the PDFStream module to encapsulate operations on streams and ensure
+consistency between encoded and decoded data.
 
 New features:
 - Added support for ASCII85 stream filter.

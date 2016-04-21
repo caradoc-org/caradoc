@@ -23,7 +23,7 @@ open Errors
 open Wrap
 open Directobject
 open Indirectobject
-open Parsestream
+open Pdfstream
 open Xref
 open Intervals
 open Mapkey
@@ -55,12 +55,12 @@ module MakeFetch (FetchComp : FetchCompT) = struct
               ~transform:(DirectObject.get_nonnegative_int ())
               stream_length in
 
-          let raw, endstreampos =
-            parsestream key (off +: offset) len ctxt.FetchCommon.input ctxt.FetchCommon.length
+          let stream, endstreampos =
+            parsestream key (off +: offset) len ctxt.FetchCommon.input ctxt.FetchCommon.length stream_dict
           in
           Intervals.add ctxt.FetchCommon.intervals (off, endstreampos) key;
+          IndirectObject.Stream stream
 
-          IndirectObject.Stream (stream_dict, raw, IndirectObject.Raw)
         | IndirectObject.Complete obj ->
           Intervals.add ctxt.FetchCommon.intervals (off, endobjpos) key;
           IndirectObject.Direct obj
@@ -90,12 +90,12 @@ module MakeFetch (FetchComp : FetchCompT) = struct
   let fetchdecodestream (key : Key.t) (off : BoundedInt.t) (ctxt : FetchCommon.context) (relax : bool) : IndirectObject.t =
     let obj = fetchobject key off ctxt in
     match obj with
-    | IndirectObject.Stream (stream_dict, raw, IndirectObject.Raw) ->
+    | IndirectObject.Stream s when not (PDFStream.is_decoded s) ->
       (* lock object *)
       ctxt.FetchCommon.traversed <- MapKey.add key false ctxt.FetchCommon.traversed;
 
-      let decoded, _ = decode raw (Errors.make_ctxt key off) stream_dict relax in
-      let result = IndirectObject.Stream (stream_dict, raw, IndirectObject.Content decoded) in
+      let (_:bool) = PDFStream.decode s (Errors.make_ctxt key off) relax in
+      let result = IndirectObject.Stream s in
       Document.set ctxt.FetchCommon.doc key result;
 
       (* unlock object *)

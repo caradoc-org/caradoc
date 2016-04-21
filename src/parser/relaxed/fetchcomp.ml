@@ -28,6 +28,7 @@ open Directobject
 open Indirectobject
 open Key
 open Params
+open Pdfstream
 
 
 module MakeFetchComp (Fetch : FetchT) = struct
@@ -130,20 +131,29 @@ module MakeFetchComp (Fetch : FetchT) = struct
         | XRefTable.Inuse -> ()
       end;
 
+      let error_ctxt = Errors.make_ctxt key entry.XRefTable.off in
+
       let obj = Fetch.fetchdecodestream key entry.XRefTable.off ctxt false in
-      let dict, content = IndirectObject.get_stream_content
-          "Object stream must be a decoded stream" (Errors.make_ctxt key entry.XRefTable.off)
+      let stream = IndirectObject.get_stream
+          "Object stream must be a stream" error_ctxt
           obj in
+
+      let dict = PDFStream.get_dict stream in
 
       (* TODO : handle dereference ? *)
       let first = DirectObject.get_nonnegative_int ()
-          "Expected integer for object stream /First" (Errors.make_ctxt key entry.XRefTable.off)
+          "Expected integer for object stream /First" error_ctxt
           (DirectObject.dict_find dict "First") in
 
       let n = DirectObject.get_nonnegative_int ()
-          "Expected integer for object stream /N" (Errors.make_ctxt key entry.XRefTable.off)
+          "Expected integer for object stream /N" error_ctxt
           (DirectObject.dict_find dict "N") in
 
+      let success = PDFStream.decode stream error_ctxt true in
+      if not success then
+        raise (Errors.PDFError ("Error decoding object stream", error_ctxt));
+
+      let content = PDFStream.get_decoded stream error_ctxt in
       parseobjstm content key entry.XRefTable.off first n ctxt
 
 

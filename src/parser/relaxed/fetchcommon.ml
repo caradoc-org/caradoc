@@ -27,6 +27,9 @@ open Indirectobject
 open Errors
 open Intervals
 open Params
+open Common
+open Wrap
+open Pdfstream
 
 
 module FetchCommon = struct
@@ -90,4 +93,18 @@ let traverse_object (key : Key.t) (off : BoundedInt.t) (ctxt : FetchCommon.conte
       Printf.eprintf "End object %s\n" (Key.to_string key);
 
     content
+
+
+let parsestream (key : Key.t) (offset : BoundedInt.t) (stream_length : BoundedInt.t) (input : in_channel) (length : BoundedInt.t) (stream_dict : DirectObject.dict_t) : PDFStream.t * BoundedInt.t =
+  if offset +: stream_length >=: length then
+    raise (Errors.PDFError ("Stream size is out of bounds", Errors.make_ctxt key offset));
+
+  let rawcontent = Common.input_substr input offset stream_length in
+
+  let lexbuf = Lexing.from_channel input in
+  wrap_parser Parser.endstream (Some (offset +: stream_length)) lexbuf;
+  let endstreampos = offset +: stream_length +: ~:((Lexing.lexeme_end lexbuf) - 1) in
+  (* TODO : reject streams from external file *)
+
+  (PDFStream.make_encoded stream_dict rawcontent), endstreampos
 

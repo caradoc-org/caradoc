@@ -17,18 +17,37 @@
 (*****************************************************************************)
 
 
-open Errors
+open Algo
+open Convert
 
 module ASCIIHex = struct
 
   let decode (content : string) : string option =
-    let lexbuf = Lexing.from_string ("<" ^ content) in
+    let s = Algo.remove_if (fun c ->
+        c = '\x00' (* NUL *) || c = '\x09' (* HT *) || c = '\x0C' (* FF *) || c = '\x20' (* SP *) || c = '\x0A' (* LF *) || c = '\x0D' (* CR *)
+      ) content in
     try
-      Some (Parser.ascii_hex_decode Lexer.token lexbuf)
+      let l = String.length s in
+      if l < 1 then
+        raise Exit;
+      if s.[l-1] <> '>' then
+        raise Exit;
+      let ll = l-1 in
+
+      let i = ref 0 in
+      let buf = Buffer.create (l / 2) in
+
+      while !i < ll do
+        if !i + 1 < ll then
+          Buffer.add_char buf (char_of_hexa s.[!i] s.[!i + 1])
+        else
+          Buffer.add_char buf (char_of_hexa s.[!i] '0');
+        i := !i + 2
+      done;
+
+      Some (Buffer.contents buf)
     with
-    | Parser.Error ->
-      None
-    | Errors.LexingError _ ->
-      None
+    | Exit -> None
+    | ConvertError _ -> None
 
 end

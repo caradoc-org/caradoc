@@ -25,6 +25,7 @@ open Key
 open Directobject
 open Indirectobject
 open Intervals
+open Pdfstream
 
 
 module FetchCommon : sig
@@ -143,4 +144,18 @@ end
      - content of object
 *)
 val traverse_object : Key.t -> BoundedInt.t -> FetchCommon.context -> (Key.t -> BoundedInt.t -> FetchCommon.context -> IndirectObject.t) -> IndirectObject.t
+
+(*   Parse a stream given an offset in an input channel
+     Args    :
+     - id of object (to use for error report)
+     - offset of encoded stream
+     - length of encoded stream
+     - input file
+     - length of input
+     - stream dictionary
+     Returns :
+     - stream
+     - offset of end of object in file
+*)
+val parsestream : Key.t -> BoundedInt.t -> BoundedInt.t -> in_channel -> BoundedInt.t -> DirectObject.dict_t -> (PDFStream.t * BoundedInt.t)
 

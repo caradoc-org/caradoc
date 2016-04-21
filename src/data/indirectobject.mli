@@ -22,18 +22,14 @@ open Setkey
 open Key
 open Mapkey
 open Errors
-open Stream
+open Pdfstream
 open Directobject
 
 module IndirectObject : sig
 
-  type stream_t =
-    | Raw
-    | Content of string
-
   type t =
     | Direct of DirectObject.t
-    | Stream of DirectObject.dict_t * string * stream_t
+    | Stream of PDFStream.t
 
   (* Partial object obtained after first step of parsing in relaxed mode *)
   type partial_t =
@@ -152,12 +148,11 @@ module IndirectObject : sig
        - error context
        - object
        Returns :
-       - stream dictionary
-       - stream content
+       - stream
   *)
-  val get_stream_content :
+  val get_stream :
     string -> Errors.error_ctxt ->
-    t -> (DirectObject.dict_t * string)
+    t -> PDFStream.t
 
 end
 

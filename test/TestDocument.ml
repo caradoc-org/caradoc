@@ -25,6 +25,7 @@ open Boundedint
 open Directobject.DirectObject
 open Indirectobject.IndirectObject
 open Graph
+open Pdfstream
 
 
 let make_doc_objs_direct objs =
@@ -145,7 +146,7 @@ let make_doc id =
       Key.make_0 ~:9, Direct (Array [Reference (Key.make_0 ~:9)]) ;
       Key.make_0 ~:10, Direct (Dictionary (TestDict.add_all ["Key", String "Value" ; "Foo", Reference (Key.make_0 ~:6)])) ;
       Key.make_0 ~:11, Direct (Reference (Key.make_0 ~:11)) ;
-      Key.make_0 ~:12, Stream (TestDict.add_all ["Length", Reference (Key.make_0 ~:4)], "", Raw) ;
+      Key.make_0 ~:12, Stream (TestStream.make_raw_dict ["foo", Reference (Key.make_0 ~:4)] "stream content") ;
     ] (TestDict.add_all [
       ])
   | 15 ->
@@ -173,7 +174,7 @@ let make_doc id =
       Key.make_0 ~:9, Direct (Array [Reference (Key.make_0 ~:9)]) ;
       Key.make_0 ~:10, Direct (Dictionary (TestDict.add_all ["Key", String "Value" ; "Foo", String "test"])) ;
       Key.make_0 ~:11, Direct (Reference (Key.make_0 ~:11)) ;
-      Key.make_0 ~:12, Stream (TestDict.add_all ["Length", Int ~:123], "", Raw) ;
+      Key.make_0 ~:12, Stream (TestStream.make_raw_dict ["foo", Int ~:123] "stream content") ;
     ] (TestDict.add_all [
       ])
   | 6 ->
