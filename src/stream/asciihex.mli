@@ -27,4 +27,12 @@ module ASCIIHex : sig
   *)
   val decode : string -> string option
 
+  (*   Compress an ASCIIHex stream
+       Args    :
+       - input string
+       Returns :
+       - encoded string
+  *)
+  val encode : string -> string
+
 end

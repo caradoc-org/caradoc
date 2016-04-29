@@ -102,5 +102,17 @@ module PDFStream : sig
   *)
   val get_decoded : t -> Errors.error_ctxt -> string
 
+  (*   Try to reencode a stream
+       Args    :
+       - stream
+       - error context
+       - relax unsupported filters (warning instead of exception)
+       - filter to reencode with (empty string for no filter)
+       Returns :
+       - reencoded stream
+       - success
+  *)
+  val reencode : t -> Errors.error_ctxt -> bool -> string -> (t * bool)
+
 end
 

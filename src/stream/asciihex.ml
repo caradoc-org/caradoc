@@ -50,4 +50,16 @@ module ASCIIHex = struct
     | Exit -> None
     | ConvertError _ -> None
 
+
+  let encode (content : string) : string =
+    let l = String.length content in
+    let buf = Buffer.create (2*l + 1) in
+
+    for i = 0 to (l-1) do
+      Buffer.add_string buf (Convert.hexa_of_char content.[i]) 
+    done;
+
+    Buffer.add_char buf '>';
+    Buffer.contents buf
+
 end

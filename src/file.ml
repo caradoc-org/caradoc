@@ -238,29 +238,37 @@ let parse_until_xref (input : in_channel) (stats : Stats.t) : (BoundedInt.t * Ke
 
 (*   Decode an object if it is a stream
      Args    :
-     - relax unsupported filters
      - key
      - object
 *)
-let objdecodestream (relax_streams : bool) (key : Key.t) (obj : IndirectObject.t) : IndirectObject.t =
+let objdecodestream (key : Key.t) (obj : IndirectObject.t) : IndirectObject.t =
   match obj with
   | IndirectObject.Stream s ->
-    let success = PDFStream.decode s (Errors.make_ctxt_key key) relax_streams in
+    let success = PDFStream.decode s (Errors.make_ctxt_key key) Params.global.Params.relax_streams in
     if success then
       IndirectObject.Stream s
     else
       obj
-  | _ ->
+  | IndirectObject.Direct _ ->
     obj
 
 
-(*   Decode streams in a document
+(*   Reencode an object if it is a stream
      Args    :
-     - document
-     - relax unsupported filters
+     - filter to reencode with
+     - key
+     - object
 *)
-let docdecodestreams (doc : Document.t) (relax_streams : bool) : unit =
-  Document.map_objects (objdecodestream relax_streams) doc
+let objreencodestream (filter : string) (key : Key.t) (obj : IndirectObject.t) : IndirectObject.t =
+  match obj with
+  | IndirectObject.Stream s ->
+    let stream, success = PDFStream.reencode s (Errors.make_ctxt_key key) Params.global.Params.relax_streams filter in
+    if success then
+      IndirectObject.Stream stream
+    else
+      obj
+  | IndirectObject.Direct _ ->
+    obj
 
 
 let extract_object (input : in_channel) (key : Key.t) : IndirectObject.t =
@@ -281,7 +289,7 @@ let extract_object (input : in_channel) (key : Key.t) : IndirectObject.t =
 
   close_in input;
   if Params.global.Params.decode_streams then
-    objdecodestream Params.global.Params.relax_streams key obj
+    objdecodestream key obj
   else
     obj
 
@@ -478,7 +486,7 @@ let parse_file (input : in_channel) : unit =
   in
 
   if Params.global.Params.decode_streams then
-    docdecodestreams doc Params.global.Params.relax_streams;
+    Document.map_objects objdecodestream doc;
 
   apply_option (fun f -> dump_objects doc f) Params.global.Params.dump_filename;
 
@@ -504,8 +512,15 @@ let cleanup (input : in_channel) (out_filename : string) : unit =
   if Params.global.Params.decode_streams then (
     if Params.global.Params.verbose then
       Printf.printf "Decoding streams\n";
-    docdecodestreams doc Params.global.Params.relax_streams
+    Document.map_objects objdecodestream doc
   );
+
+  begin
+    match Params.global.Params.reencode_streams with
+    | Some filter ->
+      Document.map_objects (objreencodestream filter) doc
+    | None -> ()
+  end;
 
   (* TODO : normalize streams containing keywords *)
 

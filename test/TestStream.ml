@@ -44,22 +44,49 @@ let tests =
   [
     "asciihex" >:::
     [
-      "(1)" >:: (fun _ -> assert_equal
-                    (ASCIIHex.decode "ABCDEF0123456789>")
-                    (Some "\xAB\xCD\xEF\x01\x23\x45\x67\x89")) ;
-      "(2)" >:: (fun _ -> assert_equal
-                    (ASCIIHex.decode "68656C6C6F>")
-                    (Some "hello")) ;
-      "(3)" >:: (fun _ -> assert_equal
-                    (ASCIIHex.decode "ABC DEF\x0001\x0A2\x0D34\x0C567\x0989 >")
-                    (Some "\xAB\xCD\xEF\x01\x23\x45\x67\x89")) ;
+      "encode" >:::
+      [
+        "(1)" >:: (fun _ -> assert_equal
+                      (ASCIIHex.encode "")
+                      ">") ;
+        "(2)" >:: (fun _ -> assert_equal
+                      (ASCIIHex.encode "hello")
+                      "68656C6C6F>") ;
+        "(3)" >:: (fun _ -> assert_equal
+                      (ASCIIHex.encode "\xFE\xDC\xBA\x98\x76\x54\x32\x10")
+                      "FEDCBA9876543210>") ;
+      ] ;
+      "decode" >:::
+      [
+        "(1)" >:: (fun _ -> assert_equal
+                      (ASCIIHex.decode "ABCDEF0123456789>")
+                      (Some "\xAB\xCD\xEF\x01\x23\x45\x67\x89")) ;
+        "(2)" >:: (fun _ -> assert_equal
+                      (ASCIIHex.decode "68656C6C6F>")
+                      (Some "hello")) ;
+        "(3)" >:: (fun _ -> assert_equal
+                      (ASCIIHex.decode "ABC DEF\x0001\x0A2\x0D34\x0C567\x0989 >")
+                      (Some "\xAB\xCD\xEF\x01\x23\x45\x67\x89")) ;
+        "(4)" >:: (fun _ -> assert_equal
+                      (ASCIIHex.decode ">")
+                      (Some "")) ;
 
-      "(4)" >:: (fun _ -> assert_equal
-                    (ASCIIHex.decode "ABCDEF0123456789")
-                    None) ;
-      "(5)" >:: (fun _ -> assert_equal
-                    (ASCIIHex.decode "foo")
-                    None) ;
+        "(5)" >:: (fun _ -> assert_equal
+                      (ASCIIHex.decode "ABCDEF0123456789")
+                      None) ;
+        "(6)" >:: (fun _ -> assert_equal
+                      (ASCIIHex.decode "foo")
+                      None) ;
+      ] ;
+      "encode-decode" >:::
+      [
+        "(1)" >:: (fun _ -> assert_equal
+                      (ASCIIHex.decode (ASCIIHex.encode ""))
+                      (Some "")) ;
+        "(2)" >:: (fun _ -> assert_equal
+                      (ASCIIHex.decode (ASCIIHex.encode "foobar"))
+                      (Some "foobar")) ;
+      ] ;
     ] ;
 
     "ascii85" >:::
@@ -149,11 +176,98 @@ let tests =
                        (ASCII85.decode "foo")
                        None) ;
       ] ;
+      "encode-decode" >:::
+      [
+        "(1)" >:: (fun _ -> assert_equal
+                      (ASCII85.decode (ASCII85.encode ""))
+                      (Some "")) ;
+        "(2)" >:: (fun _ -> assert_equal
+                      (ASCII85.decode (ASCII85.encode "foobar"))
+                      (Some "foobar")) ;
+      ] ;
     ] ;
 
     "zlib" >:::
     [
-      (* TODO *)
+      "encode" >:::
+      [
+        "(1)" >:: (fun _ -> assert_equal
+                      (Zlib.encode "")
+                      "\x78\x9C\x03\x00\x00\x00\x00\x01") ;
+        "(2)" >:: (fun _ -> assert_equal
+                      (Zlib.encode "Hello world")
+                      "\x78\x9C\xF3\x48\xCD\xC9\xC9\x57\x28\xCF\x2F\xCA\x49\x01\x00\x18\xAB\x04\x3D") ;
+      ] ;
+      "decode" >:::
+      [
+        "(1)" >:: (fun _ -> assert_equal
+                      (Zlib.decode "\x78\x9C\xF3\x48\xCD\xC9\xC9\x57\x28\xCF\x2F\xCA\x49\x01\x00\x18\xAB\x04\x3D")
+                      (Some "Hello world")) ;
+
+        "(2)" >:: (fun _ -> assert_equal
+                      (Zlib.decode "\x78\x9Cfoobar\x00\x00\x00\x00")
+                      None) ;
+
+        "header" >:::
+        [
+          "(1)" >:: (fun _ -> assert_equal
+                        (Zlib.decode "\x78\x9C\x03\x00\x00\x00\x00\x01")
+                        (Some "")) ;
+          "(2)" >:: (fun _ -> assert_equal
+                        (Zlib.decode "\x68\x81\x03\x00\x00\x00\x00\x01")
+                        (Some "")) ;
+          "(3)" >:: (fun _ -> assert_equal
+                        (Zlib.decode "\x58\x85\x03\x00\x00\x00\x00\x01")
+                        (Some "")) ;
+          "(4)" >:: (fun _ -> assert_equal
+                        (Zlib.decode "\x48\x89\x03\x00\x00\x00\x00\x01")
+                        (Some "")) ;
+          "(5)" >:: (fun _ -> assert_equal
+                        (Zlib.decode "\x38\x8D\x03\x00\x00\x00\x00\x01")
+                        (Some "")) ;
+          "(6)" >:: (fun _ -> assert_equal
+                        (Zlib.decode "\x28\x91\x03\x00\x00\x00\x00\x01")
+                        (Some "")) ;
+          "(7)" >:: (fun _ -> assert_equal
+                        (Zlib.decode "\x18\x95\x03\x00\x00\x00\x00\x01")
+                        (Some "")) ;
+          "(8)" >:: (fun _ -> assert_equal
+                        (Zlib.decode "\x08\x99\x03\x00\x00\x00\x00\x01")
+                        (Some "")) ;
+
+          "(9)" >:: (fun _ -> assert_equal
+                        (Zlib.decode "\x78\x9D\x03\x00\x00\x00\x00\x01")
+                        None) ;
+          "(10)" >:: (fun _ -> assert_equal
+                         (Zlib.decode "\x88\x98\x03\x00\x00\x00\x00\x01")
+                         None) ;
+          "(11)" >:: (fun _ -> assert_equal
+                         (Zlib.decode "\x70\x9E\x03\x00\x00\x00\x00\x01")
+                         None) ;
+          "(12)" >:: (fun _ -> assert_equal
+                         (Zlib.decode "\x78\xBB\x03\x00\x00\x00\x00\x01")
+                         None) ;
+        ] ;
+        "adler" >:::
+        [
+          "(1)" >:: (fun _ -> assert_equal
+                        (Zlib.decode "\x78\x9C\x03\x00\x00\x00\x00\x00")
+                        None) ;
+          "(2)" >:: (fun _ -> assert_equal
+                        (Zlib.decode "\x78\x9C\xF3\x48\xCD\xC9\xC9\x57\x28\xCF\x2F\xCA\x49\x01\x00\x19\xAB\x04\x3D")
+                        None) ;
+        ] ;
+        (* TODO : invalid Huffman trees, etc. *)
+      ] ;
+      "encode-decode" >:::
+      [
+        "(1)" >:: (fun _ -> assert_equal
+                      (Zlib.decode (Zlib.encode ""))
+                      (Some "")) ;
+        "(2)" >:: (fun _ -> assert_equal
+                      (Zlib.decode (Zlib.encode "foobar"))
+                      (Some "foobar")) ;
+      ] ;
     ] ;
     "adler32" >:::
     [

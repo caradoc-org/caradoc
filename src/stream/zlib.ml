@@ -72,4 +72,25 @@ module Zlib = struct
       )
     )
 
+
+  let encode (content : string) : string =
+    (* TODO : compression level? *)
+    let transform = Cryptokit.Zlib.compress () in
+    transform#put_string content;
+    transform#finish;
+    let result = transform#get_string in
+
+    let buf = Buffer.create ((String.length result) + 6) in
+    (* Deflate, 32K window size, no preset dictionary, default compression level *)
+    Buffer.add_string buf "\x78\x9C";
+    Buffer.add_string buf result;
+
+    let hash = adler32 content in
+    Buffer.add_char buf (char_of_int (Int32.to_int (Int32.logand 0xFFl (Int32.shift_right hash 24))));
+    Buffer.add_char buf (char_of_int (Int32.to_int (Int32.logand 0xFFl (Int32.shift_right hash 16))));
+    Buffer.add_char buf (char_of_int (Int32.to_int (Int32.logand 0xFFl (Int32.shift_right hash  8))));
+    Buffer.add_char buf (char_of_int (Int32.to_int (Int32.logand 0xFFl                    hash    )));
+
+    Buffer.contents buf
+
 end

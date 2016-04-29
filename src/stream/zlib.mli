@@ -35,4 +35,12 @@ module Zlib : sig
   *)
   val decode : string -> string option
 
+  (*   Compress a Zlib stream
+       Args    :
+       - input string
+       Returns :
+       - encoded string
+  *)
+  val encode : string -> string
+
 end

@@ -13,6 +13,8 @@ consistency between encoded and decoded data.
 
 New features:
 - Added support for ASCII85 stream filter.
+- Added --rencode-streams option to the 'cleanup' command to reencode all
+streams with a chosen filter.
 
 Bugfixes:
 - Use open_in_bin and open_out_bin instead of open_in and open_out. Suggested by

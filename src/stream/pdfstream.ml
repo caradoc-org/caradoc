@@ -149,9 +149,9 @@ module PDFStream = struct
     | "JPXDecode"
     | "Crypt" ->
       (* TODO : implement *)
-      raise (Errors.PDFError (Printf.sprintf "Not implemented filter method : %s" filter, ctxt))
+      raise (Errors.PDFError (Printf.sprintf "Not implemented decoding of stream filter : %s" filter, ctxt))
     | _ ->
-      raise (Errors.PDFError (Printf.sprintf "Invalid stream filter method : %s" filter, ctxt))
+      raise (Errors.PDFError (Printf.sprintf "Invalid stream filter : %s" filter, ctxt))
 
 
   let rec decode_filters (content : string) (ctxt : Errors.error_ctxt) (filters : string array) (params : DirectObject.dict_t array) (i : int) (count : int) : string =
@@ -200,6 +200,56 @@ module PDFStream = struct
       x
     | None ->
       raise (Errors.UnexpectedError "Stream was not decoded after a call to function decode")
+
+
+  let encode_filter (content : string) (ctxt : Errors.error_ctxt) (filter : string) : string =
+    match filter with
+    | "" ->
+      content
+    | "FlateDecode" ->
+      Zlib.encode content
+    | "ASCIIHexDecode" ->
+      ASCIIHex.encode content
+    | "ASCII85Decode" ->
+      ASCII85.encode content
+    | "LZWDecode"
+    | "RunLengthDecode"
+    | "CCITTFaxDecode"
+    | "JBIG2Decode"
+    | "DCTDecode"
+    | "JPXDecode"
+    | "Crypt" ->
+      (* TODO : implement *)
+      raise (Errors.PDFError (Printf.sprintf "Not implemented encoding of stream filter : %s" filter, ctxt))
+    | _ ->
+      raise (Errors.PDFError (Printf.sprintf "Invalid stream filter : %s" filter, ctxt))
+
+
+  let reset_stream_dict (d : DirectObject.dict_t) (length : BoundedInt.t) (filter : string) : unit =
+    DirectObject.dict_set d ("Length", DirectObject.Int length);
+    if filter = "" then
+      DirectObject.dict_set d ("Filter", DirectObject.Null)
+    else
+      DirectObject.dict_set d ("Filter", DirectObject.Name filter);
+    DirectObject.dict_set d ("DecodeParms", DirectObject.Null)
+
+
+  let reencode (s : t) (ctxt : Errors.error_ctxt) (relax : bool) (filter : string) : t * bool =
+    if not (decode s ctxt relax) then
+      s, false
+    else (
+      let e = encode_filter (get_decoded s ctxt) ctxt filter in
+      let length = ~:(String.length e) in
+
+      let d = DirectObject.dict_copy s.dictionary in
+      reset_stream_dict d length filter;
+
+      {
+        dictionary = d;
+        encoded = e;
+        decoded = s.decoded;
+      }, true
+    )
 
 end
 

@@ -46,6 +46,7 @@ module DirectObject : sig
 
   val dict_create : unit -> dict_t
   val dict_create_len : int -> dict_t
+  val dict_copy : dict_t -> dict_t
   val dict_length : dict_t -> int
   val dict_singleton : (string * t) -> dict_t
   val dict_add : bool -> dict_t -> (string * t) -> unit

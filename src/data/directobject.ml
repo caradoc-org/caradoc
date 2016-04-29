@@ -52,6 +52,9 @@ module DirectObject = struct
   let dict_create_len (length : int) : dict_t =
     Hashtbl.create length
 
+  let dict_copy (x : dict_t) : dict_t =
+    Hashtbl.copy x
+
   let dict_length (x : dict_t) : int =
     Hashtbl.length x
 

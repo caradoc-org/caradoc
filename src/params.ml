@@ -53,6 +53,8 @@ module Params = struct
     mutable expand_streams : bool;
     (* Limit the length of expanded streams in output *)
     mutable stream_limit : int option;
+    (* Reencode all streams using a filter in cleanup *)
+    mutable reencode_streams : string option;
 
     (**** Output files ****)
     (* Xref table *)
@@ -95,6 +97,7 @@ module Params = struct
     sort_dicts = false;
     expand_streams = false;
     stream_limit = None;
+    reencode_streams = None;
     (* Output files *)
     xref_filename = None;
     dump_filename = None;
@@ -124,6 +127,7 @@ module Params = struct
     global.sort_dicts <- false;
     global.expand_streams <- false;
     global.stream_limit <- None;
+    global.reencode_streams <- None;
     global.xref_filename <- None;
     global.dump_filename <- None;
     global.dot_filename <- None;
@@ -157,8 +161,12 @@ module Params = struct
       true
     | _ -> false
 
-  let load_value_param (_params : t) (_k : string) (_v : string) : bool =
-    false
+  let load_value_param (params : t) (k : string) (v : string) : bool =
+    match k with
+    | "reencode-streams" ->
+      params.reencode_streams <- Some v;
+      true
+    | _ -> false
 
   let load_line (params : t) (line : string) : bool =
     try
