@@ -9,6 +9,7 @@ INDENTMLI= $(MLI:.mli=.indentmli)
 
 PDFPOS= $(shell find test_files/positive -name "*.pdf")
 PDFNEG= $(shell find test_files/negative -name "*.pdf")
+PDFCLEANUP= $(shell find test_files/cleanup -name "*.pdf")
 TRAILERNEG= $(shell find test_files/negative -name "*.trailer")
 XREFNEG= $(shell find test_files/negative -name "*.xref")
 CLEANNEG= $(shell find test_files/negative -name "*.clean")
@@ -18,8 +19,9 @@ TESTSTATS_STRICT= $(PDFPOS:.pdf=.teststats_strict) $(PDFNEG:.pdf=.teststats_stri
 TESTTRAILER= $(PDFPOS:.pdf=.testtrailer) $(TRAILERNEG:.trailer=.testtrailer)
 TESTXREF= $(PDFPOS:.pdf=.testxref) $(XREFNEG:.xref=.testxref)
 TESTCLEANUP= $(PDFPOS:.pdf=.testcleanup) $(CLEANNEG:.clean=.testcleanup)
+TESTCLEANUP_OPTIONS= $(PDFCLEANUP:.pdf=.testcleanup_options)
 TESTTYPES= $(PDFPOS:.pdf=.testtypes) $(TYPESNEG:.types=.testtypes)
-TESTS= $(TESTSTATS) $(TESTSTATS_STRICT) $(TESTTRAILER) $(TESTXREF) $(TESTCLEANUP) $(TESTTYPES)
+TESTS= $(TESTSTATS) $(TESTSTATS_STRICT) $(TESTTRAILER) $(TESTXREF) $(TESTCLEANUP) $(TESTCLEANUP_OPTIONS) $(TESTTYPES)
 
 
 all: $(PROGRAM)
@@ -84,6 +86,12 @@ tmpfolder:
 	./$(PROGRAM) cleanup --out tmp/clean $<;
 	cmp -s $*.clean tmp/clean
 	./$(PROGRAM) cleanup --out tmp/clean $*.clean;
+	cmp -s $*.clean tmp/clean
+
+%.testcleanup_options: %.pdf %.options %.clean $(PROGRAM) tmpfolder
+	./$(PROGRAM) cleanup --options $*.options --out tmp/clean $<;
+	cmp -s $*.clean tmp/clean
+	./$(PROGRAM) cleanup --options $*.options --out tmp/clean $*.clean;
 	cmp -s $*.clean tmp/clean
 
 %.testtypes: %.pdf %.types $(PROGRAM) tmpfolder
