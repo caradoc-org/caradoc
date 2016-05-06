@@ -55,6 +55,15 @@ module FetchCommon = struct
       intervals = intervals;
     }
 
+  let begin_traversal (ctxt : context) (key : Key.t) : unit =
+    ctxt.traversed <- MapKey.add key false ctxt.traversed
+
+  let end_traversal (ctxt : context) (key : Key.t) : unit =
+    ctxt.traversed <- MapKey.add key true ctxt.traversed
+
+  let is_traversed (ctxt : context) (key : Key.t) : bool =
+    MapKey.find key ctxt.traversed
+
 end
 
 
@@ -73,14 +82,14 @@ end
 
 let traverse_object (key : Key.t) (off : BoundedInt.t) (ctxt : FetchCommon.context) (fetch : Key.t -> BoundedInt.t -> FetchCommon.context -> IndirectObject.t) : IndirectObject.t =
   try
-    let traversed = MapKey.find key ctxt.FetchCommon.traversed in
+    let traversed = FetchCommon.is_traversed ctxt key in
     if traversed then
       Document.find ctxt.FetchCommon.doc key
     else
       raise (Errors.PDFError ("Circular definition detected", Errors.make_ctxt key off))
   with Not_found ->
     (* begin to traverse object *)
-    ctxt.FetchCommon.traversed <- MapKey.add key false ctxt.FetchCommon.traversed;
+    FetchCommon.begin_traversal ctxt key;
     if Params.global.Params.debug then
       Printf.eprintf "Begin object %s\n" (Key.to_string key);
 
@@ -88,7 +97,7 @@ let traverse_object (key : Key.t) (off : BoundedInt.t) (ctxt : FetchCommon.conte
     Document.add ctxt.FetchCommon.doc key content;
 
     (* object succesfully traversed *)
-    ctxt.FetchCommon.traversed <- MapKey.add key true ctxt.FetchCommon.traversed;
+    FetchCommon.end_traversal ctxt key;
     if Params.global.Params.debug then
       Printf.eprintf "End object %s\n" (Key.to_string key);
 

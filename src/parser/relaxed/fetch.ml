@@ -91,15 +91,10 @@ module MakeFetch (FetchComp : FetchCompT) = struct
     let obj = fetchobject key off ctxt in
     match obj with
     | IndirectObject.Stream s when not (PDFStream.is_decoded s) ->
-      (* lock object *)
-      ctxt.FetchCommon.traversed <- MapKey.add key false ctxt.FetchCommon.traversed;
-
       let (_:bool) = PDFStream.decode s (Errors.make_ctxt key off) relax in
       let result = IndirectObject.Stream s in
       Document.set ctxt.FetchCommon.doc key result;
 
-      (* unlock object *)
-      ctxt.FetchCommon.traversed <- MapKey.add key true ctxt.FetchCommon.traversed;
       result
     | _ ->
       obj

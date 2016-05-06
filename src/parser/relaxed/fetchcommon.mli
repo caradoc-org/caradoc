@@ -59,6 +59,27 @@ module FetchCommon : sig
   *)
   val make_context : in_channel -> BoundedInt.t -> XRefTable.t -> (Key.t Intervals.t) -> Document.t -> context
 
+  (*   Mark that an object's traversal has started
+       Args    :
+       - context
+       - key of the traversed object
+  *)
+  val begin_traversal : context -> Key.t -> unit
+
+  (*   Mark that an object's traversal is finished
+       Args    :
+       - context
+       - key of the traversed object
+  *)
+  val end_traversal : context -> Key.t -> unit
+
+  (*   Get the traversal status of an object (or raise Not_found if traversal did not start)
+       Args    :
+       - context
+       - key of the traversed object
+  *)
+  val is_traversed : context -> Key.t -> bool
+
 end
 
 
