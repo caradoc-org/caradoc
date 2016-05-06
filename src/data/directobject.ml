@@ -93,6 +93,16 @@ module DirectObject = struct
   let dict_iter f (x : dict_t) : unit =
     Hashtbl.iter f x
 
+  let dict_map_key f (x : dict_t) : dict_t =
+    let y = dict_create_len (dict_length x) in
+    dict_iter (fun key value ->
+        dict_set y (key, f key value)
+      ) x;
+    y
+
+  let dict_map f (x : dict_t) : dict_t =
+    dict_map_key (fun _key value -> f value) x
+
   let dict_fold f (x : dict_t) a =
     Hashtbl.fold f x a
 
@@ -331,11 +341,7 @@ module DirectObject = struct
       end
 
   and relink_dict (newkeys : Key.t MapKey.t) (indobj : Key.t) (d : dict_t) : dict_t =
-    let dd = dict_create_len (dict_length d) in
-    dict_iter (fun name x ->
-        dict_set dd (name, (relink newkeys indobj x))
-      ) d;
-    dd
+    dict_map (relink newkeys indobj) d
 
 
   let simple_ref (key : Key.t) (x : t) : t =

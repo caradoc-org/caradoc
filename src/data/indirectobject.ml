@@ -119,11 +119,7 @@ module IndirectObject = struct
     | DirectObject.Null | DirectObject.Bool _ | DirectObject.Int _ | DirectObject.Real _ | DirectObject.String _ | DirectObject.Name _ ->  x
 
   and simplify_refs_dict (objects : t MapKey.t) (indobj : Key.t) (d : DirectObject.dict_t) : DirectObject.dict_t =
-    let dd = DirectObject.dict_create_len (DirectObject.dict_length d) in
-    DirectObject.dict_iter (fun name o ->
-        DirectObject.dict_set dd (name, (simplify_refs_direct objects indobj o))
-      ) d;
-    dd
+    DirectObject.dict_map (simplify_refs_direct objects indobj) d
 
 
   let get_direct error_msg ctxt x =

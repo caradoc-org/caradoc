@@ -45,7 +45,6 @@ module DirectObject : sig
 
 
   val dict_create : unit -> dict_t
-  val dict_create_len : int -> dict_t
   val dict_copy : dict_t -> dict_t
   val dict_length : dict_t -> int
   val dict_singleton : (string * t) -> dict_t
@@ -55,6 +54,8 @@ module DirectObject : sig
   val dict_mem : dict_t -> string -> bool
   val dict_find : dict_t -> string -> t
   val dict_iter : (string -> t -> unit) -> dict_t -> unit
+  val dict_map_key : (string -> t -> t) -> dict_t -> dict_t
+  val dict_map : (t -> t) -> dict_t -> dict_t
   val dict_fold : (string -> t -> 'a -> 'a) -> dict_t -> 'a -> 'a
 
 
