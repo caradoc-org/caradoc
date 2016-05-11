@@ -19,6 +19,9 @@
 
 open Algo
 
+(***********************)
+(* PDF reference 7.4.3 *)
+(***********************)
 module ASCII85 = struct
 
   let decode_char (c : char) : int64 =
@@ -105,8 +108,8 @@ module ASCII85 = struct
       done;
 
       Some (Buffer.contents buf)
-    with
-    | Exit -> None
+    with Exit ->
+      None
 
 
   let encode_char (x : int) : char =

@@ -58,21 +58,18 @@ let parsexref_table xref input offset intervals =
 
       wrap_xrefparser Xrefparser.trailer (Some !pos) buf;
       trail := true;
-      pos := !pos +: ~:(Lexing.lexeme_end buf);
-    with
-    | _ ->
-      (
-        seek_in input (BoundedInt.to_int !pos);
-        let buf = Lexing.from_channel input in
+      pos := !pos +: ~:(Lexing.lexeme_end buf)
+    with _ ->
+      seek_in input (BoundedInt.to_int !pos);
+      let buf = Lexing.from_channel input in
 
-        let id, len = wrap_xrefparser Xrefparser.xrefsection (Some !pos) buf in
-        for i = 0 to BoundedInt.to_int (len -: ~:1) do
-          let gen, value = wrap_xrefparser Xrefparser.xrefentry (Some !pos) buf in
-          XRefTable.add xref (Key.make_gen (id +: ~:i) gen) value
-        done;
+      let id, len = wrap_xrefparser Xrefparser.xrefsection (Some !pos) buf in
+      for i = 0 to BoundedInt.to_int (len -: ~:1) do
+        let gen, value = wrap_xrefparser Xrefparser.xrefentry (Some !pos) buf in
+        XRefTable.add xref (Key.make_gen (id +: ~:i) gen) value
+      done;
 
-        pos := !pos +: ~:(Lexing.lexeme_end buf);
-      )
+      pos := !pos +: ~:(Lexing.lexeme_end buf)
   done;
 
   seek_in input (BoundedInt.to_int !pos);
@@ -199,13 +196,12 @@ let parsexref xref input offset length setpos intervals doc =
   seek_xref input offset length;
   let buf = Lexing.from_channel input in
 
-  let is_xref = (
+  let is_xref =
     try
       Xrefparser.xref &> buf;
       true
-    with
-    | _ ->
-      false)
+    with _ ->
+      false
   in
 
   if is_xref then

@@ -33,6 +33,9 @@ open Pdfstream
 
 module MakeFetchComp (Fetch : FetchT) = struct
 
+  (***********************)
+  (* PDF reference 7.5.7 *)
+  (***********************)
   let parseobjstm (content : string) (key : Key.t) (off : BoundedInt.t) (first : BoundedInt.t) (n : BoundedInt.t) (ctxt : FetchCommon.context) : (DirectObject.t * BoundedInt.t) MapKey.t =
     if Params.global.Params.debug then
       Printf.eprintf "Parse object stream %s\n" (Key.to_string key);
@@ -46,12 +49,12 @@ module MakeFetchComp (Fetch : FetchT) = struct
       raise (Errors.PDFError ("First entry is beyond size of object stream", Errors.make_ctxt key off));
 
     let lexbuf = Lexing.from_string (String.sub content 0 (BoundedInt.to_int first)) in
-    let l, m = (
+    let l, m =
       try
         wrap_parser Parser.intpair_list None lexbuf
-      with
-      | _ -> raise (Errors.PDFError ("Parsing error in object stream", Errors.make_ctxt key off))
-    ) in
+      with _ ->
+        raise (Errors.PDFError ("Parsing error in object stream", Errors.make_ctxt key off))
+    in
     let idents = Array.of_list l in
     let offsets = Array.of_list m in
 

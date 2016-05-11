@@ -20,6 +20,9 @@
 open Algo
 open Convert
 
+(***********************)
+(* PDF reference 7.4.2 *)
+(***********************)
 module ASCIIHex = struct
 
   let decode (content : string) : string option =

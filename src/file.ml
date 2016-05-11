@@ -92,8 +92,8 @@ let line_before (input : in_channel) (pos : BoundedInt.t) : BoundedInt.t * Bound
           raise Exit
         | _ -> ()
       done
-    with
-    | Exit -> ()
+    with Exit ->
+      ()
   end;
 
   (* Handle CRLF *)
@@ -151,8 +151,8 @@ let find_xref (input : in_channel) (length : BoundedInt.t) (intervals : Key.t In
 
           eolpos := eolbefore;
         done;
-      with
-      | Exit -> ()
+      with Exit ->
+        ()
     );
 
   (!status = 0, !result)
@@ -203,7 +203,7 @@ let parse_until_xref (input : in_channel) (stats : Stats.t) : (BoundedInt.t * Ke
     Printf.printf "File has length : %d [0x%x]\n" (BoundedInt.to_int length) (BoundedInt.to_int length);
 
   let intervals = Intervals.create () in
-  if Params.global.Params.allow_invalid_version then (
+  if Params.global.Params.allow_invalid_version then
     try
       check_header input length stats intervals
     with
@@ -212,7 +212,7 @@ let parse_until_xref (input : in_channel) (stats : Stats.t) : (BoundedInt.t * Ke
     | Errors.PDFError _ ->
       check_signature input length stats;
       Printf.eprintf "Warning : Invalid PDF version\n"
-  ) else
+  else
     check_header input length stats intervals;
 
   let (found, startxref) = find_xref input length intervals in

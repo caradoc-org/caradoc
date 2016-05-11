@@ -397,7 +397,7 @@ module DirectObject = struct
 
 
   let get_array ?default ?(accept_one=false) ?length () error_msg ctxt x =
-    let a = (
+    let a =
       match x, default with
       | (Array l), _
       | Null, (Some l) ->
@@ -407,7 +407,7 @@ module DirectObject = struct
           Array.make 1 x
         else
           raise (Errors.PDFError (error_msg, ctxt))
-    ) in
+    in
 
     begin
       match length with

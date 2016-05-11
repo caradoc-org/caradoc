@@ -296,8 +296,7 @@ module CheckObjectType = struct
            | _ -> ()
         ) options;
       raise (Errors.TypeError (Printf.sprintf "Invalid variant type : expected %s" (kind_to_string (Variant options)), indobj, entry));
-    with
-    | Break typ ->
+    with Break typ ->
       (*
     if Params.global.Params.verbose then
       Printf.eprintf "Type is : %s\n" (type_to_string typ);

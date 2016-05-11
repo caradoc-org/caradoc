@@ -63,8 +63,7 @@ module Algo = struct
           raise Exit;
       done;
       !result
-    with
-    | Exit ->
+    with Exit ->
       !result
 
 

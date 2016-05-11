@@ -28,13 +28,12 @@ let dump_hole (input : in_channel) (start : BoundedInt.t) (length : BoundedInt.t
   let hole = Common.input_substr input start length in
   let lexbuf = Lexing.from_string hole in
 
-  let blank = (
+  let blank =
     try
       wrap_parser Parser.hole (Some start) lexbuf;
       true
-    with
-    | _ ->
-      false)
+    with _ ->
+      false
   in
 
   if not blank then

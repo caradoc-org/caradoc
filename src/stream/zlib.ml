@@ -17,6 +17,9 @@
 (*****************************************************************************)
 
 
+(*************************)
+(* PDF reference 7.4.4.1 *)
+(*************************)
 module Zlib = struct
 
   let adler32 (block : string) : int32 =
@@ -50,7 +53,7 @@ module Zlib = struct
         fdict <> 0
       ) then
         None
-      else (
+      else
         try
           let transform = Cryptokit.Zlib.uncompress () in
           transform#put_substring content 2 (len - 6);
@@ -67,9 +70,8 @@ module Zlib = struct
             None
           else
             Some result
-        with
-        | _ -> None
-      )
+        with _ ->
+          None
     )
 
 
