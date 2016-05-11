@@ -1,0 +1,13 @@
+(0, 65535) [not used, next is 0]
+(1, 0) at 15 [0xf]
+(2, 0) at 58 [0x3a]
+(3, 0) at 107 [0x6b]
+(4, 0) at 217 [0xd9]
+(5, 0) at 322 [0x142]
+(6, 0) at 391 [0x187]
+(7, 0) at 409 [0x199]
+
+8 object(s) in total
+1 free object(s)
+0 compressed object(s)
+0 shadowed object(s)

@@ -95,15 +95,6 @@ module type FetchT = sig
   *)
   val fetchobject : Key.t -> BoundedInt.t -> FetchCommon.context -> IndirectObject.t
 
-  (*   Dereference an object if it is a reference, or do nothing
-       Args    :
-       - input object
-       - traversal context
-       Returns :
-       - dereferenced object
-  *)
-  val dereference : DirectObject.t -> FetchCommon.context -> IndirectObject.t
-
   (*   Fetch an object and decode it if it is a stream
        Args    :
        - id of object

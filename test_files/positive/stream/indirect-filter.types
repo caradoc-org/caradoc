@@ -1,0 +1,15 @@
+1 : c"catalog"
+2 : c"pageroot"
+3 : c"page"
+4 : s"content_stream"
+5 : c"font_type1_standard"
+6 : c"info"
+
+# of objects of known type : 6 / 7
+
+c"catalog" : 1
+c"font_type1_standard" : 1
+c"info" : 1
+c"page" : 1
+c"pageroot" : 1
+s"content_stream" : 1

@@ -7,19 +7,21 @@ Breaking changes:
 
 API Changes:
 - Split the PDFObject module into DirectObject and IndirectObject modules. This
-design enforces the semantics of direct and indirect objects.
+  design enforces the semantics of direct and indirect objects.
 - Created the PDFStream module to encapsulate operations on streams and ensure
-consistency between encoded and decoded data.
+  consistency between encoded and decoded data.
 
 New features:
 - Added support for ASCII85 and RunLength stream filters.
 - Added --rencode-streams option to the 'cleanup' command to reencode all
-streams with a chosen filter.
+  streams with a chosen filter.
 
 Bugfixes:
 - Use open_in_bin and open_out_bin instead of open_in and open_out. Suggested by
   Chimrod.
 - Changed the minimum allowed integer to -2^31. Reported by Chimrod.
+- Allowed to use indirect objects as stream parameters (/Length, /Filter or
+  /DecodeParms) with the relaxed parser. Suggested by Chimrod.
 
 Misc:
 - Use standard exception Exit where relevant.

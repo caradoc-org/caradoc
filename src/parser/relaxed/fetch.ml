@@ -48,12 +48,20 @@ module MakeFetch (FetchComp : FetchCompT) = struct
           raise (Errors.PDFError ("Object definition does not match xref table", Errors.make_ctxt key off));
 
         match o with
-        | IndirectObject.StreamOffset (stream_dict, offset) ->
-          let stream_length = dereference (DirectObject.dict_find stream_dict "Length") ctxt in
-          let len = IndirectObject.get_direct_of
+        | IndirectObject.StreamOffset (original_stream_dict, offset) ->
+          let stream_dict = DirectObject.dict_map_key (fun key value ->
+              match key with
+              | "Length"
+              | "Filter"
+              | "DecodeParms" ->
+                dereference_rec ctxt value
+              | _ ->
+                value
+            ) original_stream_dict in
+
+          let len = DirectObject.get_nonnegative_int ()
               "Expected integer for stream /Length" (Errors.make_ctxt key off)
-              ~transform:(DirectObject.get_nonnegative_int ())
-              stream_length in
+              (DirectObject.dict_find stream_dict "Length") in
 
           let stream, endstreampos =
             parsestream key (off +: offset) len ctxt.FetchCommon.input ctxt.FetchCommon.length stream_dict
@@ -66,25 +74,36 @@ module MakeFetch (FetchComp : FetchCompT) = struct
           IndirectObject.Direct obj
       )
 
-  and dereference (obj : DirectObject.t) (ctxt : FetchCommon.context) : IndirectObject.t =
+  and dereference_rec (ctxt : FetchCommon.context) (obj : DirectObject.t) : DirectObject.t =
     match obj with
     | DirectObject.Reference key ->
-      let entry = XRefTable.find ctxt.FetchCommon.xref key "Reference to undeclared object" in
-
       begin
-        match entry.XRefTable.kind with
-        | XRefTable.Inuse ->
-          (* TODO : check what to do *)
-            (*
-            dereference (fetchobject (id, gen) off ctxt) ctxt
-            *)
-          fetchobject key entry.XRefTable.off ctxt
-        | XRefTable.Compressed index ->
-          FetchComp.fetchcompressed key entry.XRefTable.off index ctxt
-        | XRefTable.Free ->
-          raise (Errors.PDFError ("Reference to free object", Errors.make_ctxt_key key))
+        match dereference_key ctxt key with
+        | IndirectObject.Stream _ ->
+          obj
+        | IndirectObject.Direct d ->
+          (* We mark the key as currently being traversed to avoid infinite recursion *)
+          FetchCommon.begin_traversal ctxt key;
+          let result = dereference_rec ctxt d in
+          FetchCommon.end_traversal ctxt key;
+          result
       end
-    | _ -> IndirectObject.Direct obj
+    | DirectObject.Dictionary d ->
+      DirectObject.Dictionary (DirectObject.dict_map (dereference_rec ctxt) d)
+    | DirectObject.Array a ->
+      DirectObject.Array (List.map (dereference_rec ctxt) a)
+    | _ -> obj
+
+  and dereference_key (ctxt : FetchCommon.context) (key : Key.t) : IndirectObject.t =
+    let entry = XRefTable.find ctxt.FetchCommon.xref key "Reference to undeclared object" in
+
+    match entry.XRefTable.kind with
+    | XRefTable.Inuse ->
+      fetchobject key entry.XRefTable.off ctxt
+    | XRefTable.Compressed index ->
+      FetchComp.fetchcompressed key entry.XRefTable.off index ctxt
+    | XRefTable.Free ->
+      raise (Errors.PDFError ("Reference to free object", Errors.make_ctxt_key key))
 
 
   let fetchdecodestream (key : Key.t) (off : BoundedInt.t) (ctxt : FetchCommon.context) (relax : bool) : IndirectObject.t =

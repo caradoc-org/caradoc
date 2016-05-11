@@ -69,7 +69,6 @@ end
 
 module type FetchT = sig
   val fetchobject : Key.t -> BoundedInt.t -> FetchCommon.context -> IndirectObject.t
-  val dereference : DirectObject.t -> FetchCommon.context -> IndirectObject.t
   val fetchdecodestream : Key.t -> BoundedInt.t -> FetchCommon.context -> bool -> IndirectObject.t
 end
 
