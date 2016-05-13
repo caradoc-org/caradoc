@@ -1,6 +1,6 @@
 # Caradoc - a PDF parser and validator
 
-Caradoc is a parser and validator of PDF files written in OCaml.
+Caradoc is a parser and validator of PDF files written in OCaml. This is version 0.2 (beta).
 
 ## Dependencies
 

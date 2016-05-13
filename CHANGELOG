@@ -1,3 +1,7 @@
+-------------------
+Version 0.2 (beta):
+-------------------
+
 Breaking changes:
 - Removed the parameter --stream-errors from the 'extract' command. This
   parameter was not used in the code.
