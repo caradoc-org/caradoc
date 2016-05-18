@@ -40,6 +40,9 @@ module Params = struct
     mutable zero_offset_as_free : bool;
     (* Treat references to non-defined objects as the null object *)
     mutable undefined_ref_as_null : bool;
+    (* Allow names to contain non-ASCII characters verbatim instead of an escape sequence *)
+    (* The specification does not strictly forbid this, but escape sequences should be used *)
+    mutable allow_nonascii_in_names : bool;
 
     (**** Type-checking parameters ****)
     (* Allow a dictionary of "info" type to contain arbitrary (custom) entries *)
@@ -91,6 +94,7 @@ module Params = struct
     allow_dict_duplicates = false;
     zero_offset_as_free = false;
     undefined_ref_as_null = false;
+    allow_nonascii_in_names = false;
     (* Type-checking parameters *)
     allow_arbitrary_info = false;
     (* Output parameters *)
@@ -123,6 +127,7 @@ module Params = struct
     global.allow_dict_duplicates <- false;
     global.zero_offset_as_free <- false;
     global.undefined_ref_as_null <- false;
+    global.allow_nonascii_in_names <- false;
     global.allow_arbitrary_info <- false;
     global.sort_dicts <- false;
     global.expand_streams <- false;
@@ -155,6 +160,9 @@ module Params = struct
       true
     | "undefined-ref-as-null" ->
       params.undefined_ref_as_null <- true;
+      true
+    | "allow-nonascii-in-names" ->
+      params.allow_nonascii_in_names <- true;
       true
     | "allow-arbitrary-info" ->
       params.allow_arbitrary_info <- true;
