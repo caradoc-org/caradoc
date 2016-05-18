@@ -1,0 +1,110 @@
+%PDF-1.5
+%€€€€
+1 0 obj
+<<
+	/Type /Catalog
+	/Pages 3 0 R
+	/x#7/x /x /x#7/Pages 6 0 R
+>>
+endobj
+2 0 obj
+<<
+	/Name /F1
+	/BaseFont /Helvetica
+	/Type /Font
+	/Subtype /Type1
+>>
+endobj
+3 0 obj
+<<
+	/Count 1
+	/Kids [4 0 R]
+	/Type /Pages
+>>
+endobj
+4 0 obj
+<<
+	/Resources <<
+		/Font <<
+			/F1 2 0 R
+		>>
+	>>
+	/MediaBox [0 0 795 842]
+	/Parent 3 0 R
+	/Contents 5 0 R
+	/Type /Page
+>>
+endobj
+5 0 obj
+<< /Length 39 >>
+stream
+BT /F1 30 Tf 350 750 Td (Poppler) Tj ET
+endstream
+endobj
+6 0 obj
+<<
+	/Count 1
+	/Kids [7 0 R]
+	/Type /Pages
+	/MediaBox [0 0 1590 842]
+	/CropBox [0 0 795 842]
+>>
+endobj
+7 0 obj
+<<
+	/Resources <<
+		/Font <<
+			/F1 2 0 R
+		>>
+	>>
+	/Parent 6 0 R
+	/CropBox 8 65535 R
+	/Contents [9 0 R 10 0 R]
+	/Type /Page
+>>
+endobj
+8 65535 obj
+[795 0 1590 842]
+endobj
+9 0 obj
+<< /Length 44 >>
+stream
+BT
+/F1 30 Tf 350 750 Td (Adobe Reader) Tj
+ET
+endstream
+endobj
+10 0 obj
+<< /Length 47 >>
+stream
+BT
+1145 750 Td (Foxit, Chrome or Sumatra) Tj
+ET
+endstream
+endobj
+11 0 obj
+<<>>
+endobj
+xref
+0 12
+0000000000 65535 f 
+0000000015 00000 n 
+0000000094 00000 n 
+0000000178 00000 n 
+0000000238 00000 n 
+0000000377 00000 n 
+0000000466 00000 n 
+0000000576 00000 n 
+0000000719 65535 n 
+0000000755 00000 n 
+0000000849 00000 n 
+0000000947 00000 n 
+trailer
+<<
+	/Size 12
+	/Root 1 0 R
+	/Info 11 0 R
+>>
+startxref
+968
+%%EOF
