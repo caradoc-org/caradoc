@@ -2,6 +2,8 @@
 
 Caradoc is a parser and validator of PDF files written in OCaml. This is version 0.2 (beta).
 
+Caradoc was presented at the the third Workshop on Language-Theoretic Security (LangSec) in May 2016. More information is available on the [site of the conference](http://spw16.langsec.org/papers.html#caradoc).
+
 ## Dependencies
 
 Along with an OCaml compiler, this program depends on the following libraries :
