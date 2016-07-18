@@ -17,6 +17,8 @@
 (*****************************************************************************)
 
 
+open Mapkey
+
 (* Generic algorithms *)
 module Algo : sig
 
@@ -46,6 +48,16 @@ module Algo : sig
        - merged list
   *)
   val merge_unique : 'a list -> 'a list-> ('a -> 'a -> int) -> 'a list
+
+  (*   Compute the union of two maps
+       If a key is present in both maps, the value of the first map is retained
+       Args    :
+       - first map
+       - second map
+       Returns :
+       - union of the two maps
+  *)
+  val mapkey_union : 'a MapKey.t -> 'a MapKey.t -> 'a MapKey.t
 
   (*   Test wether a string contains a substring
        Args    :

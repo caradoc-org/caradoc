@@ -20,6 +20,7 @@
 open Type.Type
 open Directobject
 open Indirectobject
+open Errors
 
 
 module CheckObjectType : sig
@@ -29,24 +30,22 @@ module CheckObjectType : sig
        - context
        - object
        - expected type
-       - object number
-       - entry in object
+       - error context
        Returns :
        - real type of object (modified if object is an alias, variant or indirect object)
   *)
-  val check_object : context -> IndirectObject.t -> t -> Key.t -> string -> t
+  val check_object : context -> IndirectObject.t -> t -> Errors.error_ctxt -> t
 
   (*   Check type of an object
        Args    :
        - context
        - object
        - expected type
-       - object number
-       - entry in object
+       - error context
        Returns :
        - real type of object (modified if object is an alias, variant or indirect object)
   *)
-  val check_object_direct : context -> DirectObject.t -> t -> Key.t -> string -> t
+  val check_object_direct : context -> DirectObject.t -> t -> Errors.error_ctxt -> t
 
   (*   Check type (alias) of an object
        Args    :
@@ -54,32 +53,29 @@ module CheckObjectType : sig
        - object
        - alias name
        - allow indirect object
-       - object number
-       - entry in object
+       - error context
        Returns :
        - real type of object
   *)
-  val check_alias : context -> IndirectObject.t -> string -> bool -> Key.t -> string -> t
+  val check_alias : context -> IndirectObject.t -> string -> bool -> Errors.error_ctxt -> t
 
   (*   Check type of a dictionary
        Args    :
        - context
        - dictionary object
        - expected value type
-       - object number
-       - entry in object
+       - error context
   *)
-  val check_dict : context -> DirectObject.dict_t -> t -> Key.t -> string -> unit
+  val check_dict : context -> DirectObject.dict_t -> t -> Errors.error_ctxt -> unit
 
   (*   Check type of an array
        Args    :
        - context
        - array content
        - expected element type
-       - object number
-       - entry in object
+       - error context
   *)
-  val check_array : context -> DirectObject.t list -> t -> Key.t -> string -> unit
+  val check_array : context -> DirectObject.t list -> t -> Errors.error_ctxt -> unit
 
   (*   Check type of a sized array
        Args    :
@@ -87,10 +83,9 @@ module CheckObjectType : sig
        - array content
        - expected element type
        - expected size
-       - object number
-       - entry in object
+       - error context
   *)
-  val check_array_sized : context -> DirectObject.t list -> t -> int -> Key.t -> string -> unit
+  val check_array_sized : context -> DirectObject.t list -> t -> int -> Errors.error_ctxt -> unit
 
   (*   Check type of a sized array
        Args    :
@@ -98,86 +93,78 @@ module CheckObjectType : sig
        - array content
        - expected element type
        - set of expected sizes
-       - object number
-       - entry in object
+       - error context
   *)
-  val check_array_variant_sized : context -> DirectObject.t list -> t -> int array -> Key.t -> string -> unit
+  val check_array_variant_sized : context -> DirectObject.t list -> t -> int array -> Errors.error_ctxt -> unit
 
   (*   Check type of a tuple array
        Args    :
        - context
        - array content
        - expected element types
-       - object number
-       - entry in object
+       - error context
   *)
-  val check_array_tuples : context -> DirectObject.t list -> t array -> Key.t -> string -> unit
+  val check_array_tuples : context -> DirectObject.t list -> t array -> Errors.error_ctxt -> unit
 
   (*   Check type of a difference array
        Args    :
        - context
        - array content
-       - object number
-       - entry in object
+       - error context
   *)
-  val check_array_differences : context -> DirectObject.t list -> Key.t -> string -> unit
+  val check_array_differences : context -> DirectObject.t list -> Errors.error_ctxt -> unit
 
   (*   Check type of a tuple
        Args    :
        - context
        - array content
        - expected tuple element types
-       - object number
-       - entry in object
+       - error context
   *)
-  val check_tuple : context -> DirectObject.t list -> t array -> Key.t -> string -> unit
+  val check_tuple : context -> DirectObject.t list -> t array -> Errors.error_ctxt -> unit
 
   (*   Check type (variant) of an object
        Args    :
        - context
        - object
        - set of expected types
-       - object number
-       - entry in object
+       - error context
        Returns :
        - real type of object
   *)
-  val check_variant : context -> IndirectObject.t -> kind_t list -> Key.t -> string -> t
+  val check_variant : context -> IndirectObject.t -> kind_t list -> Errors.error_ctxt -> t
 
   (*   Check type of an indirect object
        Args    :
        - context
        - indirect reference
        - expected type
-       - object number
-       - entry in object
+       - error context
        Returns :
        - real type of object
   *)
-  val check_indirect : context -> Key.t -> t -> Key.t -> string -> t
+  val check_indirect : context -> Key.t -> t -> Errors.error_ctxt -> t
 
   (*   Check type of a class
        Args    :
        - context
        - object entries
        - class name
-       - object number
-       - entry in object
+       - error context
   *)
-  val check_class : context -> DirectObject.dict_t -> string -> Key.t -> string -> unit
+  val check_class : context -> DirectObject.dict_t -> string -> Errors.error_ctxt -> unit
 
   (*   Check all entries of a class (and included subclasses)
        Args    :
        - context
        - object entries
        - class name
-       - object number
-       - entry in object
+       - error context
        - set of checked entries
        Returns :
        - whether subclass is strict or not
   *)
-  val check_subclass : context -> DirectObject.dict_t -> string -> Key.t -> string -> (string, bool) Hashtbl.t -> bool
+  val check_subclass : context -> DirectObject.dict_t -> string -> Errors.error_ctxt -> (string, bool) Hashtbl.t -> bool
 
 end
 

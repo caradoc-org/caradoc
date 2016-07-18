@@ -21,7 +21,7 @@ open Boundedint
 open Errors
 
 
-let raise_syntax lexbuf offset =
+let raise_syntax (lexbuf : Lexing.lexbuf) (offset : BoundedInt.t option) =
   let pos = ~:(Lexing.lexeme_start lexbuf) in
   match offset with
   | Some o ->
@@ -29,14 +29,14 @@ let raise_syntax lexbuf offset =
   | None ->
     raise (Errors.ParseError (Printf.sprintf "syntax error at offset %d [0x%x]" (BoundedInt.to_int pos) (BoundedInt.to_int pos)))
 
-let raise_lexer msg pos offset =
+let raise_lexer (msg : string) (pos : BoundedInt.t) (offset : BoundedInt.t option) =
   match offset with
   | Some o ->
     raise (Errors.LexingError (msg, pos +: o))
   | None ->
     raise (Errors.LexingError (msg, pos))
 
-let raise_integer msg lexbuf offset =
+let raise_integer (msg : string) (lexbuf : Lexing.lexbuf) (offset : BoundedInt.t option) =
   let pos = ~:(Lexing.lexeme_start lexbuf) in
   match offset with
   | Some o ->
@@ -44,8 +44,15 @@ let raise_integer msg lexbuf offset =
   | None ->
     raise (Errors.LexingError (Printf.sprintf "integer error : %s" msg, pos))
 
+let raise_pdf (msg : string) (offset : BoundedInt.t option) (error_ctxt : Errors.error_ctxt) =
+  match offset with
+  | Some o ->
+    raise (Errors.PDFError (msg, Errors.ctxt_set_pos error_ctxt o))
+  | None ->
+    raise (Errors.PDFError (msg, error_ctxt))
 
-let wrap_parser f offset lexbuf =
+
+let wrap_parser f (offset : BoundedInt.t option) (lexbuf : Lexing.lexbuf) (error_ctxt : Errors.error_ctxt) =
   try
     f Lexer.token lexbuf
   with
@@ -55,8 +62,10 @@ let wrap_parser f offset lexbuf =
     raise_lexer msg pos offset
   | BoundedInt.IntegerError msg ->
     raise_integer msg lexbuf offset
+  | Errors.PDFError (msg, _) ->
+    raise_pdf msg offset error_ctxt
 
-let wrap_xrefparser f offset lexbuf =
+let wrap_xrefparser f (offset : BoundedInt.t option) (lexbuf : Lexing.lexbuf) =
   try
     f Xreflexer.token lexbuf
   with
@@ -67,7 +76,7 @@ let wrap_xrefparser f offset lexbuf =
   | BoundedInt.IntegerError msg ->
     raise_integer msg lexbuf offset
 
-let wrap_strictparser f offset lexbuf =
+let wrap_strictparser f (offset : BoundedInt.t option) (lexbuf : Lexing.lexbuf) =
   try
     f Strictlexer.token lexbuf
   with

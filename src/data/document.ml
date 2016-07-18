@@ -27,6 +27,8 @@ open Boundedint
 open Common
 open Graph
 open Params
+open Errors
+open Entry
 
 module Document = struct
 
@@ -51,16 +53,16 @@ module Document = struct
   let find (x : t) (k : Key.t) : IndirectObject.t =
     MapKey.find k x.objects
 
-  let remove_ref (x : t) (o : DirectObject.t) : IndirectObject.t =
+  let remove_ref (x : t) (o : DirectObject.t) (ctxt : Errors.error_ctxt) : (IndirectObject.t * Errors.error_ctxt) =
     match o with
     | DirectObject.Reference k ->
       begin
         try
-          find x k
+          find x k, Errors.make_ctxt_key k
         with Not_found ->
-          IndirectObject.Direct DirectObject.Null
+          IndirectObject.Direct DirectObject.Null, ctxt
       end
-    | _ -> IndirectObject.Direct o
+    | _ -> IndirectObject.Direct o, ctxt
 
 
   let finalize_trailers (x : t) : unit =
@@ -112,28 +114,33 @@ module Document = struct
     MapKey.iter f x.special_streams
 
 
-  let check_refs (x : IndirectObject.t MapKey.t) (s : SetKey.t) (indobj : Key.t) : SetKey.t =
+  let check_refs (objects : IndirectObject.t MapKey.t) (refs : Entry.t MapKey.t) (ctxt : Errors.error_ctxt) : SetKey.t =
+    let s = MapKey.fold (fun key _ result ->
+        SetKey.add key result
+      ) refs SetKey.empty
+    in
+
     if Params.global.Params.undefined_ref_as_null then (
-      let unknown_refs = SetKey.fold (fun key unknown_refs ->
-          if not (MapKey.mem key x) then (
-            Printf.eprintf "Warning : Reference to unknown object %s in object %s\n" (Key.to_string key) (Key.to_string indobj);
+      let unknown_refs = MapKey.fold (fun key entry unknown_refs ->
+          if not (MapKey.mem key objects) then (
+            Printf.eprintf "Warning : Reference to unknown object %s%s\n" (Key.to_string key) (Errors.ctxt_to_string (Errors.ctxt_append_entry ctxt entry));
             SetKey.add key unknown_refs
           ) else
             unknown_refs
-        ) s SetKey.empty
+        ) refs SetKey.empty
       in
       SetKey.diff s unknown_refs
     ) else (
-      SetKey.iter (fun key ->
-          if not (MapKey.mem key x) then
-            raise (Errors.PDFError (Printf.sprintf "Reference to unknown object : %s" (Key.to_string key), Errors.make_ctxt_key indobj))
-        ) s;
+      MapKey.iter (fun key entry ->
+          if not (MapKey.mem key objects) then
+            raise (Errors.PDFError (Printf.sprintf "Reference to unknown object : %s" (Key.to_string key), Errors.ctxt_append_entry ctxt entry))
+        ) refs;
       s
     )
 
   let ref_closure (x : t) (o : IndirectObject.t) (k : Key.t) : SetKey.t =
     let result = ref (SetKey.empty) in
-    let queue = ref (check_refs x.objects (IndirectObject.refs o) k) in
+    let queue = ref (check_refs x.objects (IndirectObject.refs o) (Errors.make_ctxt_key k)) in
 
     while not (SetKey.is_empty !queue) do
       let key = SetKey.min_elt !queue in
@@ -141,7 +148,7 @@ module Document = struct
       queue := SetKey.remove key !queue;
 
       let obj = MapKey.find key x.objects in
-      let refs = SetKey.diff (check_refs x.objects (IndirectObject.refs obj) key) !result in
+      let refs = SetKey.diff (check_refs x.objects (IndirectObject.refs obj) (Errors.make_ctxt_key key)) !result in
       queue := SetKey.union refs !queue
     done;
     !result
@@ -151,11 +158,10 @@ module Document = struct
     let g = Graph.create () in
 
     let f key obj =
-      let refs = IndirectObject.refs obj in
-      SetKey.iter
-        (fun k ->
+      MapKey.iter
+        (fun k _ ->
            Graph.add_edge g (key, k)
-        ) refs;
+        ) (IndirectObject.refs obj);
 
       Graph.add_vertex g key;
     in
@@ -212,7 +218,7 @@ module Document = struct
 
 
   let sanitize_trailer (newkeys : Key.t MapKey.t) (trailer : DirectObject.dict_t) : DirectObject.dict_t =
-    let tmp = DirectObject.relink_dict newkeys Key.Trailer trailer in
+    let tmp = DirectObject.relink_dict newkeys (Errors.make_ctxt_key Key.Trailer) trailer in
     let size = 1 + (MapKey.cardinal newkeys) in
     let root = DirectObject.dict_find tmp "Root" in
     let info = DirectObject.dict_find tmp "Info" in
@@ -233,12 +239,12 @@ module Document = struct
     let trailer = main_trailer x in
     let xx = ref MapKey.empty in
     MapKey.iter (fun key obj ->
-        xx := MapKey.add key (IndirectObject.simplify_refs x.objects key obj) !xx
+        xx := MapKey.add key (IndirectObject.simplify_refs x.objects (Errors.make_ctxt_key key) obj) !xx
       ) x.objects;
 
     {
       objects = !xx;
-      trailers = [IndirectObject.simplify_refs_dict x.objects Key.Trailer trailer];
+      trailers = [IndirectObject.simplify_refs_dict x.objects (Errors.make_ctxt_key Key.Trailer) trailer];
       special_streams = MapKey.empty;
     }
 
@@ -257,7 +263,7 @@ module Document = struct
     let xx = ref MapKey.empty in
     SetKey.iter (fun key ->
         let o = MapKey.find key x.objects in
-        xx := MapKey.add (MapKey.find key !newkeys) (IndirectObject.relink !newkeys key o) !xx
+        xx := MapKey.add (MapKey.find key !newkeys) (IndirectObject.relink !newkeys (Errors.make_ctxt_key key) o) !xx
       ) used;
 
     {

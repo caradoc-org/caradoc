@@ -84,8 +84,10 @@ module XRefTable = struct
   let compare (body : t) (xref : t) : unit =
     (* Iterate over objects in the body *)
     iter_all (fun key value ->
+        let error_ctxt = Errors.make_ctxt key value.off in
+
         if not (MapKey.mem key !xref) then
-          raise (Errors.PDFError ("Xref table does not contain object", Errors.make_ctxt key value.off));
+          raise (Errors.PDFError ("Xref table does not contain object", error_ctxt));
 
         match key, MapKey.find key !xref with
         | Key.Object (0, _), [v] when value.kind = v.kind ->
@@ -93,9 +95,9 @@ module XRefTable = struct
         | _, [v] when value = v ->
           ()
         | _, [v] ->
-          raise (Errors.PDFError (Printf.sprintf "Xref table states position %s, which does not match" (BoundedInt.to_string v.off), Errors.make_ctxt key value.off))
+          raise (Errors.PDFError (Printf.sprintf "Xref table states position %s, which does not match" (BoundedInt.to_string v.off), error_ctxt))
         | _, _ ->
-          raise (Errors.PDFError ("Xref table does not match position of object", Errors.make_ctxt key value.off))
+          raise (Errors.PDFError ("Xref table does not match position of object", error_ctxt))
       ) body;
 
     (* Iterate over objects in the xref table *)

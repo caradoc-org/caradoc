@@ -50,7 +50,7 @@ module TypeChecker = struct
 
     if Params.global.Params.verbose then
       Printf.eprintf "\nChecking trailer\n";
-    let (_:Type.t) = CheckObjectType.check_alias ctxt (IndirectObject.Direct (DirectObject.Dictionary trailer)) "trailer" false Key.Trailer "" in
+    let (_:Type.t) = CheckObjectType.check_alias ctxt (IndirectObject.Direct (DirectObject.Dictionary trailer)) "trailer" false (Errors.make_ctxt_key Key.Trailer) in
 
     Document.iter_stms
       (fun key kind ->
@@ -61,18 +61,18 @@ module TypeChecker = struct
            | Document.Xrefstm ->
              ctxt.Type.types <- MapKey.add key (Type.Alias "stream_xrefstm") ctxt.Type.types
          end;
-         ctxt.Type.to_check <- key::ctxt.Type.to_check
+         ctxt.Type.to_check <- (key, Errors.ctxt_none)::ctxt.Type.to_check
       ) doc;
 
     while ctxt.Type.to_check <> [] do
-      let key = List.hd ctxt.Type.to_check in
+      let key, error_ctxt = List.hd ctxt.Type.to_check in
       ctxt.Type.to_check <- List.tl ctxt.Type.to_check;
 
       if Params.global.Params.verbose then
         Printf.eprintf "Remaining objects : %d -- checking object : %s " (List.length ctxt.Type.to_check) (Key.to_string key);
 
       if not (Document.mem doc key) then
-        raise (Errors.PDFError ("Reference to unknown object", Errors.make_ctxt_key key));
+        raise (Errors.PDFError (Printf.sprintf "Reference to unknown object : %s" (Key.to_string key), error_ctxt));
 
       let typ = {
         Type.kind = MapKey.find key ctxt.Type.types;
@@ -82,7 +82,7 @@ module TypeChecker = struct
       if Params.global.Params.verbose then
         Printf.eprintf "of type : %s\n" (Type.type_to_string typ);
 
-      let real_type = CheckObjectType.check_object ctxt (Document.find doc key) typ key "" in
+      let real_type = CheckObjectType.check_object ctxt (Document.find doc key) typ (Errors.make_ctxt_key key) in
       if Params.global.Params.verbose then
         Printf.eprintf "Object %s has type %s\n\n" (Key.to_string key) (Type.type_to_string real_type);
 

@@ -24,6 +24,7 @@ open Errors
 open Algo
 open Convert
 open Params
+open Entry
 
 module DirectObject = struct
 
@@ -71,7 +72,7 @@ module DirectObject = struct
 
   let dict_add (allow_duplicates : bool) (x : dict_t) (key, value) : unit =
     if Hashtbl.mem x key then (
-      let error_msg = Printf.sprintf "The same name appears several times in dictionary : %s" key in
+      let error_msg = Printf.sprintf "The same name appears several times in dictionary : /%s" key in
       if allow_duplicates then (
         Printf.eprintf "Warning : %s\n" error_msg;
         dict_set x (key, value)
@@ -299,23 +300,34 @@ module DirectObject = struct
 
 
 
-  let rec refs (x : t) : SetKey.t =
+  let rec refs_impl (entry : Entry.t) (x : t) : Entry.t MapKey.t =
     match x with
     | Reference key ->
-      SetKey.singleton key
+      MapKey.singleton key entry
     | Array a ->
-      List.fold_left (fun s o -> SetKey.union s (refs o)) SetKey.empty a
+      let _, result = List.fold_left (fun (i, s) o ->
+          i+1, Algo.mapkey_union s (refs_impl (Entry.append_index entry i) o)
+        ) (0, MapKey.empty) a
+      in
+      result
     | Dictionary d ->
-      refs_dict d
-    | Null | Bool _ | Int _ | Real _ | String _ | Name _ -> SetKey.empty
+      refs_dict_impl entry d
+    | Null | Bool _ | Int _ | Real _ | String _ | Name _ -> MapKey.empty
 
-  and refs_dict (d : dict_t) : SetKey.t =
-    dict_fold (fun _ obj set ->
-        SetKey.union set (refs obj)
-      ) d SetKey.empty
+  and refs_dict_impl (entry : Entry.t) (d : dict_t) : Entry.t MapKey.t =
+    dict_fold (fun key obj set ->
+        Algo.mapkey_union set (refs_impl (Entry.append_name entry key) obj)
+      ) d MapKey.empty
 
 
-  let rec relink (newkeys : Key.t MapKey.t) (indobj : Key.t) (x : t) : t =
+  let refs (x : t) : Entry.t MapKey.t =
+    refs_impl Entry.empty x
+
+  let refs_dict (d : dict_t) : Entry.t MapKey.t =
+    refs_dict_impl Entry.empty d
+
+
+  let rec relink (newkeys : Key.t MapKey.t) (ctxt : Errors.error_ctxt) (x : t) : t =
     match x with
     | Null
     | Bool _
@@ -325,23 +337,23 @@ module DirectObject = struct
     | Name _ ->
       x
     | Array l ->
-      Array (List.map (relink newkeys indobj) l)
+      Array (List.mapi (fun i x -> relink newkeys (Errors.ctxt_append_index ctxt i) x) l)
     | Dictionary d ->
-      Dictionary (relink_dict newkeys indobj d)
+      Dictionary (relink_dict newkeys ctxt d)
     | Reference key ->
       begin
         try
           Reference (MapKey.find key newkeys)
         with Not_found ->
           if Params.global.Params.undefined_ref_as_null then (
-            Printf.eprintf "Warning : Reference to unknown object %s in object %s\n" (Key.to_string key) (Key.to_string indobj);
+            Printf.eprintf "Warning : Reference to unknown object %s%s\n" (Key.to_string key) (Errors.ctxt_to_string ctxt);
             Null
           ) else
-            raise (Errors.PDFError (Printf.sprintf "Reference to unknown object : %s" (Key.to_string key), Errors.make_ctxt_key indobj))
+            raise (Errors.PDFError (Printf.sprintf "Reference to unknown object : %s" (Key.to_string key), ctxt))
       end
 
-  and relink_dict (newkeys : Key.t MapKey.t) (indobj : Key.t) (d : dict_t) : dict_t =
-    dict_map (relink newkeys indobj) d
+  and relink_dict (newkeys : Key.t MapKey.t) (ctxt : Errors.error_ctxt) (d : dict_t) : dict_t =
+    dict_map_key (fun key x -> relink newkeys (Errors.ctxt_append_name ctxt key) x) d
 
 
   let simple_ref (key : Key.t) (x : t) : t =

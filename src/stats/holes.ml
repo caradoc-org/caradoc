@@ -22,6 +22,7 @@ open Wrap
 open Intervals
 open Boundedint
 open Key
+open Errors
 
 
 let dump_hole (input : in_channel) (start : BoundedInt.t) (length : BoundedInt.t) : string =
@@ -30,7 +31,7 @@ let dump_hole (input : in_channel) (start : BoundedInt.t) (length : BoundedInt.t
 
   let blank =
     try
-      wrap_parser Parser.hole (Some start) lexbuf;
+      wrap_parser Parser.hole (Some start) lexbuf Errors.ctxt_none;
       true
     with _ ->
       false

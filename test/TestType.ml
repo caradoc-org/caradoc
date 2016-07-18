@@ -450,37 +450,37 @@ let tests =
     "type_intersection" >:::
     [
       "(1)" >:: (fun _ -> assert_equal
-                    (type_intersection (make_pool 0) Bool Bool Key.Trailer "")
+                    (type_intersection (make_pool 0) Bool Bool (Errors.make_ctxt_key Key.Trailer))
                     Bool) ;
       "(2)" >:: (fun _ -> assert_equal
-                    (type_intersection (make_pool 0) (Variant [Int ; String]) (Variant [Name ; Int]) Key.Trailer "")
+                    (type_intersection (make_pool 0) (Variant [Int ; String]) (Variant [Name ; Int]) (Errors.make_ctxt_key Key.Trailer))
                     Int) ;
       "(3)" >:: (fun _ -> assert_equal
-                    (type_intersection (make_pool 0) (Variant [Int ; Name ; String]) Name Key.Trailer "")
+                    (type_intersection (make_pool 0) (Variant [Int ; Name ; String]) Name (Errors.make_ctxt_key Key.Trailer))
                     Name) ;
       "(4)" >:: (fun _ -> assert_equal
-                    (type_intersection (make_pool 0) (Variant [Int ; Variant [Name ; String]]) (Variant [Variant [Null ; Name] ; Bool]) Key.Trailer "")
+                    (type_intersection (make_pool 0) (Variant [Int ; Variant [Name ; String]]) (Variant [Variant [Null ; Name] ; Bool]) (Errors.make_ctxt_key Key.Trailer))
                     Name) ;
       "(5)" >:: (fun _ -> assert_equal
                     (remove_variant (make_pool 0)
                        (type_intersection (make_pool_aliases ["A", Variant [Name ; String] ; "B", Variant [Null ; Name] ; "C", Variant [String ; Real]])
-                          (Variant [Int ; Alias "A" ; Real]) (Variant [Alias "B" ; Alias "C" ; Bool]) Key.Trailer ""))
+                          (Variant [Int ; Alias "A" ; Real]) (Variant [Alias "B" ; Alias "C" ; Bool]) (Errors.make_ctxt_key Key.Trailer)))
                     (remove_variant (make_pool 0) (Variant [String ; Real ; Name]))) ;
       "(6)" >:: (fun _ -> assert_equal
-                    (type_intersection (make_pool_aliases ["A", Bool ; "B", Bool]) (Alias "A") (Alias "B") Key.Trailer "")
+                    (type_intersection (make_pool_aliases ["A", Bool ; "B", Bool]) (Alias "A") (Alias "B") (Errors.make_ctxt_key Key.Trailer))
                     Bool) ;
 
       "(7)" >:: (fun _ -> assert_raises
-                    (Errors.TypeError ("Inconsistent type inference between bool and int", Key.Trailer, "dummy"))
-                    (fun () -> type_intersection (make_pool 0) Bool Int Key.Trailer "dummy")) ;
+                    (Errors.TypeError ("Inconsistent type inference between bool and int", Errors.make_ctxt_name Key.Trailer "dummy"))
+                    (fun () -> type_intersection (make_pool 0) Bool Int (Errors.make_ctxt_name Key.Trailer "dummy"))) ;
       "(8)" >:: (fun _ -> assert_raises
-                    (Errors.TypeError ("Inconsistent type inference between a\"A\" and a\"B\"", Key.Trailer, "dummy"))
-                    (fun () -> type_intersection (make_pool_aliases ["A", Bool ; "B", Int]) (Alias "A") (Alias "B") Key.Trailer "dummy")) ;
+                    (Errors.TypeError ("Inconsistent type inference between a\"A\" and a\"B\"", Errors.make_ctxt_name Key.Trailer "dummy"))
+                    (fun () -> type_intersection (make_pool_aliases ["A", Bool ; "B", Int]) (Alias "A") (Alias "B") (Errors.make_ctxt_name Key.Trailer "dummy"))) ;
       (* TODO : behavior ? *)
       "(9)" >:: (fun _ -> assert_raises
-                    (Errors.TypeError ("Inconsistent type inference between {{a\"A\", int}} and {{bool, a\"B\"}}", Key.Trailer, "dummy"))
+                    (Errors.TypeError ("Inconsistent type inference between {{a\"A\", int}} and {{bool, a\"B\"}}", Errors.make_ctxt_name Key.Trailer "dummy"))
                     (fun () -> type_intersection (make_pool_aliases ["A", Bool ; "B", Int])
-                        (Tuple [| Util.type_alias "A" ; Util.make_type Int |]) (Tuple [| Util.make_type Bool ; Util.type_alias "B" |]) Key.Trailer "dummy")) ;
+                        (Tuple [| Util.type_alias "A" ; Util.make_type Int |]) (Tuple [| Util.make_type Bool ; Util.type_alias "B" |]) (Errors.make_ctxt_name Key.Trailer "dummy"))) ;
       (* TODO *)
     ] ;
   ]

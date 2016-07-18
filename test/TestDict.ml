@@ -56,10 +56,10 @@ let tests =
                     (add_all ["Key", DirectObject.Bool true])) ;
 
       "(3)" >:: (fun _ -> assert_raises
-                    (Errors.PDFError ("The same name appears several times in dictionary : Key", Errors.ctxt_none))
+                    (Errors.PDFError ("The same name appears several times in dictionary : /Key", Errors.ctxt_none))
                     (fun () -> add_all ["Key", DirectObject.Bool true ; "Key", DirectObject.Bool false])) ;
       "(4)" >:: (fun _ -> assert_raises
-                    (Errors.PDFError ("The same name appears several times in dictionary : Key", Errors.ctxt_none))
+                    (Errors.PDFError ("The same name appears several times in dictionary : /Key", Errors.ctxt_none))
                     (fun () -> add_all ["Key", DirectObject.Bool true ; "Key", DirectObject.Bool true])) ;
     ] ;
 

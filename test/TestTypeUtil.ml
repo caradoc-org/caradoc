@@ -22,6 +22,7 @@ open Mapkey
 open Type
 open Key
 open Boundedint
+open Errors
 
 
 let make_context id =
@@ -55,12 +56,12 @@ let tests =
                     (make_context 2)) ;
       "(3)" >:: (fun _ -> assert_equal
                     (let ctxt, copy = make_copy_context 1 2 in
-                     copy.Type.to_check <- (Key.make_0 ~:1)::copy.Type.to_check;
+                     copy.Type.to_check <- (Key.make_0 ~:1, Errors.ctxt_none)::copy.Type.to_check;
                      ctxt)
                     (make_context 1)) ;
       "(4)" >:: (fun _ -> assert_equal
                     (let ctxt, copy = make_copy_context 1 2 in
-                     ctxt.Type.to_check <- (Key.make_0 ~:1)::ctxt.Type.to_check;
+                     ctxt.Type.to_check <- (Key.make_0 ~:1, Errors.ctxt_none)::ctxt.Type.to_check;
                      copy)
                     (make_context 2)) ;
       "(5)" >:: (fun _ -> assert_equal

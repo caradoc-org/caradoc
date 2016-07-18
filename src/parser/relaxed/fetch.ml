@@ -34,21 +34,23 @@ module MakeFetch (FetchComp : FetchCompT) = struct
 
   let rec fetchobject (key : Key.t) (off : BoundedInt.t) (ctxt : FetchCommon.context) =
     traverse_object key off ctxt (fun key off ctxt ->
+        let error_ctxt = Errors.make_ctxt key off in
+
         if off <: ctxt.FetchCommon.length then
           seek_in ctxt.FetchCommon.input (BoundedInt.to_int off)
         else
-          raise (Errors.PDFError ("Invalid object position", Errors.make_ctxt key off));
+          raise (Errors.PDFError ("Object position is out of bounds", error_ctxt));
 
         let lexbuf = Lexing.from_channel ctxt.FetchCommon.input in
-        let k, o = wrap_parser Parser.indirectobj (Some off) lexbuf in
+        let k, o = wrap_parser Parser.indirectobj (Some off) lexbuf error_ctxt in
 
         let endobjpos = off +: ~:((Lexing.lexeme_end lexbuf) - 1) in
 
         if k <> key then
-          raise (Errors.PDFError ("Object definition does not match xref table", Errors.make_ctxt key off));
+          raise (Errors.PDFError ("Object definition does not match xref table", error_ctxt));
 
         match o with
-        | IndirectObject.StreamOffset (original_stream_dict, offset) ->
+        | IndirectObject.StreamOffset (original_stream_dict, stream_off) ->
           let stream_dict = DirectObject.dict_map_key (fun key value ->
               match key with
               | "Length"
@@ -59,12 +61,12 @@ module MakeFetch (FetchComp : FetchCompT) = struct
                 value
             ) original_stream_dict in
 
-          let len = DirectObject.get_nonnegative_int ()
-              "Expected integer for stream /Length" (Errors.make_ctxt key off)
+          let stream_length = DirectObject.get_nonnegative_int ()
+              "Expected non-negative integer" (Errors.ctxt_append_name error_ctxt "Length")
               (DirectObject.dict_find stream_dict "Length") in
 
           let stream, endstreampos =
-            parsestream key (off +: offset) len ctxt.FetchCommon.input ctxt.FetchCommon.length stream_dict
+            parsestream key (off +: stream_off) stream_length ctxt.FetchCommon.input ctxt.FetchCommon.length stream_dict
           in
           Intervals.add ctxt.FetchCommon.intervals (off, endstreampos) key;
           IndirectObject.Stream stream

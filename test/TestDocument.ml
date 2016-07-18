@@ -216,7 +216,7 @@ let tests =
                     (TestSetkey.add_all [Key.make_0 ~:3 ; Key.make_0 ~:5])) ;
 
       "(4)" >:: (fun _ -> assert_raises
-                    (Errors.PDFError ("Reference to unknown object : 3", Errors.make_ctxt_key (Key.make_0 ~:2)))
+                    (Errors.PDFError ("Reference to unknown object : 3", Errors.make_ctxt_index (Key.make_0 ~:2) 0))
                     (fun () -> Document.ref_closure (make_doc (-1)) (Direct (Reference (Key.make_0 ~:1))) Key.Trailer)) ;
       "(5)" >:: (fun _ -> assert_raises
                     (Errors.PDFError ("Reference to unknown object : 1", Errors.make_ctxt_key Key.Trailer))
@@ -246,7 +246,7 @@ let tests =
                     (TestDict.add_all ["Size", Int ~:3 ; "Root", Reference (Key.make_0 ~:1) ; "Info", Reference (Key.make_0 ~:2) ; "ID", Array [String "ABCD" ; String "EFGH"]])) ;
 
       "(4)" >:: (fun _ -> assert_raises
-                    (Errors.PDFError ("Reference to unknown object : 1", Errors.make_ctxt_key Key.Trailer))
+                    (Errors.PDFError ("Reference to unknown object : 1", Errors.make_ctxt_name Key.Trailer "Root"))
                     (fun () -> Document.sanitize_trailer (TestMapkey.add_all []) (TestDict.add_all ["Root", Reference (Key.make_0 ~:1)]))) ;
     ] ;
 
@@ -263,7 +263,7 @@ let tests =
                     (Errors.UnexpectedError "No trailer found in document")
                     (fun () -> Document.simplify_refs (make_doc 1))) ;
       "(4)" >:: (fun _ -> assert_raises
-                    (Errors.PDFError ("Reference to unknown object : 3", Errors.make_ctxt_key (Key.make_0 ~:2)))
+                    (Errors.PDFError ("Reference to unknown object : 3", Errors.make_ctxt_index (Key.make_0 ~:2) 0))
                     (fun () -> Document.simplify_refs (make_doc (-2)))) ;
     ] ;
 

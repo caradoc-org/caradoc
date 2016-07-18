@@ -89,11 +89,12 @@ xref:
   h = xrefhead s = xrefsection
     { let xrefpos, xstart, headcount = h in
       let x2, seccount = s in
+      let error_ctxt = Errors.Errors.make_ctxt Key.Trailer xrefpos in
 
       if headcount <> seccount then
-        raise (Errors.Errors.PDFError ("Object count does not match in xref", Errors.Errors.make_ctxt Key.Trailer xrefpos));
+        raise (Errors.Errors.PDFError ("Object count does not match in xref", error_ctxt));
       if xstart <> ~:0 then
-        raise (Errors.Errors.PDFError ("Xref does not start at object 0", Errors.Errors.make_ctxt Key.Trailer xrefpos));
+        raise (Errors.Errors.PDFError ("Xref does not start at object 0", error_ctxt));
       (xrefpos, x2) }
 
 xrefhead:

@@ -17,6 +17,8 @@
 (*****************************************************************************)
 
 
+open Mapkey
+
 module Algo = struct
 
   let array_contains (x : 'a array) (y : 'a) : bool =
@@ -48,6 +50,14 @@ module Algo = struct
         b::(merge_unique x r cmp)
       else
         a::(merge_unique q r cmp)
+
+  let mapkey_union (x : 'a MapKey.t) (y : 'a MapKey.t) : 'a MapKey.t =
+    MapKey.fold (fun key value z ->
+        if not (MapKey.mem key z) then
+          MapKey.add key value z
+        else
+          z
+      ) y x
 
 
   let string_contains (x : string) (y : string) : bool =

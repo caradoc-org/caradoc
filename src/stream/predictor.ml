@@ -34,11 +34,11 @@ module Predictor = struct
     early: BoundedInt.t;
   }
 
-  let extract_predictor (ctxt : Errors.error_ctxt) (params : DirectObject.dict_t) : t =
+  let extract_predictor (ctxt_params : Errors.error_ctxt) (params : DirectObject.dict_t) : t =
     let f name def =
       DirectObject.get_positive_int
         ~default:(~:def) ()
-        (Printf.sprintf "Invalid value for filter /%s" name) ctxt
+        "Expected positive integer" (Errors.ctxt_append_name ctxt_params name)
         (DirectObject.dict_find params name)
     in
 
@@ -132,7 +132,7 @@ module Predictor = struct
     Buffer.contents result
 
 
-  let decode_predictor (content : string) (ctxt : Errors.error_ctxt) (predictor : t) : string =
+  let decode_predictor (content : string) (ctxt : Errors.error_ctxt) (ctxt_params : Errors.error_ctxt) (predictor : t) : string =
     match (BoundedInt.to_int predictor.p) with
     | 1 -> content
     | 10
@@ -142,14 +142,14 @@ module Predictor = struct
     | 14
     | 15 ->
       if predictor.bpc <> ~:8 then
-        raise (Errors.PDFError ("Not implemented filter predictor method", ctxt));
+        raise (Errors.PDFError ("Not implemented filter predictor method", ctxt_params));
       let sample_size = predictor.colors in
       let width = predictor.colors *: predictor.cols in
       predict_png content ctxt (BoundedInt.to_int sample_size) width
     (* TODO : implement *)
     | 2 ->
-      raise (Errors.PDFError ("Not implemented filter predictor method", ctxt));
+      raise (Errors.PDFError ("Not implemented filter predictor method", Errors.ctxt_append_name ctxt_params "Predictor"));
     | _ ->
-      raise (Errors.PDFError ("Invalid filter predictor method", ctxt))
+      raise (Errors.PDFError ("Invalid filter predictor method", Errors.ctxt_append_name ctxt_params "Predictor"))
 
 end

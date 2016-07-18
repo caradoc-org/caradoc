@@ -71,7 +71,7 @@ module Type = struct
   type context = {
     mutable pool : pool_t;
     mutable types : kind_t MapKey.t;
-    mutable to_check : Key.t list;
+    mutable to_check : (Key.t * Errors.error_ctxt) list;
     mutable incomplete : bool;
   }
 
@@ -349,7 +349,7 @@ module Type = struct
       None
 
 
-  let rec type_intersection (pool : pool_t) (type1 : kind_t) (type2 : kind_t) (indobj : Key.t) (entry : string) : kind_t =
+  let rec type_intersection (pool : pool_t) (type1 : kind_t) (type2 : kind_t) (ectxt : Errors.error_ctxt) : kind_t =
     let l1 = remove_variant pool type1 in
     let l2 = remove_variant pool type2 in
 
@@ -369,7 +369,7 @@ module Type = struct
     match l with
     | [] ->
       let msg = Printf.sprintf "Inconsistent type inference between %s and %s" (kind_to_string type1) (kind_to_string type2) in
-      raise (Errors.TypeError (msg, indobj, entry))
+      raise (Errors.TypeError (msg, ectxt))
     | [x] ->
       x
     | _ ->

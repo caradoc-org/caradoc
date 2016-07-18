@@ -2,6 +2,9 @@ New features:
 - Added --allow-nonascii-in-names option to allow names to contain non-ASCII
   characters instead of the corresponding escape sequence.
 
+Misc:
+- Improved error handling.
+
 -------------------
 Version 0.2 (beta):
 -------------------

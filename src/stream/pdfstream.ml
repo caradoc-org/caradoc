@@ -99,10 +99,11 @@ module PDFStream = struct
     Buffer.contents buf
 
 
-  let decode_filter (content : string) (ctxt : Errors.error_ctxt) (filter : string) (params : DirectObject.dict_t) : string =
+  let decode_filter (content : string) (ctxt : Errors.error_ctxt) (ctxt_params : Errors.error_ctxt) (filter : string) (params : DirectObject.dict_t) : string =
+    let ctxt_filter = Errors.ctxt_append_name ctxt "Filter" in
     match filter with
     | "FlateDecode" ->
-      let predictor = Predictor.extract_predictor ctxt params in
+      let predictor = Predictor.extract_predictor ctxt_params params in
 
       let decoded =
         let decoded1 = Zlib.decode content in
@@ -122,7 +123,7 @@ module PDFStream = struct
         | None ->
           raise (Errors.PDFError ("Error in Flate/Zlib stream", ctxt))
         | Some d ->
-          Predictor.decode_predictor d ctxt predictor
+          Predictor.decode_predictor d ctxt ctxt_params predictor
       end
     | "ASCIIHexDecode" ->
       begin
@@ -158,15 +159,15 @@ module PDFStream = struct
     | "JPXDecode"
     | "Crypt" ->
       (* TODO : implement *)
-      raise (Errors.PDFError (Printf.sprintf "Not implemented decoding of stream filter : %s" filter, ctxt))
+      raise (Errors.PDFError (Printf.sprintf "Not implemented decoding of stream filter : %s" filter, ctxt_filter))
     | _ ->
-      raise (Errors.PDFError (Printf.sprintf "Invalid stream filter : %s" filter, ctxt))
+      raise (Errors.PDFError (Printf.sprintf "Invalid stream filter : %s" filter, ctxt_filter))
 
 
-  let rec decode_filters (content : string) (ctxt : Errors.error_ctxt) (filters : string array) (params : DirectObject.dict_t array) (i : int) (count : int) : string =
+  let rec decode_filters (content : string) (ctxt : Errors.error_ctxt) (ctxt_params : Errors.error_ctxt) (filters : string array) (params : DirectObject.dict_t array) (i : int) (count : int) : string =
     if i < count then (
-      let decoded = decode_filter content ctxt filters.(i) params.(i) in
-      decode_filters decoded ctxt filters params (i + 1) count
+      let decoded = decode_filter content ctxt ctxt_params filters.(i) params.(i) in
+      decode_filters decoded ctxt ctxt_params filters params (i + 1) count
     ) else
       content
 
@@ -177,20 +178,21 @@ module PDFStream = struct
     else (
       let filters = DirectObject.get_array_of
           ~default:[] ~accept_one:true ()
-          "Invalid value for stream /Filter" ctxt
+          "Expected name or array of names" (Errors.ctxt_append_name ctxt "Filter")
           ~transform:(DirectObject.get_name ())
           (DirectObject.dict_find s.dictionary "Filter") in
 
+      let ctxt_params = Errors.ctxt_append_name ctxt "DecodeParms" in
       let count = Array.length filters in
       let def = Array.to_list (Array.make count DirectObject.Null) in
       let params = DirectObject.get_array_of
           ~default:def ~length:count ~accept_one:true()
-          "Invalid value for stream /DecodeParms" ctxt
+          "Expected dictionary or array of dictionaries" ctxt_params
           ~transform:(DirectObject.get_dict ~default:(DirectObject.dict_create ()) ())
           (DirectObject.dict_find s.dictionary "DecodeParms") in
 
       let f = fun () ->
-        let d = decode_filters s.encoded ctxt filters params 0 count in
+        let d = decode_filters s.encoded ctxt ctxt_params filters params 0 count in
         s.decoded <- Some d;
         true
       in

@@ -23,6 +23,7 @@ open Mapkey
 open Errors
 open Boundedint
 open Params
+open Entry
 
 
 let init_params () =
@@ -181,48 +182,48 @@ let tests =
     [
       "(1)" >:: (fun _ -> assert_equal
                     (refs (Array [Reference (Key.make_gen ~:2 ~:1)]))
-                    (TestSetkey.add_all [Key.make_gen ~:2 ~:1])) ;
+                    (TestMapkey.add_all [Key.make_gen ~:2 ~:1, Entry.make_index 0])) ;
       "(2)" >:: (fun _ -> assert_equal
                     (refs (Array [Reference (Key.make_gen ~:2 ~:1) ; Reference (Key.make_0 ~:5) ; Reference (Key.make_gen ~:2 ~:1) ; Reference (Key.make_0 ~:3) ; Reference (Key.make_0 ~:123456)]))
-                    (TestSetkey.add_all [Key.make_gen ~:2 ~:1 ; Key.make_0 ~:5 ; Key.make_0 ~:3 ; Key.make_0 ~:123456])) ;
+                    (TestMapkey.add_all [Key.make_gen ~:2 ~:1, Entry.make_index 0 ; Key.make_0 ~:5, Entry.make_index 1 ; Key.make_0 ~:3, Entry.make_index 3 ; Key.make_0 ~:123456, Entry.make_index 4])) ;
     ] ;
 
     "relink" >:::
     [
       "(1)" >:: (fun _ -> assert_equal
-                    (relink MapKey.empty Key.Trailer Null)
+                    (relink MapKey.empty (Errors.make_ctxt_key Key.Trailer) Null)
                     Null) ;
       "(2)" >:: (fun _ -> assert_equal
-                    (relink MapKey.empty Key.Trailer (Bool false))
+                    (relink MapKey.empty (Errors.make_ctxt_key Key.Trailer) (Bool false))
                     (Bool false)) ;
       "(3)" >:: (fun _ -> assert_equal
-                    (relink MapKey.empty Key.Trailer (Int ~:123))
+                    (relink MapKey.empty (Errors.make_ctxt_key Key.Trailer) (Int ~:123))
                     (Int ~:123)) ;
       "(4)" >:: (fun _ -> assert_equal
-                    (relink MapKey.empty Key.Trailer (Real "1.02"))
+                    (relink MapKey.empty (Errors.make_ctxt_key Key.Trailer) (Real "1.02"))
                     (Real "1.02")) ;
       "(5)" >:: (fun _ -> assert_equal
-                    (relink MapKey.empty Key.Trailer (String "test"))
+                    (relink MapKey.empty (Errors.make_ctxt_key Key.Trailer) (String "test"))
                     (String "test")) ;
       "(6)" >:: (fun _ -> assert_equal
-                    (relink MapKey.empty Key.Trailer (Name "key"))
+                    (relink MapKey.empty (Errors.make_ctxt_key Key.Trailer) (Name "key"))
                     (Name "key")) ;
       "(7)" >:: (fun _ -> assert_equal
-                    (relink (TestMapkey.add_all [Key.make_0 ~:4, Key.make_0 ~:1 ; Key.make_0 ~:3, Key.make_0 ~:2]) Key.Trailer
+                    (relink (TestMapkey.add_all [Key.make_0 ~:4, Key.make_0 ~:1 ; Key.make_0 ~:3, Key.make_0 ~:2]) (Errors.make_ctxt_key Key.Trailer)
                        (Array [Reference (Key.make_0 ~:3) ; Array [Reference (Key.make_0 ~:4)]]))
                     (Array [Reference (Key.make_0 ~:2) ; Array [Reference (Key.make_0 ~:1)]])) ;
       "(8)" >:: (fun _ -> assert_equal
-                    (relink_dict (TestMapkey.add_all [Key.make_0 ~:4, Key.make_0 ~:1 ; Key.make_0 ~:3, Key.make_0 ~:2]) Key.Trailer
+                    (relink_dict (TestMapkey.add_all [Key.make_0 ~:4, Key.make_0 ~:1 ; Key.make_0 ~:3, Key.make_0 ~:2]) (Errors.make_ctxt_key Key.Trailer)
                        (TestDict.add_all ["Key", Reference (Key.make_0 ~:3) ; "Other", Reference (Key.make_0 ~:4)]))
                     (TestDict.add_all ["Other", Reference (Key.make_0 ~:1) ; "Key", Reference (Key.make_0 ~:2)])) ;
       "(9)" >:: (fun _ -> assert_equal
-                    (relink (TestMapkey.add_all [Key.make_0 ~:2, Key.make_0 ~:1]) Key.Trailer
+                    (relink (TestMapkey.add_all [Key.make_0 ~:2, Key.make_0 ~:1]) (Errors.make_ctxt_key Key.Trailer)
                        (Reference (Key.make_0 ~:2)))
                     (Reference (Key.make_0 ~:1))) ;
 
       "(10)" >:: (fun _ -> assert_raises
-                     (Errors.PDFError ("Reference to unknown object : 2", Errors.make_ctxt_key Key.Trailer))
-                     (fun () -> relink MapKey.empty Key.Trailer (Reference (Key.make_0 ~:2)))) ;
+                     (Errors.PDFError ("Reference to unknown object : 2", Errors.make_ctxt_index Key.Trailer 0))
+                     (fun () -> relink MapKey.empty (Errors.make_ctxt_key Key.Trailer) (Array [Reference (Key.make_0 ~:2)]))) ;
     ] ;
 
     "get_positive_int" >:::

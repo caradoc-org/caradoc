@@ -41,6 +41,7 @@ let tests =
     (* util/ *)
     TestAlgo.tests;
     TestBoundedint.tests;
+    TestErrors.tests;
     TestKey.tests;
 
     (* TODO : finish *)

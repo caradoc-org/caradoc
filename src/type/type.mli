@@ -20,6 +20,7 @@
 open Mapkey
 open Key
 open Boundedint
+open Errors
 
 
 module Type : sig
@@ -96,7 +97,7 @@ module Type : sig
     (* Types of objects *)
     mutable types : kind_t MapKey.t;
     (* Queue of objects to traverse *)
-    mutable to_check : Key.t list;
+    mutable to_check : (Key.t * Errors.error_ctxt) list;
     (* Incomplete types were encountered *)
     mutable incomplete : bool;
   }
@@ -195,12 +196,11 @@ module Type : sig
        - pool of classes and aliases
        - type 1
        - type 2
-       - object number
-       - entry in the object
+       - error context
        Returns :
        - intersection of the two types, without alias
   *)
-  val type_intersection : pool_t -> kind_t -> kind_t -> Key.t -> string -> kind_t
+  val type_intersection : pool_t -> kind_t -> kind_t -> Errors.error_ctxt -> kind_t
 
 end
 

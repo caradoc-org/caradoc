@@ -19,30 +19,81 @@
 
 open Boundedint
 open Key
+open Entry
 
 module Errors = struct
 
   type error_ctxt = {
     key : Key.t option;
     pos : BoundedInt.t option;
+    entry : Entry.t;
   }
 
-  let make_ctxt (k : Key.t) (p : BoundedInt.t) : error_ctxt =
-    {key = Some k; pos = Some p}
-
-  let make_ctxt_key (k : Key.t) : error_ctxt =
-    {key = Some k; pos = None}
-
-  let make_ctxt_pos (p : BoundedInt.t) : error_ctxt =
-    {key = None; pos = Some p}
 
   let ctxt_none : error_ctxt =
-    {key = None; pos = None}
+    {key = None; pos = None; entry = Entry.empty}
+
+  let make_ctxt (k : Key.t) (p : BoundedInt.t) : error_ctxt =
+    {key = Some k; pos = Some p; entry = Entry.empty}
+
+  let make_ctxt_key (k : Key.t) : error_ctxt =
+    {key = Some k; pos = None; entry = Entry.empty}
+
+  let make_ctxt_pos (p : BoundedInt.t) : error_ctxt =
+    {key = None; pos = Some p; entry = Entry.empty}
+
+  let make_ctxt_entry (k : Key.t) (e : Entry.t) : error_ctxt =
+    {key = Some k; pos = None; entry = e}
+
+  let make_ctxt_index (k : Key.t) (i : int) : error_ctxt =
+    {key = Some k; pos = None; entry = Entry.make_index i}
+
+  let make_ctxt_name (k : Key.t) (n : string) : error_ctxt =
+    {key = Some k; pos = None; entry = Entry.make_name n}
+
+  let make_ctxt_full_name (k : Key.t) (p : BoundedInt.t) (n : string) : error_ctxt =
+    {key = Some k; pos = Some p; entry = Entry.make_name n}
+
+
+  let ctxt_append_entry (c : error_ctxt) (e : Entry.t) : error_ctxt =
+    {c with entry = Entry.append_entry c.entry e}
+
+  let ctxt_append_index (c : error_ctxt) (i : int) : error_ctxt =
+    {c with entry = Entry.append_index c.entry i}
+
+  let ctxt_append_name (c : error_ctxt) (n : string) : error_ctxt =
+    {c with entry = Entry.append_name c.entry n}
+
+  let ctxt_set_pos (c : error_ctxt) (p : BoundedInt.t) : error_ctxt =
+    {c with pos = Some p}
+
+
+  let ctxt_to_string (ctxt : error_ctxt) : string =
+    let buf = Buffer.create 16 in
+    begin
+      match ctxt.key with
+      | Some k ->
+        Buffer.add_string buf " for object ";
+        Buffer.add_string buf (Key.to_string k)
+      | None -> ()
+    end;
+    if not (Entry.is_empty ctxt.entry) then (
+      Buffer.add_string buf " at entry ";
+      Buffer.add_string buf (Entry.to_string ctxt.entry)
+    );
+    begin
+      match ctxt.pos with
+      | Some p ->
+        Buffer.add_string buf (Printf.sprintf " at offset %d [0x%x]" (BoundedInt.to_int p) (BoundedInt.to_int p));
+      | None -> ()
+    end;
+    Buffer.contents buf
+
 
   exception LexingError of string * BoundedInt.t
   exception ParseError of string
   exception PDFError of string * error_ctxt
-  exception TypeError of string * Key.t * string
+  exception TypeError of string * error_ctxt
   exception UnexpectedError of string
 
 
@@ -64,27 +115,11 @@ module Errors = struct
       Printf.eprintf "Convert error : %s !\n" msg;
       fail ()
     | PDFError (msg, ctxt) ->
-      Printf.eprintf "PDF error : %s" msg;
-      begin
-        match ctxt.key with
-        | Some k ->
-          Printf.eprintf " for object %s" (Key.to_string k)
-        | _ -> ()
-      end;
-      begin
-        match ctxt.pos with
-        | Some p ->
-          Printf.eprintf " at offset %d [0x%x]" (BoundedInt.to_int p) (BoundedInt.to_int p);
-        | _ -> ()
-      end;
-      Printf.eprintf " !\n";
+      Printf.eprintf "PDF error : %s%s !\n" msg (ctxt_to_string ctxt);
       fail ()
 
-    | TypeError (msg, key, entry) ->
-      Printf.eprintf "Type error : %s for object %s" msg (Key.to_string key);
-      if entry <> "" then
-        Printf.eprintf " at entry %s" entry;
-      Printf.eprintf " !\n";
+    | TypeError (msg, ctxt) ->
+      Printf.eprintf "Type error : %s%s !\n" msg (ctxt_to_string ctxt);
       fail ()
 
     | UnexpectedError msg ->

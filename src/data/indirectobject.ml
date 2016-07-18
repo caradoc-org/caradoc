@@ -24,6 +24,7 @@ open Setkey
 open Mapkey
 open Errors
 open Pdfstream
+open Entry
 
 module IndirectObject = struct
 
@@ -67,7 +68,7 @@ module IndirectObject = struct
       PDFStream.to_pdf s
 
 
-  let refs (x : t) : SetKey.t =
+  let refs (x : t) : Entry.t MapKey.t =
     match x with
     | Direct y ->
       DirectObject.refs y
@@ -75,12 +76,12 @@ module IndirectObject = struct
       DirectObject.refs_dict (PDFStream.get_dict s)
 
 
-  let rec relink (newkeys : Key.t MapKey.t) (indobj : Key.t) (x : t) : t =
+  let rec relink (newkeys : Key.t MapKey.t) (ctxt : Errors.error_ctxt) (x : t) : t =
     match x with
     | Direct y ->
-      Direct (DirectObject.relink newkeys indobj y)
+      Direct (DirectObject.relink newkeys ctxt y)
     | Stream s ->
-      let d = (DirectObject.relink_dict newkeys indobj (PDFStream.get_dict s)) in
+      let d = (DirectObject.relink_dict newkeys ctxt (PDFStream.get_dict s)) in
       Stream (PDFStream.set_dict s d)
 
 
@@ -91,15 +92,7 @@ module IndirectObject = struct
     | Stream _ ->
       DirectObject.Reference key
 
-  let rec simplify_refs (objects : t MapKey.t) (indobj : Key.t) (x : t) : t =
-    match x with
-    | Direct y ->
-      Direct (simplify_refs_direct objects indobj y)
-    | Stream s ->
-      let d = (simplify_refs_dict objects indobj (PDFStream.get_dict s)) in
-      Stream (PDFStream.set_dict s d)
-
-  and simplify_refs_direct (objects : t MapKey.t) (indobj : Key.t) (x : DirectObject.t) : DirectObject.t =
+  let rec simplify_refs_direct (objects : t MapKey.t) (ctxt : Errors.error_ctxt) (x : DirectObject.t) : DirectObject.t =
     match x with
     | DirectObject.Reference key ->
       begin
@@ -107,19 +100,27 @@ module IndirectObject = struct
           simple_ref key (MapKey.find key objects)
         with Not_found ->
           if Params.global.Params.undefined_ref_as_null then (
-            Printf.eprintf "Warning : Reference to unknown object %s in object %s\n" (Key.to_string key) (Key.to_string indobj);
+            Printf.eprintf "Warning : Reference to unknown object %s%s\n" (Key.to_string key) (Errors.ctxt_to_string ctxt);
             DirectObject.Null
           ) else
-            raise (Errors.PDFError (Printf.sprintf "Reference to unknown object : %s" (Key.to_string key), Errors.make_ctxt_key indobj))
+            raise (Errors.PDFError (Printf.sprintf "Reference to unknown object : %s" (Key.to_string key), ctxt))
       end
     | DirectObject.Array l ->
-      DirectObject.Array (List.map (simplify_refs_direct objects indobj) l)
+      DirectObject.Array (List.mapi (fun i x -> simplify_refs_direct objects (Errors.ctxt_append_index ctxt i) x) l)
     | DirectObject.Dictionary d ->
-      DirectObject.Dictionary (simplify_refs_dict objects indobj d)
+      DirectObject.Dictionary (simplify_refs_dict objects ctxt d)
     | DirectObject.Null | DirectObject.Bool _ | DirectObject.Int _ | DirectObject.Real _ | DirectObject.String _ | DirectObject.Name _ ->  x
 
-  and simplify_refs_dict (objects : t MapKey.t) (indobj : Key.t) (d : DirectObject.dict_t) : DirectObject.dict_t =
-    DirectObject.dict_map (simplify_refs_direct objects indobj) d
+  and simplify_refs_dict (objects : t MapKey.t) (ctxt : Errors.error_ctxt) (d : DirectObject.dict_t) : DirectObject.dict_t =
+    DirectObject.dict_map_key (fun key x -> simplify_refs_direct objects (Errors.ctxt_append_name ctxt key) x) d
+
+  let simplify_refs (objects : t MapKey.t) (ctxt : Errors.error_ctxt) (x : t) : t =
+    match x with
+    | Direct y ->
+      Direct (simplify_refs_direct objects ctxt y)
+    | Stream s ->
+      let d = simplify_refs_dict objects ctxt (PDFStream.get_dict s) in
+      Stream (PDFStream.set_dict s d)
 
 
   let get_direct error_msg ctxt x =

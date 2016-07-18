@@ -104,15 +104,16 @@ let traverse_object (key : Key.t) (off : BoundedInt.t) (ctxt : FetchCommon.conte
 
 
 let parsestream (key : Key.t) (offset : BoundedInt.t) (stream_length : BoundedInt.t) (input : in_channel) (length : BoundedInt.t) (stream_dict : DirectObject.dict_t) : PDFStream.t * BoundedInt.t =
+  let error_ctxt = Errors.make_ctxt key offset in
   if offset +: stream_length >=: length then
-    raise (Errors.PDFError ("Stream size is out of bounds", Errors.make_ctxt key offset));
+    raise (Errors.PDFError ("Stream size is out of bounds", Errors.ctxt_append_name error_ctxt "Length"));
 
   let rawcontent = Common.input_substr input offset stream_length in
 
   let lexbuf = Lexing.from_channel input in
-  wrap_parser Parser.endstream (Some (offset +: stream_length)) lexbuf;
+  wrap_parser Parser.endstream (Some (offset +: stream_length)) lexbuf error_ctxt;
   let endstreampos = offset +: stream_length +: ~:((Lexing.lexeme_end lexbuf) - 1) in
   (* TODO : reject streams from external file *)
 
-  (PDFStream.make_encoded stream_dict rawcontent), endstreampos
+  PDFStream.make_encoded stream_dict rawcontent, endstreampos
 

@@ -74,7 +74,7 @@ let parsexref_table xref input offset intervals =
 
   seek_in input (BoundedInt.to_int !pos);
   let buf = Lexing.from_channel input in
-  let trailer = wrap_parser Parser.trailerdict (Some !pos) buf in
+  let trailer = wrap_parser Parser.trailerdict (Some !pos) buf (Errors.make_ctxt_key Key.Trailer) in
 
   Intervals.add intervals (offset, !pos +: ~:((Lexing.lexeme_end buf) - 1)) Key.Trailer;
 
@@ -121,60 +121,62 @@ let parsexref_stm xref input offset length doc =
   seek_xref input offset length;
   let lexbuf = Lexing.from_channel input in
 
-  let key, obj = wrap_parser Parser.indirectobj (Some offset) lexbuf in
+  let key, obj = wrap_parser Parser.indirectobj (Some offset) lexbuf Errors.ctxt_none in
 
   let stream_dict, stream_off =
-    begin
-      match obj with
-      | IndirectObject.StreamOffset (d, o) ->
-        d, o
-      | IndirectObject.Complete _ ->
-        raise (Errors.PDFError ("Invalid xref", Errors.make_ctxt_pos offset))
-    end
+    match obj with
+    | IndirectObject.StreamOffset (d, o) ->
+      d, o
+    | IndirectObject.Complete _ ->
+      raise (Errors.PDFError ("Invalid xref", Errors.make_ctxt_pos offset))
   in
 
-  let value = DirectObject.dict_find stream_dict "Length" in
+  let error_ctxt = Errors.make_ctxt key offset in
+
   let stream_length = DirectObject.get_nonnegative_int ()
-      "Expected integer for stream /Length" (Errors.make_ctxt key offset)
-      value in
+      "Expected non-negative integer" (Errors.ctxt_append_name error_ctxt "Length")
+      (DirectObject.dict_find stream_dict "Length") in
 
   let stream, _ = parsestream key (offset +: stream_off) stream_length input length stream_dict in
-  let content = PDFStream.get_decoded stream (Errors.make_ctxt key offset) in
+  let content = PDFStream.get_decoded stream error_ctxt in
 
   (*************************)
   (* PDF reference 7.5.8.2 *)
   (*************************)
+  let error_ctxt_w = Errors.ctxt_append_name error_ctxt "W" in
   let w = DirectObject.get_array_of
       ~length:3 ()
-      "Expected array of 3 ints for xref stream /W" (Errors.make_ctxt key offset)
+      "Expected array of 3 non-negative ints" error_ctxt_w
       ~transform:(DirectObject.get_nonnegative_int ())
       (DirectObject.dict_find stream_dict "W") in
 
+  let error_ctxt_size = Errors.ctxt_append_name error_ctxt "Size" in
   let size = DirectObject.get_nonnegative_int ()
-      "Expected integer for xref stream /Size" (Errors.make_ctxt key offset)
+      "Expected non-negative integer" error_ctxt_size
       (DirectObject.dict_find stream_dict "Size") in
 
+  let error_ctxt_index = Errors.ctxt_append_name error_ctxt "Index" in
   let index = DirectObject.get_array_of
       ~default:[DirectObject.Int ~:0 ; DirectObject.Int size] ()
-      "Expected array of ints for xref stream /Index" (Errors.make_ctxt key offset)
+      "Expected array of non-negative ints" error_ctxt_index
       ~transform:(DirectObject.get_nonnegative_int ())
       (DirectObject.dict_find stream_dict "Index") in
 
   let idxlen = ~:(Array.length index) in
   if (BoundedInt.rem idxlen ~:2) <> ~:0 || idxlen <=: ~:0 then
-    raise (Errors.PDFError ("Expected pairs of ints for xref stream /Index", Errors.make_ctxt key offset));
+    raise (Errors.PDFError ("Expected pairs of ints", error_ctxt_index));
 
   let total_count = ref ~:0 in
   for k = 0 to BoundedInt.to_int ((idxlen /: ~:2) -: ~:1) do
     (* TODO : check positive lengths *)
     if k > 0 && (index.(2*k) <: index.(2*k - 2) +: index.(2*k - 1)) then
-      raise (Errors.PDFError ("Xref stream subsections must come in ascending order", Errors.make_ctxt key offset));
+      raise (Errors.PDFError ("Xref stream subsections must come in ascending order", error_ctxt_index));
     total_count := !total_count +: index.(2*k + 1)
   done;
 
   let sum_w = w.(0) +: w.(1) +: w.(2) in
   if !total_count *: sum_w <> ~:(String.length content) then
-    raise (Errors.PDFError ("Xref stream length does not match parameters", Errors.make_ctxt key offset));
+    raise (Errors.PDFError ("Xref stream length does not match parameters", error_ctxt_w));
 
   let pos = ref ~:0 in
   for k = 0 to BoundedInt.to_int ((idxlen /: ~:2) -: ~:1) do
@@ -219,7 +221,7 @@ let rec parsetrailer offset trailer xref input length setpos intervals doc stats
   (* Generic function to handle hybrid-reference files. *)
   let f name x =
     let startxref = DirectObject.get_positive_int ()
-        (Printf.sprintf "/%s field in trailer is not an integer" name) (Errors.make_ctxt_pos offset)
+        "Expected positive integer" (Errors.make_ctxt_full_name Key.Trailer offset name)
         x in
 
     if Params.global.Params.debug then

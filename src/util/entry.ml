@@ -17,40 +17,33 @@
 (*****************************************************************************)
 
 
-open Boundedint
-open Key
+module Entry = struct
 
-module Errors : sig
-
-  type error_ctxt = {
-    key : Key.t option;
-    pos : BoundedInt.t option;
-  }
-
-  val make_ctxt : Key.t -> BoundedInt.t -> error_ctxt
-  val make_ctxt_key : Key.t -> error_ctxt
-  val make_ctxt_pos : BoundedInt.t -> error_ctxt
-  val ctxt_none : error_ctxt
-
-  exception LexingError of string * BoundedInt.t
-  exception ParseError of string
-  exception PDFError of string * error_ctxt
-  exception TypeError of string * Key.t * string
-  exception UnexpectedError of string
+  type t = string
 
 
-  (*   Call a function and call fail if an exception is caught
-       Args    :
-       - function to call in case of failure
-       - function to call
-  *)
-  val catch : fail:(unit -> 'a) -> (unit -> 'a) -> 'a
+  let empty : t = ""
 
-  (*   Call a function and print the error to stderr if an exception is caught
-       Args    :
-       - function to call
-  *)
-  val print : (unit -> unit) -> unit
+  let make_index (i : int) : t =
+    Printf.sprintf "[%d]" i
+
+  let make_name (n : string) : t =
+    "/" ^ n
+
+  let append_entry (x : t) (y : t) : t =
+    x ^ y
+
+  let append_index (x : t) (i : int) : t =
+    Printf.sprintf "%s[%d]" x i
+
+  let append_name (x : t) (n : string) : t =
+    Printf.sprintf "%s/%s" x n
+
+  let is_empty (x : t) : bool =
+    x = ""
+
+  let to_string (x : t) : string =
+    x
 
 end
 

@@ -25,6 +25,7 @@ open Errors
 open Boundedint
 open Params
 open Pdfstream
+open Entry
 
 
 let init_params () =
@@ -135,14 +136,14 @@ let tests =
       [
         "(1)" >:: (fun _ -> assert_equal
                       (refs (Direct (DirectObject.Array [DirectObject.Reference (Key.make_gen ~:2 ~:1) ; DirectObject.Reference (Key.make_0 ~:5) ; DirectObject.Reference (Key.make_gen ~:2 ~:1) ; DirectObject.Reference (Key.make_0 ~:3) ; DirectObject.Reference (Key.make_0 ~:123456)])))
-                      (TestSetkey.add_all [Key.make_gen ~:2 ~:1 ; Key.make_0 ~:5 ; Key.make_0 ~:3 ; Key.make_0 ~:123456])) ;
+                      (TestMapkey.add_all [Key.make_gen ~:2 ~:1, Entry.make_index 0 ; Key.make_0 ~:5, Entry.make_index 1 ; Key.make_0 ~:3, Entry.make_index 3 ; Key.make_0 ~:123456, Entry.make_index 4])) ;
       ] ;
 
       "stream" >:::
       [
         "(1)" >:: (fun _ -> assert_equal
                       (refs (Stream (TestStream.make_raw_dict ["Key", DirectObject.Reference (Key.make_0 ~:2)] "raw content")))
-                      (TestSetkey.add_all [Key.make_0 ~:2])) ;
+                      (TestMapkey.add_all [Key.make_0 ~:2, Entry.make_name "Key"])) ;
       ] ;
     ] ;
 
@@ -151,23 +152,25 @@ let tests =
       "direct" >:::
       [
         "(1)" >:: (fun _ -> assert_equal
-                      (relink (TestMapkey.add_all [Key.make_0 ~:4, Key.make_0 ~:1 ; Key.make_0 ~:3, Key.make_0 ~:2]) Key.Trailer
+                      (relink (TestMapkey.add_all [Key.make_0 ~:4, Key.make_0 ~:1 ; Key.make_0 ~:3, Key.make_0 ~:2]) (Errors.make_ctxt_key Key.Trailer)
                          (Direct (DirectObject.Array [DirectObject.Reference (Key.make_0 ~:3) ; DirectObject.Array [DirectObject.Reference (Key.make_0 ~:4)]])))
                       (Direct (DirectObject.Array [DirectObject.Reference (Key.make_0 ~:2) ; DirectObject.Array [DirectObject.Reference (Key.make_0 ~:1)]]))) ;
         "(2)" >:: (fun _ -> assert_equal
-                      (relink (TestMapkey.add_all [Key.make_0 ~:4, Key.make_0 ~:1 ; Key.make_0 ~:3, Key.make_0 ~:2]) Key.Trailer
+                      (relink (TestMapkey.add_all [Key.make_0 ~:4, Key.make_0 ~:1 ; Key.make_0 ~:3, Key.make_0 ~:2]) (Errors.make_ctxt_key Key.Trailer)
                          (Direct (DirectObject.Dictionary (TestDict.add_all ["Key", DirectObject.Reference (Key.make_0 ~:3) ; "Other", DirectObject.Reference (Key.make_0 ~:4)]))))
                       (Direct (DirectObject.Dictionary (TestDict.add_all ["Other", DirectObject.Reference (Key.make_0 ~:1) ; "Key", DirectObject.Reference (Key.make_0 ~:2)])))) ;
 
         "(3)" >:: (fun _ -> assert_raises
-                      (Errors.PDFError ("Reference to unknown object : 2", Errors.make_ctxt_key Key.Trailer))
-                      (fun () -> relink MapKey.empty Key.Trailer (Direct (DirectObject.Reference (Key.make_0 ~:2))))) ;
+                      (Errors.PDFError ("Reference to unknown object : 2", Errors.make_ctxt_name Key.Trailer "foo"))
+                      (fun () -> relink MapKey.empty (Errors.make_ctxt_key Key.Trailer)
+                          (Direct (DirectObject.Dictionary (TestDict.add_all ["foo", DirectObject.Reference (Key.make_0 ~:2)])))
+                      )) ;
       ] ;
 
       "stream" >:::
       [
         "(1)" >:: (fun _ -> assert_equal
-                      (relink (TestMapkey.add_all [Key.make_0 ~:2, Key.make_0 ~:1]) Key.Trailer
+                      (relink (TestMapkey.add_all [Key.make_0 ~:2, Key.make_0 ~:1]) (Errors.make_ctxt_key Key.Trailer)
                          (Stream (TestStream.make_raw_dict ["Key", DirectObject.Reference (Key.make_0 ~:2)] "raw content")))
                       (Stream (TestStream.make_raw_dict ["Key", DirectObject.Reference (Key.make_0 ~:1)] "raw content"))) ;
       ] ;

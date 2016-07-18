@@ -22,6 +22,7 @@ open Setkey
 open Key
 open Mapkey
 open Errors
+open Entry
 
 module DirectObject : sig
 
@@ -121,35 +122,35 @@ module DirectObject : sig
        Args    :
        - object
        Returns :
-       - set of references
+       - mapping of references to entries
   *)
-  val refs : t -> SetKey.t
+  val refs : t -> Entry.t MapKey.t
   (*   Get objects referenced by a dictionary
        Args    :
        - dictionary
        Returns :
-       - set of references
+       - mapping of references to entries
   *)
-  val refs_dict : dict_t -> SetKey.t
+  val refs_dict : dict_t -> Entry.t MapKey.t
 
   (*   Change all references according to a conversion table
        Args    :
        - conversion table
-       - current indirect object
+       - error context
        - object
        Returns :
        - converted object
   *)
-  val relink : Key.t MapKey.t -> Key.t -> t -> t
+  val relink : Key.t MapKey.t -> Errors.error_ctxt -> t -> t
   (*   Change all references according to a conversion table
        Args    :
        - conversion table
-       - current indirect object
+       - error context
        - dictionary
        Returns :
        - converted dictionary
   *)
-  val relink_dict : Key.t MapKey.t -> Key.t -> dict_t -> dict_t
+  val relink_dict : Key.t MapKey.t -> Errors.error_ctxt -> dict_t -> dict_t
 
   (*   Transform a reference into a direct object if it is simple
        Args    :

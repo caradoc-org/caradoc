@@ -24,6 +24,7 @@ open Mapkey
 open Errors
 open Pdfstream
 open Directobject
+open Entry
 
 module IndirectObject : sig
 
@@ -74,19 +75,19 @@ module IndirectObject : sig
        Args    :
        - object
        Returns :
-       - set of references
+       - mapping of references to entries
   *)
-  val refs : t -> SetKey.t
+  val refs : t -> Entry.t MapKey.t
 
   (*   Change all references according to a conversion table
        Args    :
        - conversion table
-       - current indirect object
+       - error context
        - object
        Returns :
        - converted object
   *)
-  val relink : Key.t MapKey.t -> Key.t -> t -> t
+  val relink : Key.t MapKey.t -> Errors.error_ctxt -> t -> t
 
   (*   Transform a reference into a direct object if it is simple
        Args    :
@@ -99,21 +100,21 @@ module IndirectObject : sig
   (*   Simplify all references in an object
        Args    :
        - table of objects
-       - object number
+       - error context
        - object
        Returns :
        - simplified object
   *)
-  val simplify_refs : t MapKey.t -> Key.t -> t -> t
+  val simplify_refs : t MapKey.t -> Errors.error_ctxt -> t -> t
   (*   Simplify all references in a dictionary
        Args    :
        - table of objects
-       - object number
+       - error context
        - object
        Returns :
        - simplified object
   *)
-  val simplify_refs_dict : t MapKey.t -> Key.t -> DirectObject.dict_t -> DirectObject.dict_t
+  val simplify_refs_dict : t MapKey.t -> Errors.error_ctxt -> DirectObject.dict_t -> DirectObject.dict_t
 
 
   (*   Check and extract a direct object, or raise an exception

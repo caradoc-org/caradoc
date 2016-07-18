@@ -39,7 +39,7 @@ module GraphChecker = struct
     in
 
     let catalog_k = DirectObject.get_reference
-        () "Catalog is mandatory and shall be indirect" (Errors.make_ctxt_key Key.Trailer)
+        () "Catalog is mandatory and shall be indirect" (Errors.make_ctxt_name Key.Trailer "Root")
         (DirectObject.dict_find trailer "Root") in
 
     let catalog = IndirectObject.get_direct_of
@@ -50,7 +50,7 @@ module GraphChecker = struct
 
     (* Page tree *)
     let pageroot = DirectObject.get_reference
-        () "Page root is mandatory and shall be indirect" (Errors.make_ctxt_key catalog_k)
+        () "Page root is mandatory and shall be indirect" (Errors.make_ctxt_name catalog_k "Pages")
         (DirectObject.dict_find catalog "Pages") in
 
     if Params.global.Params.debug then
@@ -62,15 +62,16 @@ module GraphChecker = struct
 
     (* Name trees *)
     DirectObject.apply_not_null (DirectObject.dict_find catalog "Names") (fun x ->
+        let xx, error_ctxt = Document.remove_ref doc x (Errors.make_ctxt_name catalog_k "Names") in
         let names = IndirectObject.get_direct_of
-            "Names shall be a dictionary" Errors.ctxt_none
+            "Names shall be a dictionary" error_ctxt
             ~transform:(DirectObject.get_dict ())
-            (Document.remove_ref doc x) in
+            xx in
 
         (* Destination tree *)
         DirectObject.apply_not_null (DirectObject.dict_find names "Dests") (fun x ->
             let destroot = DirectObject.get_reference
-                () "Dest shall be indirect" Errors.ctxt_none
+                () "Dest shall be indirect" (Errors.ctxt_append_name error_ctxt "Dests")
                 x in
 
             if Params.global.Params.debug then
@@ -87,7 +88,7 @@ module GraphChecker = struct
     (* Outlines *)
     DirectObject.apply_not_null (DirectObject.dict_find catalog "Outlines") (fun x ->
         let outlineroot = DirectObject.get_reference
-            () "Outlines shall be indirect" Errors.ctxt_none
+            () "Outlines shall be indirect" (Errors.make_ctxt_name catalog_k "Outlines")
             x in
 
         if Params.global.Params.debug then

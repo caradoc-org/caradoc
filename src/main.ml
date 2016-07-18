@@ -166,7 +166,7 @@ let command_object =
 
     Printf.printf "%s\n" (IndirectObject.to_string obj);
 
-    if !raw_stream_filename <> "" then (
+    if !raw_stream_filename <> "" then
       begin
         match obj with
         | IndirectObject.Stream s ->
@@ -176,9 +176,8 @@ let command_object =
         | _ ->
           prerr_endline "Warning: --raw-stream argument was provided but the object is not a stream."
       end;
-    );
 
-    if !decoded_stream_filename <> "" then (
+    if !decoded_stream_filename <> "" then
       begin
         match obj with
         | IndirectObject.Stream s ->
@@ -188,7 +187,6 @@ let command_object =
         | _ ->
           prerr_endline "Warning: --decoded-stream argument was provided but the object is not a stream."
       end;
-    )
   in
 
   let options = [

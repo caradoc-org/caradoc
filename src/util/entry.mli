@@ -17,37 +17,18 @@
 (*****************************************************************************)
 
 
-open Boundedint
-open Errors
+module Entry : sig
 
-(*   Calls a parse function on Lexer.token and intercept syntax errors to insert the correct offset
-     Args    :
-     - parse function
-     - offset of the lexbuf from the beginning of the file
-     - lexbuf to parse
-     - error context
-     Returns :
-     - result of the parse function
-*)
-val wrap_parser : ((Lexing.lexbuf -> Parser.token) -> Lexing.lexbuf -> 'a) -> (BoundedInt.t option) -> Lexing.lexbuf -> Errors.error_ctxt -> 'a
+  type t
 
-(*   Calls a parse function on Xreflexer.token and intercept syntax errors to insert the correct offset
-     Args    :
-     - parse function
-     - offset of the lexbuf from the beginning of the file
-     - lexbuf to parse
-     Returns :
-     - result of the parse function
-*)
-val wrap_xrefparser : ((Lexing.lexbuf -> Xrefparser.token) -> Lexing.lexbuf -> 'a) -> (BoundedInt.t option) -> Lexing.lexbuf -> 'a
+  val empty : t
+  val make_index : int -> t
+  val make_name : string -> t
+  val append_entry : t -> t -> t
+  val append_index : t -> int -> t
+  val append_name : t -> string -> t
+  val is_empty : t -> bool
+  val to_string : t -> string
 
-(*   Calls a parse function on Strictlexer.token and intercept syntax errors to insert the correct offset
-     Args    :
-     - parse function
-     - offset of the lexbuf from the beginning of the file
-     - lexbuf to parse
-     Returns :
-     - result of the parse function
-*)
-val wrap_strictparser : ((Lexing.lexbuf -> Strictparser.token) -> Lexing.lexbuf -> 'a) -> (BoundedInt.t option) -> Lexing.lexbuf -> 'a
+end
 

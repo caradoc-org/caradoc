@@ -23,6 +23,7 @@ open Setkey
 open Directobject
 open Indirectobject
 open Graph
+open Errors
 
 (* Set of objects and trailers extracted from a file *)
 module Document : sig
@@ -33,7 +34,7 @@ module Document : sig
   val create : unit -> t
   val mem : t -> Key.t -> bool
   val find : t -> Key.t -> IndirectObject.t
-  val remove_ref : t -> DirectObject.t -> IndirectObject.t
+  val remove_ref : t -> DirectObject.t -> Errors.error_ctxt -> (IndirectObject.t * Errors.error_ctxt)
 
   val finalize_trailers : t -> unit
   val trailers : t -> (DirectObject.dict_t list)

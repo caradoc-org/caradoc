@@ -19,6 +19,7 @@
 
 open OUnit
 open Algo
+open Boundedint
 
 
 let create_hash id =
@@ -93,6 +94,13 @@ let tests =
       "(3)" >:: (fun _ -> assert_equal
                     (Algo.merge_unique [1 ; 2] [] compare)
                     [1 ; 2]) ;
+    ] ;
+
+    "mapkey_union" >:::
+    [
+      "(1)" >:: (fun _ -> assert_equal
+                    (Algo.mapkey_union (TestMapkey.add_all [Key.make_0 ~:1, "foo" ; Key.make_0 ~:2, "hello"]) (TestMapkey.add_all [Key.make_0 ~:1, "bar" ; Key.make_0 ~:3, "world"]))
+                    (TestMapkey.add_all [Key.make_0 ~:1, "foo" ; Key.make_0 ~:2, "hello" ; Key.make_0 ~:3, "world"])) ;
     ] ;
   ]
 

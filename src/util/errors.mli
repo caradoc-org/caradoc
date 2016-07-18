@@ -19,61 +19,51 @@
 
 open Boundedint
 open Key
-open Directobject
-open Errors
+open Entry
 
-module Predictor : sig
+module Errors : sig
 
-  type t = {
-    (* Predictor id *)
-    p: BoundedInt.t;
-    (* Number of colors *)
-    colors: BoundedInt.t;
-    (* Bit per color *)
-    bpc: BoundedInt.t;
-    (* Number of columns *)
-    cols: BoundedInt.t;
-    (* Early parameter for LZW *)
-    early: BoundedInt.t;
+  type error_ctxt = {
+    key : Key.t option;
+    pos : BoundedInt.t option;
+    entry : Entry.t;
   }
 
-  (*   Read predictor parameters from a predictor dictionary
-       Args    :
-       - error context for predictor dictionary
-       - predictor dictionary
-       Returns :
-       - predictor
-  *)
-  val extract_predictor : Errors.error_ctxt -> DirectObject.dict_t -> t
+  val ctxt_none : error_ctxt
+  val make_ctxt : Key.t -> BoundedInt.t -> error_ctxt
+  val make_ctxt_key : Key.t -> error_ctxt
+  val make_ctxt_pos : BoundedInt.t -> error_ctxt
+  val make_ctxt_entry : Key.t -> Entry.t -> error_ctxt
+  val make_ctxt_index : Key.t -> int -> error_ctxt
+  val make_ctxt_name : Key.t -> string -> error_ctxt
+  val make_ctxt_full_name : Key.t -> BoundedInt.t -> string -> error_ctxt
 
-  (*   Compute the PNG Paeth predicting function
-       Args    :
-       - a, b, c
-       Returns :
-       - Paeth(a, b, c)
-  *)
-  val paeth : int -> int -> int -> int
+  val ctxt_append_entry : error_ctxt -> Entry.t -> error_ctxt
+  val ctxt_append_index : error_ctxt -> int -> error_ctxt
+  val ctxt_append_name : error_ctxt -> string -> error_ctxt
+  val ctxt_set_pos : error_ctxt -> BoundedInt.t -> error_ctxt
 
-  (*   Decode a stream according to a PNG predictor
-       Args    :
-       - stream content
-       - error context for stream dictionary
-       - sample size (in bytes, according to colors)
-       - width of the predicting frame
-       Returns :
-       - decoded stream
-  *)
-  val predict_png : string -> Errors.error_ctxt -> int -> BoundedInt.t -> string
+  val ctxt_to_string : error_ctxt -> string
 
-  (*   Decode a stream according to a predictor
+  exception LexingError of string * BoundedInt.t
+  exception ParseError of string
+  exception PDFError of string * error_ctxt
+  exception TypeError of string * error_ctxt
+  exception UnexpectedError of string
+
+
+  (*   Call a function and call fail if an exception is caught
        Args    :
-       - stream content
-       - error context for stream dictionary
-       - error context for predictor dictionary
-       - predictor
-       Returns :
-       - decoded stream
+       - function to call in case of failure
+       - function to call
   *)
-  val decode_predictor : string -> Errors.error_ctxt -> Errors.error_ctxt -> t -> string
+  val catch : fail:(unit -> 'a) -> (unit -> 'a) -> 'a
+
+  (*   Call a function and print the error to stderr if an exception is caught
+       Args    :
+       - function to call
+  *)
+  val print : (unit -> unit) -> unit
 
 end
+

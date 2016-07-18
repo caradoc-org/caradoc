@@ -377,20 +377,24 @@ let parse_strict (input : in_channel) (stats : Stats.t) : Document.t =
 
   (* Check generation numbers *)
   Document.iter_objects (fun key _ ->
+      let error_ctxt = Errors.make_ctxt_key key in
       match key with
       | Key.Object (_, 0) -> ()
-      | Key.Object _ -> raise (Errors.PDFError ("Object has a non-zero generation number", Errors.make_ctxt_key key))
-      | _ -> raise (Errors.PDFError ("Key.Object expected", Errors.make_ctxt_key key))
+      | Key.Object _ -> raise (Errors.PDFError ("Object has a non-zero generation number", error_ctxt))
+      | _ -> raise (Errors.PDFError ("Key.Object expected", error_ctxt))
     ) doc;
 
   (* Check stream lengths and unallowed keywords *)
   let keywords = ["endstream" ; "endobj" ; "trailer"] in
   Document.iter_objects (fun key obj ->
+      let error_ctxt = Errors.make_ctxt_key key in
       match obj with
       | IndirectObject.Stream stream ->
-        let stream_length = Document.remove_ref doc (DirectObject.dict_find (PDFStream.get_dict stream) "Length") in
+        let error_ctxt_length = Errors.ctxt_append_name error_ctxt "Length" in
+
+        let stream_length, (_:Errors.error_ctxt) = Document.remove_ref doc (DirectObject.dict_find (PDFStream.get_dict stream) "Length") error_ctxt_length in
         let len = IndirectObject.get_direct_of
-            "Expected integer for stream /Length" (Errors.make_ctxt_key key)
+            "Expected non-negative integer" error_ctxt_length
             ~transform:(DirectObject.get_nonnegative_int ())
             stream_length in
 
@@ -415,11 +419,11 @@ let parse_strict (input : in_channel) (stats : Stats.t) : Document.t =
         in
 
         if not length_match then
-          raise (Errors.PDFError (Printf.sprintf "Length (%d) of stream does not match reported length (%d)" (BoundedInt.to_int real_len) (BoundedInt.to_int len), Errors.make_ctxt_key key));
+          raise (Errors.PDFError (Printf.sprintf "Length (%d) of stream does not match reported length (%d)" (BoundedInt.to_int real_len) (BoundedInt.to_int len), error_ctxt_length));
 
         List.iter (fun keyword ->
             if Algo.string_contains encoded keyword then
-              raise (Errors.PDFError (Printf.sprintf "Stream contains unallowed keyword \"%s\"" keyword, Errors.make_ctxt_key key));
+              raise (Errors.PDFError (Printf.sprintf "Stream contains unallowed keyword \"%s\"" keyword, error_ctxt));
           ) keywords;
       | _ ->
         ()
@@ -442,7 +446,7 @@ let extract_filters (filter_hash : (string, int) Hashtbl.t) (key : Key.t) (obj :
   | IndirectObject.Stream stream ->
     let filters = DirectObject.get_array_of
         ~default:[] ~accept_one:true ()
-        "Invalid value for stream /Filter" (Errors.make_ctxt_key key)
+        "Expected name or array of names" (Errors.make_ctxt_name key "Filter")
         ~transform:(DirectObject.get_name ())
         (DirectObject.dict_find (PDFStream.get_dict stream) "Filter") in
 
