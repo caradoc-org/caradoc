@@ -239,12 +239,10 @@ module Type = struct
            check_pool_type pool (Printf.sprintf "%s{%d}" typename i) x.kind
         ) types
     | Variant options ->
-      let (_:int) = List.fold_left
-          (fun i x ->
-             check_pool_type pool (Printf.sprintf "%s<%d>" typename i) x;
-             i + 1
-          ) 0 options
-      in ()
+      Algo.iteri List.fold_left
+        (fun i x ->
+           check_pool_type pool (Printf.sprintf "%s<%d>" typename i) x
+        ) options
     | Dictionary typ ->
       check_pool_type pool (typename ^ "{}") typ.kind
     | Any

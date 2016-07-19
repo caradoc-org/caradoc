@@ -176,12 +176,11 @@ module CheckObjectType = struct
 
 
   and check_array (ctxt : context) (l : DirectObject.t list) (elemtype : t) (ectxt : Errors.error_ctxt) : unit =
-    let (_:int) = List.fold_left
-        (fun i y ->
-           let (_:t) = check_object_direct ctxt y elemtype (Errors.ctxt_append_index ectxt i) in
-           i + 1
-        ) 0 l
-    in ()
+    Algo.iteri List.fold_left
+      (fun i y ->
+         let (_:t) = check_object_direct ctxt y elemtype (Errors.ctxt_append_index ectxt i) in
+         ()
+      ) l
 
 
   and check_array_sized (ctxt : context) (l : DirectObject.t list) (elemtype : t) (len : int) (ectxt : Errors.error_ctxt) : unit =
@@ -205,12 +204,11 @@ module CheckObjectType = struct
     let tuple_len = Array.length types in
     if list_len mod tuple_len <> 0 then
       raise (Errors.TypeError (Printf.sprintf "Array size (%d) is not among the expected ones (multiples of %d) for this array of tuples" list_len tuple_len, ectxt));
-    let (_:int) = List.fold_left
-        (fun i y ->
-           let (_:t) = check_object_direct ctxt y types.(i mod (Array.length types)) (Errors.ctxt_append_index ectxt i) in
-           i + 1
-        ) 0 l
-    in ()
+    Algo.iteri List.fold_left
+      (fun i y ->
+         let (_:t) = check_object_direct ctxt y types.(i mod (Array.length types)) (Errors.ctxt_append_index ectxt i) in
+         ()
+      ) l
 
 
   and check_array_differences (_ctxt : context) (l : DirectObject.t list) (ectxt : Errors.error_ctxt) : unit =
@@ -256,12 +254,11 @@ module CheckObjectType = struct
     let tuple_len = Array.length types in
     if list_len <> tuple_len then
       raise (Errors.TypeError (Printf.sprintf "Array size (%d) is not the expected one (%d) for this tuple" list_len tuple_len, ectxt));
-    let (_:int) = List.fold_left
-        (fun i y ->
-           let (_:t) = check_object_direct ctxt y types.(i) (Errors.ctxt_append_index ectxt i) in
-           i + 1
-        ) 0 l
-    in ()
+    Algo.iteri List.fold_left
+      (fun i y ->
+         let (_:t) = check_object_direct ctxt y types.(i) (Errors.ctxt_append_index ectxt i) in
+         ()
+      ) l
 
 
   and check_variant (ctxt : context) (x : IndirectObject.t) (options : kind_t list) (ectxt : Errors.error_ctxt) : t =

@@ -22,6 +22,44 @@ open Mapkey
 (* Generic algorithms *)
 module Algo : sig
 
+  (*   Implement iteri using fold_left
+       Args    :
+       - fold_left function of the iterable object
+       - iteration function to apply
+       - iterable object (e.g. list, array)
+  *)
+  val iteri : ((int -> 'b -> int) -> int -> 'a -> int) -> (int -> 'b -> unit) -> 'a -> unit
+
+  (*   Same as iter but with indication of the first round
+       Args    :
+       - fold_left function of the iterable object
+       - iteration function to apply
+       - iterable object (e.g. list, array)
+  *)
+  val iter_start : ((bool -> 'b -> bool) -> bool -> 'a -> bool) -> (bool -> 'b -> unit) -> 'a -> unit
+
+  (*   Same as fold_left but with an additional counter
+       Args    :
+       - fold_left function of the iterable object
+       - fold function to apply
+       - initial argument
+       - iterable object (e.g. list, array)
+       Returns :
+       - result of the folding operation
+  *)
+  val fold_lefti : ((int * 'c -> 'b -> int * 'c) -> int * 'c -> 'a -> int * 'c) -> (int -> 'c -> 'b -> 'c) -> 'c -> 'a -> 'c
+
+  (*   Same as fold_left but with indication of the first round
+       Args    :
+       - fold_left function of the iterable object
+       - fold function to apply
+       - initial argument
+       - iterable object (e.g. list, array)
+       Returns :
+       - result of the folding operation
+  *)
+  val fold_left_start : ((bool * 'c -> 'b -> bool * 'c) -> bool * 'c -> 'a -> bool * 'c) -> (bool -> 'c -> 'b -> 'c) -> 'c -> 'a -> 'c
+
   (*   Search an element in an array
        Args    :
        - array

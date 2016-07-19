@@ -21,6 +21,24 @@ open Mapkey
 
 module Algo = struct
 
+  (* TODO : List.iteri is available from OCaml 4.00.0 *)
+  let iteri fold_left f iterable =
+    let (_:int) = fold_left (fun i x -> f i x; i+1) 0 iterable in
+    ()
+
+  let iter_start fold_left f iterable =
+    let (_:bool) = fold_left (fun started x -> f started x; true) false iterable in
+    ()
+
+  let fold_lefti fold_left f init iterable =
+    let (_:int), result = fold_left (fun (i, y) x -> i+1, f i y x) (0, init) iterable in
+    result
+
+  let fold_left_start fold_left f init iterable =
+    let (_:bool), result = fold_left (fun (started, y) x -> true, f started y x) (false, init) iterable in
+    result
+
+
   let array_contains (x : 'a array) (y : 'a) : bool =
     Array.fold_left
       (fun result z -> result || y = z
@@ -78,13 +96,11 @@ module Algo = struct
 
 
   let join_buffer (buf : Buffer.t) fold_left to_buffer (separator : string) iterable : unit =
-    let (_:bool) = fold_left (fun started x ->
+    iter_start fold_left (fun started x ->
         if started then
           Buffer.add_string buf separator;
-        to_buffer buf x;
-        true
-      ) false iterable
-    in ()
+        to_buffer buf x
+      ) iterable
 
   let join_string fold_left to_string (separator : string) iterable : string =
     let to_buffer buf x =

@@ -305,11 +305,9 @@ module DirectObject = struct
     | Reference key ->
       MapKey.singleton key entry
     | Array a ->
-      let _, result = List.fold_left (fun (i, s) o ->
-          i+1, Algo.mapkey_union s (refs_impl (Entry.append_index entry i) o)
-        ) (0, MapKey.empty) a
-      in
-      result
+      Algo.fold_lefti List.fold_left (fun i s o ->
+          Algo.mapkey_union s (refs_impl (Entry.append_index entry i) o)
+        ) MapKey.empty a
     | Dictionary d ->
       refs_dict_impl entry d
     | Null | Bool _ | Int _ | Real _ | String _ | Name _ -> MapKey.empty

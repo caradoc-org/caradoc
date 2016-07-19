@@ -21,6 +21,7 @@ open Mapkey
 open Key
 open Boundedint
 open Errors
+open Algo
 
 module XRefTable = struct
 
@@ -73,11 +74,10 @@ module XRefTable = struct
   let fold_all f (x : t) a =
     MapKey.fold
       (fun key values b ->
-         let result, _ = List.fold_left
-             (fun (c, is_first) value -> (f key value c is_first, false)
-             ) (b, true) values
-         in
-         result
+         Algo.fold_left_start List.fold_left
+           (fun started c value ->
+              f key value c started
+           ) b values
       ) !x a
 
 
@@ -109,9 +109,9 @@ module XRefTable = struct
 
   let print (out : out_channel) (x : t) : unit =
     let count, free, compressed, shadowed = fold_all
-        (fun key v (count, free, compressed, shadowed) is_first ->
+        (fun key v (count, free, compressed, shadowed) started ->
            let id, gen = Key.get_obj_ref key in
-           if not is_first then
+           if started then
              Printf.fprintf out "*";
 
            Printf.fprintf out "(%d, %d) " id gen;
@@ -127,7 +127,7 @@ module XRefTable = struct
            end;
            Printf.fprintf out "\n";
 
-           (count + 1, free + (if v.kind = Free then 1 else 0), compressed + (match v.kind with Compressed _ -> 1 | _ -> 0), shadowed + (if is_first then 0 else 1))
+           (count + 1, free + (if v.kind = Free then 1 else 0), compressed + (match v.kind with Compressed _ -> 1 | _ -> 0), shadowed + (if started then 1 else 0))
         ) x (0, 0, 0, 0)
     in
 
