@@ -55,6 +55,7 @@ module DirectObject : sig
   val dict_mem : dict_t -> string -> bool
   val dict_find : dict_t -> string -> t
   val dict_iter : (string -> t -> unit) -> dict_t -> unit
+  val dict_iter_sorted : (string -> t -> unit) -> dict_t -> unit
   val dict_map_key : (string -> t -> t) -> dict_t -> dict_t
   val dict_map : (t -> t) -> dict_t -> dict_t
   val dict_fold : (string -> t -> 'a -> 'a) -> dict_t -> 'a -> 'a
@@ -117,6 +118,23 @@ module DirectObject : sig
        Returns :
   *)
   val dict_to_pdf_buf : Buffer.t -> dict_t -> unit
+
+  (*   Find a reference in an object
+       Args    :
+       - reference to find
+       - object
+       Returns :
+       - list of occurrences in object
+  *)
+  val find_ref : Key.t -> t -> Entry.t list
+  (*   Find a reference in an object
+       Args    :
+       - reference to find
+       - dictionary
+       Returns :
+       - list of occurrences in object
+  *)
+  val find_ref_dict : Key.t -> dict_t -> Entry.t list
 
   (*   Get objects referenced by an object
        Args    :

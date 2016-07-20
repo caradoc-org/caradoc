@@ -45,7 +45,7 @@ module GraphChecker = struct
     let catalog = IndirectObject.get_direct_of
         "Catalog shall be a dictionary" (Errors.make_ctxt_key catalog_k)
         ~transform:(DirectObject.get_dict ())
-        (Document.find doc catalog_k) in
+        (Document.find_obj doc catalog_k) in
 
 
     (* Page tree *)

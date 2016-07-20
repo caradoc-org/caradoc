@@ -68,6 +68,14 @@ module IndirectObject = struct
       PDFStream.to_pdf s
 
 
+  let find_ref (k : Key.t) (x : t) : Entry.t list =
+    match x with
+    | Direct y ->
+      DirectObject.find_ref k y
+    | Stream s ->
+      DirectObject.find_ref_dict k (PDFStream.get_dict s)
+
+
   let refs (x : t) : Entry.t MapKey.t =
     match x with
     | Direct y ->

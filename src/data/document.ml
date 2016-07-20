@@ -47,10 +47,10 @@ module Document = struct
     special_streams = MapKey.empty;
   }
 
-  let mem (x : t) (k : Key.t) : bool =
+  let mem_obj (x : t) (k : Key.t) : bool =
     MapKey.mem k x.objects
 
-  let find (x : t) (k : Key.t) : IndirectObject.t =
+  let find_obj (x : t) (k : Key.t) : IndirectObject.t =
     MapKey.find k x.objects
 
   let remove_ref (x : t) (o : DirectObject.t) (ctxt : Errors.error_ctxt) : (IndirectObject.t * Errors.error_ctxt) =
@@ -58,7 +58,7 @@ module Document = struct
     | DirectObject.Reference k ->
       begin
         try
-          find x k, Errors.make_ctxt_key k
+          find_obj x k, Errors.make_ctxt_key k
         with Not_found ->
           IndirectObject.Direct DirectObject.Null, ctxt
       end
@@ -112,6 +112,23 @@ module Document = struct
 
   let iter_stms f (x : t) : unit =
     MapKey.iter f x.special_streams
+
+
+  let find_ref (key : Key.t) (x : t) : Entry.t list MapKey.t =
+    let tmp = fold_objects (fun k o m ->
+        let l = IndirectObject.find_ref key o in
+        if l = [] then
+          m
+        else
+          MapKey.add k l m
+      ) x MapKey.empty
+    in
+
+    let l = DirectObject.find_ref_dict key (main_trailer x) in
+    if l = [] then
+      tmp
+    else
+      MapKey.add Key.Trailer l tmp
 
 
   let check_refs (objects : IndirectObject.t MapKey.t) (refs : Entry.t MapKey.t) (ctxt : Errors.error_ctxt) : SetKey.t =

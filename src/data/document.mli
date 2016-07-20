@@ -24,6 +24,7 @@ open Directobject
 open Indirectobject
 open Graph
 open Errors
+open Entry
 
 (* Set of objects and trailers extracted from a file *)
 module Document : sig
@@ -32,8 +33,8 @@ module Document : sig
   type t
 
   val create : unit -> t
-  val mem : t -> Key.t -> bool
-  val find : t -> Key.t -> IndirectObject.t
+  val mem_obj : t -> Key.t -> bool
+  val find_obj : t -> Key.t -> IndirectObject.t
   val remove_ref : t -> DirectObject.t -> Errors.error_ctxt -> (IndirectObject.t * Errors.error_ctxt)
 
   val finalize_trailers : t -> unit
@@ -49,6 +50,15 @@ module Document : sig
   val fold_objects : (Key.t -> IndirectObject.t -> 'a -> 'a) -> t -> 'a -> 'a
   val map_objects : (Key.t -> IndirectObject.t -> IndirectObject.t) -> t -> unit
   val iter_stms : (Key.t -> kind_t -> unit) -> t -> unit
+
+  (*   Find all references to an object
+       Args    :
+       - reference to find
+       - document
+       Returns :
+       - list of occurrences
+  *)
+  val find_ref : Key.t -> t -> Entry.t list MapKey.t
 
   (*   Get the closure of objects referenced by an object
        Args    :

@@ -1,4 +1,5 @@
 New features:
+- Added the 'findref' command to find all references to an object.
 - Added --allow-nonascii-in-names option to allow names to contain non-ASCII
   characters instead of the corresponding escape sequence.
 

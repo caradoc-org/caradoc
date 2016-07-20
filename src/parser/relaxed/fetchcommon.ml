@@ -83,7 +83,7 @@ let traverse_object (key : Key.t) (off : BoundedInt.t) (ctxt : FetchCommon.conte
   try
     let traversed = FetchCommon.is_traversed ctxt key in
     if traversed then
-      Document.find ctxt.FetchCommon.doc key
+      Document.find_obj ctxt.FetchCommon.doc key
     else
       raise (Errors.PDFError ("Circular definition detected", Errors.make_ctxt key off))
   with Not_found ->

@@ -77,7 +77,7 @@ module Tree = struct
       let node = IndirectObject.get_direct_of
           "Graph error : Expected a dictionary" error_ctxt
           ~transform:(DirectObject.get_dict ())
-          (Document.find doc node_k) in
+          (Document.find_obj doc node_k) in
 
       (* Check parent *)
       checkparent node node_k parent_k;
@@ -96,7 +96,7 @@ module Tree = struct
       let root = IndirectObject.get_direct_of
           "Graph error : Expected a dictionary" (Errors.make_ctxt_key root_k)
           ~transform:(DirectObject.get_dict ())
-          (Document.find doc root_k) in
+          (Document.find_obj doc root_k) in
 
       (* Check children *)
       checkchildren doc visited root root_k
@@ -194,7 +194,7 @@ module Tree = struct
       let node = IndirectObject.get_direct_of
           "Graph error : Expected a dictionary" error_ctxt
           ~transform:(DirectObject.get_dict ())
-          (Document.find doc node_k) in
+          (Document.find_obj doc node_k) in
 
       (* Check parent *)
       checkparent node node_k parent_k;
@@ -217,7 +217,7 @@ module Tree = struct
       let root = IndirectObject.get_direct_of
           "Graph error : Expected a dictionary" (Errors.make_ctxt_key root_k)
           ~transform:(DirectObject.get_dict ())
-          (Document.find doc root_k) in
+          (Document.find_obj doc root_k) in
 
       (* Check children *)
       checkchildren doc visited root root_k

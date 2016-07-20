@@ -94,6 +94,9 @@ module DirectObject = struct
   let dict_iter f (x : dict_t) : unit =
     Hashtbl.iter f x
 
+  let dict_iter_sorted f (x : dict_t) : unit =
+    List.iter (fun (key, value) -> f key value) (Algo.sort_hash x)
+
   let dict_map_key f (x : dict_t) : dict_t =
     let y = dict_create_len (dict_length x) in
     dict_iter (fun key value ->
@@ -182,11 +185,10 @@ module DirectObject = struct
     in
 
     let content_to_buf () =
-      if Params.global.Params.sort_dicts then (
-        List.iter (fun (key, value) -> entry_to_string key value) (Algo.sort_hash d)
-      ) else (
-        dict_iter (fun key value -> entry_to_string key value) d
-      )
+      if Params.global.Params.sort_dicts then
+        dict_iter_sorted entry_to_string d
+      else
+        dict_iter entry_to_string d
     in
 
     Buffer.add_string buf "<<";
@@ -298,6 +300,35 @@ module DirectObject = struct
     dict_to_pdf_buf buf x;
     Buffer.contents buf
 
+
+  let rec find_ref_impl (k : Key.t) (l : Entry.t list ref) (entry : Entry.t) (x : t) : unit =
+    match x with
+    | Reference key ->
+      if key = k then
+        l := entry::(!l)
+    | Array a ->
+      Algo.iteri List.fold_left (fun i o ->
+          find_ref_impl k l (Entry.append_index entry i) o
+        ) a
+    | Dictionary d ->
+      find_ref_dict_impl k l entry d
+    | Null | Bool _ | Int _ | Real _ | String _ | Name _ -> ()
+
+  and find_ref_dict_impl (k : Key.t) (l : Entry.t list ref) (entry : Entry.t) (d : dict_t) : unit =
+    dict_iter_sorted (fun key obj ->
+        find_ref_impl k l (Entry.append_name entry key) obj
+      ) d
+
+
+  let find_ref (k : Key.t) (x : t) : Entry.t list =
+    let result = ref [] in
+    find_ref_impl k result Entry.empty x;
+    List.rev !result
+
+  let find_ref_dict (k : Key.t) (d : dict_t) : Entry.t list =
+    let result = ref [] in
+    find_ref_dict_impl k result Entry.empty d;
+    List.rev !result
 
 
   let rec refs_impl (entry : Entry.t) (x : t) : Entry.t MapKey.t =

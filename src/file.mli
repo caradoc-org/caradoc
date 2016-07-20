@@ -65,8 +65,16 @@ val statistics : in_channel -> Stats.t -> unit
 (*   Parse a PDF file and extract various data
      Args    :
      - input channel
+     Returns :
+     - parsed document
 *)
-val parse_file : in_channel -> unit
+val parse_file : in_channel -> Document.t
+
+(*   Parse a PDF file and extract various data
+     Args    :
+     - input channel
+*)
+val check_file : in_channel -> unit
 
 (*   Write a cleaned up version of a file to stdout
      Args    :

@@ -178,6 +178,22 @@ let tests =
                      "3 2 R") ;
     ] ;
 
+    "find_ref" >:::
+    [
+      "(1)" >:: (fun _ -> assert_equal
+                    (find_ref (Key.make_0 ~:1) (String "foo"))
+                    []) ;
+      "(2)" >:: (fun _ -> assert_equal
+                    (find_ref (Key.make_0 ~:1) (Reference (Key.make_0 ~:1)))
+                    [Entry.empty]) ;
+      "(3)" >:: (fun _ -> assert_equal
+                    (find_ref (Key.make_0 ~:1) (Array [Reference (Key.make_0 ~:1) ; Bool false ; Reference (Key.make_0 ~:1)]))
+                    [Entry.make_index 0 ; Entry.make_index 2]) ;
+      "(4)" >:: (fun _ -> assert_equal
+                    (find_ref_dict (Key.make_0 ~:1) (TestDict.add_all ["Foo", Reference (Key.make_0 ~:1) ; "Bar", Bool false ; "Hello", Reference (Key.make_0 ~:1) ; "World", Reference (Key.make_0 ~:2) ; "Alpha", Reference (Key.make_0 ~:1)]))
+                    [Entry.make_name "Alpha" ; Entry.make_name "Foo" ; Entry.make_name "Hello"]) ;
+    ] ;
+
     "refs" >:::
     [
       "(1)" >:: (fun _ -> assert_equal
@@ -186,6 +202,9 @@ let tests =
       "(2)" >:: (fun _ -> assert_equal
                     (refs (Array [Reference (Key.make_gen ~:2 ~:1) ; Reference (Key.make_0 ~:5) ; Reference (Key.make_gen ~:2 ~:1) ; Reference (Key.make_0 ~:3) ; Reference (Key.make_0 ~:123456)]))
                     (TestMapkey.add_all [Key.make_gen ~:2 ~:1, Entry.make_index 0 ; Key.make_0 ~:5, Entry.make_index 1 ; Key.make_0 ~:3, Entry.make_index 3 ; Key.make_0 ~:123456, Entry.make_index 4])) ;
+      "(3)" >:: (fun _ -> assert_equal
+                    (refs_dict (TestDict.add_all ["Foo", Reference (Key.make_gen ~:2 ~:1) ; "Bar", Reference (Key.make_0 ~:5)]))
+                    (TestMapkey.add_all [Key.make_gen ~:2 ~:1, Entry.make_name "Foo" ; Key.make_0 ~:5, Entry.make_name "Bar"])) ;
     ] ;
 
     "relink" >:::

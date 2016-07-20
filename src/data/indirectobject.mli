@@ -71,6 +71,15 @@ module IndirectObject : sig
   *)
   val to_pdf : t -> string
 
+  (*   Find a reference in an object
+       Args    :
+       - reference to find
+       - object
+       Returns :
+       - list of occurrences in object
+  *)
+  val find_ref : Key.t -> t -> Entry.t list
+
   (*   Get objects referenced by an object
        Args    :
        - object

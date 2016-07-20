@@ -29,6 +29,8 @@ open Stats
 open Params
 open Errors
 open Pdfstream
+open Document
+open Mapkey
 
 
 (***************)
@@ -123,7 +125,7 @@ let command_extract =
       Params.load_file Params.global !options_filename;
 
     let input = open_in_bin filename in
-    File.parse_file input
+    File.check_file input
   in
 
   let options = [
@@ -225,8 +227,6 @@ let command_trailer =
   OneFileCmd (options, "Extract the trailer(s) from a PDF file", parse_trailer)
 
 
-
-
 let command_cleanup =
   let options_filename = ref "" in
   let out_filename = ref "" in
@@ -251,6 +251,54 @@ let command_cleanup =
   OneFileCmd (options, "Rewrite a cleaned up version of a file", cleanup_file)
 
 
+let command_findref =
+  let options_filename = ref "" in
+  let num = ref 0 in   (* These two fields describe the object number *)
+  let gen = ref 0 in   (* => number + generation number               *)
+  let show_ctxt = ref false in
+
+  let find_reference filename =
+    (* Load more options *)
+    if !options_filename <> "" then
+      Params.load_file Params.global !options_filename;
+
+    let key = Key.make_gen_i !num !gen in
+
+    let input = open_in_bin filename in
+    let doc = File.parse_file input in
+
+    let occurrences = Document.find_ref key doc in
+    if occurrences = MapKey.empty then (
+      print_string "Not found\n";
+      exit 255
+    ) else
+      MapKey.iter (fun k l ->
+          List.iter (fun entry ->
+              Printf.printf "Found%s\n" (Errors.ctxt_to_string (Errors.make_ctxt_entry k entry))
+            ) l;
+
+          if !show_ctxt then (
+            let tmp =
+              if k = Key.Trailer then
+                DirectObject.dict_to_string (Document.main_trailer doc)
+              else
+                IndirectObject.to_string (Document.find_obj doc k)
+            in
+            Printf.printf "%s\n" tmp
+          )
+        ) occurrences
+  in
+
+  let options = [
+    "--options", Arg.Set_string options_filename, "options filename";
+    "--num", Arg.Set_int num, "number of the object";
+    "--gen", Arg.Set_int gen, "generation number of the object (default : 0)";
+    "--show", Arg.Unit (fun () -> show_ctxt := true), "show context of each occurrence found";
+    "--sort-dicts", Arg.Unit (fun () -> Params.global.Params.sort_dicts <- true), "sort dictionaries by key";
+  ] in
+  OneFileCmd (options, "Find all references to an object in a PDF file", find_reference)
+
+
 
 (****************)
 (* Main program *)
@@ -264,6 +312,7 @@ let commands = [
   "types", command_types;
   "cleanup", command_cleanup;
   "stats", command_stats;
+  "findref", command_findref;
 ]
 
 

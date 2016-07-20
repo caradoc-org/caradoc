@@ -26,6 +26,7 @@ open Directobject.DirectObject
 open Indirectobject.IndirectObject
 open Graph
 open Pdfstream
+open Entry
 
 
 let make_doc_objs_direct objs =
@@ -203,6 +204,20 @@ let make_doc id =
 let tests =
   "Document" >:::
   [
+    "find_ref" >:::
+    [
+      "(1)" >:: (fun _ -> assert_equal
+                    (Document.find_ref (Key.make_0 ~:1) (make_doc 2))
+                    (TestMapkey.add_all [Key.make_0 ~:2, [Entry.make_index 0] ; Key.Trailer, [Entry.make_name "Root"]])) ;
+      "(2)" >:: (fun _ -> assert_equal
+                    (Document.find_ref (Key.make_0 ~:4) (make_doc 6))
+                    (TestMapkey.add_all [Key.make_0 ~:1, [Entry.make_index 1] ; Key.make_gen ~:3 ~:1, [Entry.make_name "Foo"]])) ;
+
+      "(3)" >:: (fun _ -> assert_raises
+                    (Errors.UnexpectedError ("No trailer found in document"))
+                    (fun () -> Document.find_ref (Key.make_0 ~:2) (make_doc 1))) ;
+    ] ;
+
     "ref_closure" >:::
     [
       "(1)" >:: (fun _ -> assert_equal

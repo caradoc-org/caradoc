@@ -71,7 +71,7 @@ module TypeChecker = struct
       if Params.global.Params.verbose then
         Printf.eprintf "Remaining objects : %d -- checking object : %s " (List.length ctxt.Type.to_check) (Key.to_string key);
 
-      if not (Document.mem doc key) then
+      if not (Document.mem_obj doc key) then
         raise (Errors.PDFError (Printf.sprintf "Reference to unknown object : %s" (Key.to_string key), error_ctxt));
 
       let typ = {
@@ -82,7 +82,7 @@ module TypeChecker = struct
       if Params.global.Params.verbose then
         Printf.eprintf "of type : %s\n" (Type.type_to_string typ);
 
-      let real_type = CheckObjectType.check_object ctxt (Document.find doc key) typ (Errors.make_ctxt_key key) in
+      let real_type = CheckObjectType.check_object ctxt (Document.find_obj doc key) typ (Errors.make_ctxt_key key) in
       if Params.global.Params.verbose then
         Printf.eprintf "Object %s has type %s\n\n" (Key.to_string key) (Type.type_to_string real_type);
 
