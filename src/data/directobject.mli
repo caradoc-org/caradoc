@@ -75,12 +75,30 @@ module DirectObject : sig
        - string representation of this object
   *)
   val dict_to_string : dict_t -> string
-  (*   Convert a dictionary to a string and append it to a buffer
+
+  (*   Convert an object to a string with selection highlighted in console
+       Args    :
+       - object
+       - selection to highlight
+       Returns :
+       - string representation of this object
+  *)
+  val to_string_hl : t -> Entry.select_t -> string
+  (*   Convert a dictionary to a string with selection highlighted in console
+       Args    :
+       - dictionary
+       - selection to highlight
+       Returns :
+       - string representation of this object
+  *)
+  val dict_to_string_hl : dict_t -> Entry.select_t -> string
+  (*   Convert a dictionary to a string with highlighted selection and append it to a buffer
        Args    :
        - buffer
        - dictionary
+       - selection to highlight
   *)
-  val dict_to_string_buf : Buffer.t -> dict_t -> unit
+  val dict_to_string_buf : Buffer.t -> dict_t -> Entry.select_t -> unit
 
   (*   Check if an object needs a space before it in a PDF file
        Args    :

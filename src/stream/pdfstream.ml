@@ -27,6 +27,7 @@ open Ascii85
 open Runlength
 open Predictor
 open Params
+open Entry
 
 
 module PDFStream = struct
@@ -57,7 +58,7 @@ module PDFStream = struct
     s.decoded <> None
 
 
-  let to_string (s : t) : string =
+  let to_string_hl (s : t) (selector : Entry.select_t) : string =
     let decoded = is_decoded s in
     let c =
       match s.decoded with
@@ -78,7 +79,7 @@ module PDFStream = struct
     in
 
     let header = Printf.sprintf "stream <%s stream of length %d>" (if decoded then "decoded" else "encoded") (String.length c) in
-    DirectObject.dict_to_string_buf buf s.dictionary;
+    DirectObject.dict_to_string_buf buf s.dictionary selector;
     Buffer.add_char buf '\n';
     Buffer.add_string buf header;
     if expand then (
@@ -88,6 +89,9 @@ module PDFStream = struct
     );
 
     Buffer.contents buf
+
+  let to_string (s : t) : string =
+    to_string_hl s Entry.no_selector
 
 
   let to_pdf (s : t) : string =

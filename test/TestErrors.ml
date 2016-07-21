@@ -119,25 +119,25 @@ let tests =
                     "") ;
       "(2)" >:: (fun _ -> assert_equal
                     (Errors.ctxt_to_string (Errors.make_ctxt Key.Trailer ~:123))
-                    " for object trailer at offset 123 [0x7b]") ;
+                    " in object trailer at offset 123 [0x7b]") ;
       "(3)" >:: (fun _ -> assert_equal
                     (Errors.ctxt_to_string (Errors.make_ctxt_key Key.Trailer))
-                    " for object trailer") ;
+                    " in object trailer") ;
       "(4)" >:: (fun _ -> assert_equal
                     (Errors.ctxt_to_string (Errors.make_ctxt_pos ~:123))
                     " at offset 123 [0x7b]") ;
       "(5)" >:: (fun _ -> assert_equal
                     (Errors.ctxt_to_string (Errors.make_ctxt_entry Key.Trailer (Entry.make_name "foo")))
-                    " for object trailer at entry /foo") ;
+                    " in object trailer at entry /foo") ;
       "(6)" >:: (fun _ -> assert_equal
                     (Errors.ctxt_to_string (Errors.make_ctxt_index Key.Trailer 123))
-                    " for object trailer at entry [123]") ;
+                    " in object trailer at entry [123]") ;
       "(7)" >:: (fun _ -> assert_equal
                     (Errors.ctxt_to_string (Errors.make_ctxt_name Key.Trailer "bar"))
-                    " for object trailer at entry /bar") ;
+                    " in object trailer at entry /bar") ;
       "(8)" >:: (fun _ -> assert_equal
                     (Errors.ctxt_to_string (Errors.make_ctxt_full_name Key.Trailer ~:123 "foo"))
-                    " for object trailer at entry /foo at offset 123 [0x7b]") ;
+                    " in object trailer at entry /foo at offset 123 [0x7b]") ;
     ] ;
   ]
 

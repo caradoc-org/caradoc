@@ -1,4 +1,4 @@
 Version : 1.5
 Incremental updates : 0
 Neither updates nor object streams nor free objects nor encryption
-PDF error : Object definition does not match xref table for object 7 at offset 620 [0x26c] !
+PDF error : Object definition does not match xref table in object 7 at offset 620 [0x26c] !

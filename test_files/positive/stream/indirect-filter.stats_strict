@@ -2,4 +2,4 @@ Version : 1.7
 Incremental updates : 0
 Neither updates nor object streams nor free objects nor encryption
 Object count : 7
-PDF error : Expected name or array of names for object 4 at entry /Filter !
+PDF error : Expected name or array of names in object 4 at entry /Filter !

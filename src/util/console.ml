@@ -17,60 +17,13 @@
 (*****************************************************************************)
 
 
-open OUnit
+module Console = struct
 
+  let highlight : string =
+    "\x1b[0;7m"
 
-let tests =
-  "PDF" >:::
-  [
-    (* data/ *)
-    TestDocument.tests;
-    TestDict.tests;
-    TestDirectObject.tests;
-    TestIndirectObject.tests;
+  let reset : string =
+    "\x1b[0m"
 
-    (* parse/ *)
-    TestCommon.tests;
-    TestConvert.tests;
-    TestLexer.tests;
-    TestParser.tests;
-    TestStrictLexer.tests;
-    TestXrefLexer.tests;
-    TestXrefParser.tests;
-
-    (* util/ *)
-    TestAlgo.tests;
-    TestBoundedint.tests;
-    TestErrors.tests;
-    TestKey.tests;
-
-    (* TODO : finish *)
-    (* data/ *)
-    TestGraph.tests;
-    TestIntervals.tests;
-    TestXref.tests;
-
-    (* parse/ *)
-    TestStrictParser.tests;
-
-    (* stream/ *)
-    TestStream.tests;
-
-    (* type/ *)
-    TestType.tests;
-
-    (* util/ *)
-    TestEntry.tests;
-
-    (* TODO *)
-    (* graph/ *)
-    TestTree.tests;
-
-    (* type/ *)
-    TestCheckType.tests;
-    TestTypeUtil.tests;
-  ]
-
-let (_:OUnit.test_results) =
-  run_test_tt_main tests
+end
 

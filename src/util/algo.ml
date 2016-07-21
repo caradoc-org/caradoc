@@ -102,6 +102,13 @@ module Algo = struct
         to_buffer buf x
       ) iterable
 
+  let join_bufferi (buf : Buffer.t) fold_left to_buffer (separator : string) iterable : unit =
+    iteri fold_left (fun i x ->
+        if i <> 0 then
+          Buffer.add_string buf separator;
+        to_buffer i buf x
+      ) iterable
+
   let join_string fold_left to_string (separator : string) iterable : string =
     let to_buffer buf x =
       Buffer.add_string buf (to_string x)

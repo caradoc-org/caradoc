@@ -47,6 +47,14 @@ module IndirectObject : sig
        - string representation of this object
   *)
   val to_string : t -> string
+  (*   Convert an object to a string with selection highlighted in console
+       Args    :
+       - object
+       - selection to highlight
+       Returns :
+       - string representation of this object
+  *)
+  val to_string_hl : t -> Entry.select_t -> string
 
   (*   Check if an object needs a space before it in a PDF file
        Args    :

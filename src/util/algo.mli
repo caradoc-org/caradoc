@@ -116,6 +116,16 @@ module Algo : sig
   *)
   val join_buffer : Buffer.t -> ((bool -> 'b -> bool) -> bool -> 'a -> bool) -> (Buffer.t -> 'b -> unit) -> string -> 'a -> unit
 
+  (*   Join into a buffer an iterable object with separators
+       Args    :
+       - buffer
+       - fold_left function of the iterable object
+       - function to append an element of the iterable to a buffer
+       - separator
+       - iterable object (e.g. list, array)
+  *)
+  val join_bufferi : Buffer.t -> ((int -> 'b -> int) -> int -> 'a -> int) -> (int -> Buffer.t -> 'b -> unit) -> string -> 'a -> unit
+
   (*   Join an iterable object with separators
        Args    :
        - fold_left function of the iterable object

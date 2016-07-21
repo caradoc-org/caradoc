@@ -44,6 +44,13 @@ module IndirectObject = struct
     | Stream s ->
       PDFStream.to_string s
 
+  let to_string_hl (x : t) (selector : Entry.select_t) : string =
+    match x with
+    | Direct y ->
+      DirectObject.to_string_hl y selector
+    | Stream s ->
+      PDFStream.to_string_hl s selector
+
 
   let need_space_before (x : t) : bool =
     match x with

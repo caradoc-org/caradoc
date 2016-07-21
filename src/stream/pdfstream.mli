@@ -21,6 +21,7 @@ open Key
 open Boundedint
 open Directobject
 open Errors
+open Entry
 
 module PDFStream : sig
 
@@ -74,6 +75,14 @@ module PDFStream : sig
        - string representation of this stream
   *)
   val to_string : t -> string
+  (*   Convert a stream to a string with selection highlighted in console
+       Args    :
+       - stream
+       - selection to highlight
+       Returns :
+       - string representation of this stream
+  *)
+  val to_string_hl : t -> Entry.select_t -> string
 
   (*   Convert a stream to its representation in PDF syntax
        Args    :

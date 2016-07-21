@@ -25,6 +25,7 @@ open Algo
 open Convert
 open Params
 open Entry
+open Console
 
 module DirectObject = struct
 
@@ -144,7 +145,15 @@ module DirectObject = struct
     done
 
 
-  let rec to_string_impl (tab : string) (buf : Buffer.t) (x : t) : unit =
+  let rec to_string_impl (selector : Entry.select_t) (tab : string) (buf : Buffer.t) (x : t) : unit =
+    if Entry.is_selected selector then (
+      Buffer.add_string buf Console.highlight;
+      to_string_core selector tab buf x;
+      Buffer.add_string buf Console.reset
+    ) else
+      to_string_core selector tab buf x
+
+  and to_string_core (selector : Entry.select_t) (tab : string) (buf : Buffer.t) (x : t) : unit =
     match x with
     | Null -> Buffer.add_string buf "null"
     | Bool true -> Buffer.add_string buf "true"
@@ -160,10 +169,10 @@ module DirectObject = struct
       escape_name buf n
     | Array a ->
       Buffer.add_char buf '[';
-      Algo.join_buffer buf List.fold_left (to_string_impl tab) " " a;
+      Algo.join_bufferi buf List.fold_left (fun i -> to_string_impl (Entry.move_to_index selector i) tab) " " a;
       Buffer.add_char buf ']'
     | Dictionary d ->
-      dict_to_string_impl tab buf d
+      dict_to_string_impl selector tab buf d
     | Reference key ->
       let id, gen = Key.get_obj_ref key in
       Buffer.add_string buf (string_of_int id);
@@ -171,8 +180,7 @@ module DirectObject = struct
       Buffer.add_string buf (string_of_int gen);
       Buffer.add_string buf " R"
 
-
-  and dict_to_string_impl (tab : string) (buf : Buffer.t) (d : dict_t) : unit =
+  and dict_to_string_impl (selector : Entry.select_t) (tab : string) (buf : Buffer.t) (d : dict_t) : unit =
     let tabtab = tab ^ "    " in
 
     let entry_to_string key value =
@@ -181,7 +189,7 @@ module DirectObject = struct
       Buffer.add_char buf '/';
       escape_name buf key;
       Buffer.add_char buf ' ';
-      to_string_impl tabtab buf value
+      to_string_impl (Entry.move_to_name selector key) tabtab buf value
     in
 
     let content_to_buf () =
@@ -200,15 +208,26 @@ module DirectObject = struct
 
   let to_string (x : t) : string =
     let buf = Buffer.create 16 in
-    to_string_impl "" buf x;
+    to_string_impl Entry.no_selector "" buf x;
     Buffer.contents buf
 
-  let dict_to_string_buf (buf : Buffer.t) (x : dict_t) : unit =
-    dict_to_string_impl "" buf x
+  let dict_to_string_buf (buf : Buffer.t) (x : dict_t) (selector : Entry.select_t) : unit =
+    dict_to_string_impl selector "" buf x
 
   let dict_to_string (x : dict_t) : string =
     let buf = Buffer.create 16 in
-    dict_to_string_buf buf x;
+    dict_to_string_buf buf x Entry.no_selector;
+    Buffer.contents buf
+
+
+  let to_string_hl (x : t) (selector : Entry.select_t) : string =
+    let buf = Buffer.create 16 in
+    to_string_impl selector "" buf x;
+    Buffer.contents buf
+
+  let dict_to_string_hl (x : dict_t) (selector : Entry.select_t) : string =
+    let buf = Buffer.create 16 in
+    dict_to_string_buf buf x selector;
     Buffer.contents buf
 
 

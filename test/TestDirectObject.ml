@@ -24,6 +24,7 @@ open Errors
 open Boundedint
 open Params
 open Entry
+open Console
 
 
 let init_params () =
@@ -121,6 +122,22 @@ let tests =
                       (init_params (); to_string (Reference (Key.make_gen ~:3 ~:2)))
                       "3 2 R") ;
       ] ;
+    ] ;
+
+    "to_string_hl" >:::
+    [
+      "(1)" >:: (fun _ -> assert_equal
+                    (to_string_hl Null Entry.no_selector)
+                    "null") ;
+      "(2)" >:: (fun _ -> assert_equal
+                    (to_string_hl Null (Entry.make_selector [Entry.empty]))
+                    (Console.highlight ^ "null" ^ Console.reset)) ;
+      "(3)" >:: (fun _ -> assert_equal
+                    (to_string_hl (Array [Null ; Bool true ; Int ~:123 ; String "foo"]) (Entry.make_selector [Entry.make_index 1 ; Entry.make_index 2]))
+                    ("[null " ^ Console.highlight ^ "true" ^ Console.reset ^ " " ^ Console.highlight ^ "123" ^ Console.reset ^ " (foo)]")) ;
+      "(4)" >:: (fun _ -> assert_equal
+                    (to_string_hl (Array [Null ; Array [Bool true ; Name "bar"] ; Int ~:123 ; String "foo"]) (Entry.make_selector [Entry.make_index 1 ; Entry.append_index (Entry.make_index 1) 0]))
+                    ("[null " ^ Console.highlight ^ "[true /bar]" ^ Console.reset ^ " 123 (foo)]")) ;
     ] ;
 
     "to_pdf" >:::

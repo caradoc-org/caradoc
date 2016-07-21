@@ -31,6 +31,7 @@ open Errors
 open Pdfstream
 open Document
 open Mapkey
+open Entry
 
 
 (***************)
@@ -256,6 +257,7 @@ let command_findref =
   let num = ref 0 in   (* These two fields describe the object number *)
   let gen = ref 0 in   (* => number + generation number               *)
   let show_ctxt = ref false in
+  let highlight = ref false in
 
   let find_reference filename =
     (* Load more options *)
@@ -271,22 +273,37 @@ let command_findref =
     if occurrences = MapKey.empty then (
       print_string "Not found\n";
       exit 255
-    ) else
+    ) else (
+      let count = ref 0 in
+      let count_obj = ref 0 in
+
       MapKey.iter (fun k l ->
+          count_obj := !count_obj + 1;
           List.iter (fun entry ->
+              count := !count + 1;
               Printf.printf "Found%s\n" (Errors.ctxt_to_string (Errors.make_ctxt_entry k entry))
             ) l;
 
           if !show_ctxt then (
+            let selector =
+              if !highlight then
+                Entry.make_selector l
+              else
+                Entry.no_selector
+            in
+
             let tmp =
               if k = Key.Trailer then
-                DirectObject.dict_to_string (Document.main_trailer doc)
+                DirectObject.dict_to_string_hl (Document.main_trailer doc) selector
               else
-                IndirectObject.to_string (Document.find_obj doc k)
+                IndirectObject.to_string_hl (Document.find_obj doc k) selector
             in
-            Printf.printf "%s\n" tmp
+            Printf.printf "%s\n\n" tmp
           )
-        ) occurrences
+        ) occurrences;
+
+      Printf.printf "Found %d occurrence(s) in %d object(s).\n" !count !count_obj
+    )
   in
 
   let options = [
@@ -294,7 +311,8 @@ let command_findref =
     "--num", Arg.Set_int num, "number of the object";
     "--gen", Arg.Set_int gen, "generation number of the object (default : 0)";
     "--show", Arg.Unit (fun () -> show_ctxt := true), "show context of each occurrence found";
-    "--sort-dicts", Arg.Unit (fun () -> Params.global.Params.sort_dicts <- true), "sort dictionaries by key";
+    "--sort-dicts", Arg.Unit (fun () -> Params.global.Params.sort_dicts <- true), "when --show is activated, sort dictionaries by key";
+    "--highlight", Arg.Unit (fun () -> highlight := true), "when --show is activated, highlight occurrences in console output";
   ] in
   OneFileCmd (options, "Find all references to an object in a PDF file", find_reference)
 

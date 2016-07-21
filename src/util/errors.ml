@@ -73,7 +73,7 @@ module Errors = struct
     begin
       match ctxt.key with
       | Some k ->
-        Buffer.add_string buf " for object ";
+        Buffer.add_string buf " in object ";
         Buffer.add_string buf (Key.to_string k)
       | None -> ()
     end;
