@@ -41,7 +41,8 @@ module Algo = struct
 
   let array_contains (x : 'a array) (y : 'a) : bool =
     Array.fold_left
-      (fun result z -> result || y = z
+      (fun result z ->
+         result || y = z
       ) false x
 
   let sort_hash (x : (string, 'a) Hashtbl.t) : (string * 'a) list =

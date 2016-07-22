@@ -73,6 +73,12 @@ To print the list of PDF types handled by this version of Caradoc :
 caradoc types
 ```
 
+To find all references to an object, given its object number (and generation number, defaulted to zero) :
+```
+caradoc findref --num 2 input.pdf
+caradoc findref --num 2 --gen 5 --show --highlight input.pdf
+```
+
 ## Ad-hoc parser options
 
 You can specify an option file as parameter of most commands in the relaxed parser mode :
@@ -89,6 +95,7 @@ The following options are defined, to cope with common errors produced by variou
 - `allow-dict-duplicates` : allow a PDF dictionary to contain several times the same key. In that case, the last occurrence of the key is kept as the actual value.
 - `zero-offset-as-free` : treat an xref table entry with an offset of zero as a *free* object. Some software produce such ill-formed PDFs.
 - `undefined-ref-as-null` : treat a reference to an undeclared object as the *null* object. By default, such references trigger an error.
+- `allow-nonascii-in-names` : allow non-ASCII characters in PDF names, even when they are not represented by an escape sequence. By default, non-ASCII characters are only allowed in the form of an escape sequence.
 - `allow-arbitrary-info` : allow the *Info* dictionary to contain arbitrary (metadata) keys. Otherwise, unknown keys trigger an error in the type checker.
 
 ## Structure of the code
