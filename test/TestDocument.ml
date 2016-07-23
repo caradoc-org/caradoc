@@ -218,6 +218,20 @@ let tests =
                     (fun () -> Document.find_ref (Key.make_0 ~:2) (make_doc 1))) ;
     ] ;
 
+    "find_name" >:::
+    [
+      "(1)" >:: (fun _ -> assert_equal
+                    (Document.find_name "Root" (make_doc 2))
+                    (TestMapkey.add_all [Key.Trailer, [Entry.make_name_key "Root"]])) ;
+      "(2)" >:: (fun _ -> assert_equal
+                    (Document.find_name "foo" (make_doc 5))
+                    (TestMapkey.add_all [Key.make_0 ~:7, [Entry.empty] ; Key.make_0 ~:12, [Entry.make_name_key "foo"]])) ;
+
+      "(3)" >:: (fun _ -> assert_raises
+                    (Errors.UnexpectedError ("No trailer found in document"))
+                    (fun () -> Document.find_name "foo" (make_doc 1))) ;
+    ] ;
+
     "ref_closure" >:::
     [
       "(1)" >:: (fun _ -> assert_equal

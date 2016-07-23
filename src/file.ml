@@ -481,7 +481,8 @@ let statistics (input : in_channel) (stats : Stats.t) : unit =
   ()
 
 
-let parse_file (input : in_channel) : Document.t =
+let parse_file (filename : string) : Document.t =
+  let input = open_in_bin filename in
   let doc =
     if Params.global.Params.strict_parser then
       parse_strict input (Stats.create ())
@@ -495,8 +496,8 @@ let parse_file (input : in_channel) : Document.t =
   doc
 
 
-let check_file (input : in_channel) : unit =
-  let doc = parse_file input in
+let check_file (filename : string) : unit =
+  let doc = parse_file filename in
 
   apply_option (fun f -> dump_objects doc f) Params.global.Params.dump_filename;
 

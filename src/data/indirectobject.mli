@@ -87,6 +87,14 @@ module IndirectObject : sig
        - list of occurrences in object
   *)
   val find_ref : Key.t -> t -> Entry.t list
+  (*   Find a name in an object
+       Args    :
+       - name to find (without leading slash)
+       - object
+       Returns :
+       - list of occurrences in object
+  *)
+  val find_name : string -> t -> Entry.t list
 
   (*   Get objects referenced by an object
        Args    :

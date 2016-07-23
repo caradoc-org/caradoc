@@ -33,13 +33,21 @@ module Entry : sig
   *)
   val make_index : int -> t
 
-  (*   Create an entry from a dictionary key
+  (*   Create an entry from a dictionary key binding
        Args    :
        - dictionary key (without leading slash)
        Returns :
        - entry
   *)
   val make_name : string -> t
+
+  (*   Create an entry from a dictionary key
+       Args    :
+       - dictionary key (without leading slash)
+       Returns :
+       - entry
+  *)
+  val make_name_key : string -> t
 
   (*   Append an entry to another entry
        Args    :
@@ -59,7 +67,7 @@ module Entry : sig
   *)
   val append_index : t -> int -> t
 
-  (*   Append a dictionary key to an entry
+  (*   Append a dictionary key binding to an entry
        Args    :
        - entry
        - dictionary key (without leading slash)
@@ -67,6 +75,15 @@ module Entry : sig
        - concatenation of the entry followed by the name
   *)
   val append_name : t -> string -> t
+
+  (*   Append a dictionary key to an entry
+       Args    :
+       - entry
+       - dictionary key (without leading slash)
+       Returns :
+       - concatenation of the entry followed by the name
+  *)
+  val append_name_key : t -> string -> t
 
   (*   Check if an entry is empty
        Args    :
@@ -108,7 +125,7 @@ module Entry : sig
   *)
   val move_to_index : select_t -> int -> select_t
 
-  (*   Move to a dictionary key in the current object and update the selector accordingly
+  (*   Move to a dictionary key binding in the current object and update the selector accordingly
        Args    :
        - selector
        - name to move the current entry to
@@ -116,6 +133,15 @@ module Entry : sig
        - intersection of the selector with the obtained entry
   *)
   val move_to_name : select_t -> string -> select_t
+
+  (*   Move to a dictionary key in the current object and update the selector accordingly
+       Args    :
+       - selector
+       - name to move the current entry to
+       Returns :
+       - intersection of the selector with the obtained entry
+  *)
+  val move_to_name_key : select_t -> string -> select_t
 
   (*   Check if a selector selects the current entry in an object
        Args    :

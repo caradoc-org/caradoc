@@ -114,9 +114,9 @@ module Document = struct
     MapKey.iter f x.special_streams
 
 
-  let find_ref (key : Key.t) (x : t) : Entry.t list MapKey.t =
+  let find (indirect_find : 'a -> IndirectObject.t -> Entry.t list) (dict_find : 'a -> DirectObject.dict_t -> Entry.t list) (what : 'a) (x : t) : Entry.t list MapKey.t =
     let tmp = fold_objects (fun k o m ->
-        let l = IndirectObject.find_ref key o in
+        let l = indirect_find what o in
         if l = [] then
           m
         else
@@ -124,11 +124,17 @@ module Document = struct
       ) x MapKey.empty
     in
 
-    let l = DirectObject.find_ref_dict key (main_trailer x) in
+    let l = dict_find what (main_trailer x) in
     if l = [] then
       tmp
     else
       MapKey.add Key.Trailer l tmp
+
+  let find_ref : Key.t -> t -> Entry.t list MapKey.t =
+    find IndirectObject.find_ref DirectObject.find_ref_dict
+
+  let find_name : string -> t -> Entry.t list MapKey.t =
+    find IndirectObject.find_name DirectObject.find_name_dict
 
 
   let check_refs (objects : IndirectObject.t MapKey.t) (refs : Entry.t MapKey.t) (ctxt : Errors.error_ctxt) : SetKey.t =

@@ -138,6 +138,9 @@ let tests =
       "(4)" >:: (fun _ -> assert_equal
                     (to_string_hl (Array [Null ; Array [Bool true ; Name "bar"] ; Int ~:123 ; String "foo"]) (Entry.make_selector [Entry.make_index 1 ; Entry.append_index (Entry.make_index 1) 0]))
                     ("[null " ^ Console.highlight ^ "[true /bar]" ^ Console.reset ^ " 123 (foo)]")) ;
+      "(5)" >:: (fun _ -> assert_equal
+                    (init_params (); dict_to_string_hl (TestDict.add_all ["Key", String "value" ; "Foo", Name "bar"]) (Entry.make_selector [Entry.make_name "Key" ; Entry.make_name_key "Foo"]))
+                    ("<<\n    " ^ Console.highlight ^ "/Foo" ^ Console.reset ^ " /bar\n    /Key " ^ Console.highlight ^ "(value)" ^ Console.reset ^ "\n>>")) ;
     ] ;
 
     "to_pdf" >:::
@@ -209,6 +212,25 @@ let tests =
       "(4)" >:: (fun _ -> assert_equal
                     (find_ref_dict (Key.make_0 ~:1) (TestDict.add_all ["Foo", Reference (Key.make_0 ~:1) ; "Bar", Bool false ; "Hello", Reference (Key.make_0 ~:1) ; "World", Reference (Key.make_0 ~:2) ; "Alpha", Reference (Key.make_0 ~:1)]))
                     [Entry.make_name "Alpha" ; Entry.make_name "Foo" ; Entry.make_name "Hello"]) ;
+    ] ;
+
+    "find_name" >:::
+    [
+      "(1)" >:: (fun _ -> assert_equal
+                    (find_name "Foo" (String "Foo"))
+                    []) ;
+      "(2)" >:: (fun _ -> assert_equal
+                    (find_name "Foo" (Reference (Key.make_0 ~:1)))
+                    []) ;
+      "(3)" >:: (fun _ -> assert_equal
+                    (find_name "Foo" (Name "Foo"))
+                    [Entry.empty]) ;
+      "(4)" >:: (fun _ -> assert_equal
+                    (find_name "Foo" (Array [Name "Foo" ; Name "Bar" ; Bool false ; Name "Foo"]))
+                    [Entry.make_index 0 ; Entry.make_index 3]) ;
+      "(5)" >:: (fun _ -> assert_equal
+                    (find_name_dict "Foo" (TestDict.add_all ["Foo", Reference (Key.make_0 ~:1) ; "Bar", Bool false ; "Hello", Name "Foo"]))
+                    [Entry.make_name_key "Foo" ; Entry.make_name "Hello"]) ;
     ] ;
 
     "refs" >:::

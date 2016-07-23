@@ -6,6 +6,7 @@ true: use_menhir, package(cryptokit), package(oUnit)
 "src/parser/relaxed": include
 "src/stats": include
 "src/stream": include
+"src/tools": include
 "src/type": include
 "src/type/pdf": include
 "src/util": include

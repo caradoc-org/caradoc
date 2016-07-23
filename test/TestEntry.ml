@@ -45,7 +45,16 @@ let tests =
                     (Entry.is_empty (Entry.make_index 0))
                     false) ;
       "(3)" >:: (fun _ -> assert_equal
+                    (Entry.is_empty (Entry.make_name ""))
+                    false) ;
+      "(4)" >:: (fun _ -> assert_equal
                     (Entry.is_empty (Entry.make_name "foo"))
+                    false) ;
+      "(5)" >:: (fun _ -> assert_equal
+                    (Entry.is_empty (Entry.make_name_key ""))
+                    false) ;
+      "(6)" >:: (fun _ -> assert_equal
+                    (Entry.is_empty (Entry.make_name_key "bar"))
                     false) ;
     ] ;
     "to_string" >:::
@@ -57,11 +66,14 @@ let tests =
                     (Entry.to_string (Entry.make_name "foo"))
                     "/foo") ;
       "(3)" >:: (fun _ -> assert_equal
+                    (Entry.to_string (Entry.make_name_key "bar"))
+                    "\\bar") ;
+      "(4)" >:: (fun _ -> assert_equal
                     (Entry.to_string (Entry.make_index 123))
                     "[123]") ;
-      "(4)" >:: (fun _ -> assert_equal
-                    (Entry.to_string (Entry.append_name (Entry.make_index 123) "foo"))
-                    "[123]/foo") ;
+      "(5)" >:: (fun _ -> assert_equal
+                    (Entry.to_string (Entry.append_name_key (Entry.append_name (Entry.make_index 123) "foo") "bar"))
+                    "[123]/foo\\bar") ;
     ] ;
 
     "make_selector" >:::
@@ -106,11 +118,29 @@ let tests =
                     (Entry.move_to_name (Entry.make_selector [Entry.append_name (Entry.make_name "bar") "foo" ; Entry.make_name "bar" ; Entry.append_index (Entry.make_index 123) 456]) "bar")
                     (Entry.make_selector [Entry.make_name "foo" ; Entry.empty])) ;
     ] ;
+    "move_to_name_key" >:::
+    [
+      "(1)" >:: (fun _ -> assert_equal
+                    (Entry.move_to_name_key Entry.no_selector "foo")
+                    Entry.no_selector) ;
+      "(2)" >:: (fun _ -> assert_equal
+                    (Entry.move_to_name_key (Entry.make_selector [Entry.make_index 123]) "foo")
+                    Entry.no_selector) ;
+      "(3)" >:: (fun _ -> assert_equal
+                    (Entry.move_to_name_key (Entry.make_selector [Entry.make_name "foo"]) "foo")
+                    Entry.no_selector) ;
+      "(4)" >:: (fun _ -> assert_equal
+                    (Entry.move_to_name_key (Entry.make_selector [Entry.make_name_key "bar"]) "bar")
+                    (Entry.make_selector [Entry.empty])) ;
+    ] ;
     "is_selected" >:::
     [
       "(1)" >:: (fun _ -> assert_equal
                     (Entry.is_selected Entry.no_selector)
                     false) ;
+      "(2)" >:: (fun _ -> assert_equal
+                    (Entry.is_selected (Entry.make_selector [Entry.empty]))
+                    true) ;
     ] ;
   ]
 

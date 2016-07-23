@@ -147,6 +147,23 @@ let tests =
       ] ;
     ] ;
 
+    "find_name" >:::
+    [
+      "direct" >:::
+      [
+        "(1)" >:: (fun _ -> assert_equal
+                      (find_name "Foo" (Direct (DirectObject.Array [DirectObject.Name "Foo" ; DirectObject.Int ~:123 ; DirectObject.Name "Foo" ; DirectObject.String "Foo"])))
+                      [Entry.make_index 0 ; Entry.make_index 2]) ;
+      ] ;
+
+      "stream" >:::
+      [
+        "(1)" >:: (fun _ -> assert_equal
+                      (find_name "Foo" (Stream (TestStream.make_raw_dict ["Foo", DirectObject.Reference (Key.make_0 ~:2) ; "Bar", DirectObject.Array [DirectObject.Name "Foo"]] "raw content")))
+                      [Entry.append_index (Entry.make_name "Bar") 0 ; Entry.make_name_key "Foo"]) ;
+      ] ;
+    ] ;
+
     "refs" >:::
     [
       "direct" >:::

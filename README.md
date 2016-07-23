@@ -79,6 +79,12 @@ caradoc findref --num 2 input.pdf
 caradoc findref --num 2 --gen 5 --show --highlight input.pdf
 ```
 
+To find all occurrences of a PDF name :
+```
+caradoc findname --name Page input.pdf
+caradoc findname --name Resources --show --highlight input.pdf
+```
+
 ## Ad-hoc parser options
 
 You can specify an option file as parameter of most commands in the relaxed parser mode :
@@ -109,6 +115,7 @@ The source code is organized as follows :
 - `src/parser/relaxed/` : specific parsing code of the relaxed parser (to fetch objects from xref tables) ;
 - `src/stats/` : modules to store statistics about a PDF file ;
 - `src/stream/` : decoding of PDF streams ;
+- `src/tools/` : various PDF tools (e.g. search in a file) ;
 - `src/type/` : code of the type checker ;
 - `src/type/pdf/` : definitions of PDF types ;
 - `src/util/` : various helper modules ;

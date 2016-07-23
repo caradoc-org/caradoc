@@ -37,58 +37,44 @@ module IndirectObject = struct
     | StreamOffset of DirectObject.dict_t * BoundedInt.t
 
 
-  let to_string (x : t) : string =
+  let make_fun (fun_direct : DirectObject.t -> 'a) (fun_stream : PDFStream.t -> 'a) (x : t) : 'a =
     match x with
     | Direct y ->
-      DirectObject.to_string y
+      fun_direct y
     | Stream s ->
-      PDFStream.to_string s
+      fun_stream s
 
-  let to_string_hl (x : t) (selector : Entry.select_t) : string =
-    match x with
-    | Direct y ->
-      DirectObject.to_string_hl y selector
-    | Stream s ->
-      PDFStream.to_string_hl s selector
+  let make_fun_dict (fun_direct : DirectObject.t -> 'a) (fun_dict : DirectObject.dict_t -> 'a) : t -> 'a =
+    make_fun fun_direct (fun s -> fun_dict (PDFStream.get_dict s))
 
 
-  let need_space_before (x : t) : bool =
-    match x with
-    | Direct y ->
-      DirectObject.need_space_before y
-    | Stream _ ->
-      false
+  let to_string : t -> string =
+    make_fun DirectObject.to_string PDFStream.to_string
 
-  let need_space_after (x : t) : bool =
-    match x with
-    | Direct y ->
-      DirectObject.need_space_after y
-    | Stream _ ->
-      true
+  let to_string_hl : t -> Entry.select_t -> string =
+    make_fun DirectObject.to_string_hl PDFStream.to_string_hl
 
 
-  let to_pdf (x : t) : string =
-    match x with
-    | Direct y ->
-      DirectObject.to_pdf y
-    | Stream s ->
-      PDFStream.to_pdf s
+  let need_space_before : t -> bool =
+    make_fun DirectObject.need_space_before (fun _ -> false)
+
+  let need_space_after : t -> bool =
+    make_fun DirectObject.need_space_after (fun _ -> true)
 
 
-  let find_ref (k : Key.t) (x : t) : Entry.t list =
-    match x with
-    | Direct y ->
-      DirectObject.find_ref k y
-    | Stream s ->
-      DirectObject.find_ref_dict k (PDFStream.get_dict s)
+  let to_pdf : t -> string =
+    make_fun DirectObject.to_pdf PDFStream.to_pdf
 
 
-  let refs (x : t) : Entry.t MapKey.t =
-    match x with
-    | Direct y ->
-      DirectObject.refs y
-    | Stream s ->
-      DirectObject.refs_dict (PDFStream.get_dict s)
+  let find_ref (k : Key.t) : t -> Entry.t list =
+    make_fun_dict (DirectObject.find_ref k) (DirectObject.find_ref_dict k)
+
+  let find_name (n : string) : t -> Entry.t list =
+    make_fun_dict (DirectObject.find_name n) (DirectObject.find_name_dict n)
+
+
+  let refs : t -> Entry.t MapKey.t =
+    make_fun_dict DirectObject.refs DirectObject.refs_dict
 
 
   let rec relink (newkeys : Key.t MapKey.t) (ctxt : Errors.error_ctxt) (x : t) : t =

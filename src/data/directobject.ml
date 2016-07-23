@@ -184,10 +184,18 @@ module DirectObject = struct
     let tabtab = tab ^ "    " in
 
     let entry_to_string key value =
+      let key_selected = Entry.is_selected (Entry.move_to_name_key selector key) in
+
       Buffer.add_char buf '\n';
       Buffer.add_string buf tabtab;
+
+      if key_selected then
+        Buffer.add_string buf Console.highlight;
       Buffer.add_char buf '/';
       escape_name buf key;
+      if key_selected then
+        Buffer.add_string buf Console.reset;
+
       Buffer.add_char buf ' ';
       to_string_impl (Entry.move_to_name selector key) tabtab buf value
     in
@@ -320,6 +328,17 @@ module DirectObject = struct
     Buffer.contents buf
 
 
+  let find (find_impl : 'a -> Entry.t list ref -> Entry.t -> t -> unit) (what : 'a) (x : t) : Entry.t list =
+    let result = ref [] in
+    find_impl what result Entry.empty x;
+    List.rev !result
+
+  let find_dict (find_dict_impl : 'a -> Entry.t list ref -> Entry.t -> dict_t -> unit) (what : 'a) (d : dict_t) : Entry.t list =
+    let result = ref [] in
+    find_dict_impl what result Entry.empty d;
+    List.rev !result
+
+
   let rec find_ref_impl (k : Key.t) (l : Entry.t list ref) (entry : Entry.t) (x : t) : unit =
     match x with
     | Reference key ->
@@ -339,15 +358,38 @@ module DirectObject = struct
       ) d
 
 
-  let find_ref (k : Key.t) (x : t) : Entry.t list =
-    let result = ref [] in
-    find_ref_impl k result Entry.empty x;
-    List.rev !result
+  let rec find_name_impl (n : string) (l : Entry.t list ref) (entry : Entry.t) (x : t) : unit =
+    match x with
+    | Name name ->
+      if name = n then
+        l := entry::(!l)
+    | Array a ->
+      Algo.iteri List.fold_left (fun i o ->
+          find_name_impl n l (Entry.append_index entry i) o
+        ) a
+    | Dictionary d ->
+      find_name_dict_impl n l entry d
+    | Null | Bool _ | Int _ | Real _ | String _ | Reference _ -> ()
 
-  let find_ref_dict (k : Key.t) (d : dict_t) : Entry.t list =
-    let result = ref [] in
-    find_ref_dict_impl k result Entry.empty d;
-    List.rev !result
+  and find_name_dict_impl (n : string) (l : Entry.t list ref) (entry : Entry.t) (d : dict_t) : unit =
+    dict_iter_sorted (fun key obj ->
+        if key = n then
+          l := (Entry.append_name_key entry key)::(!l);
+        find_name_impl n l (Entry.append_name entry key) obj
+      ) d
+
+
+  let find_ref : Key.t -> t -> Entry.t list =
+    find find_ref_impl
+
+  let find_ref_dict : Key.t -> dict_t -> Entry.t list =
+    find_dict find_ref_dict_impl
+
+  let find_name : string -> t -> Entry.t list =
+    find find_name_impl
+
+  let find_name_dict : string -> dict_t -> Entry.t list =
+    find_dict find_name_dict_impl
 
 
   let rec refs_impl (entry : Entry.t) (x : t) : Entry.t MapKey.t =

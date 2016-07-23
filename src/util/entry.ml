@@ -22,6 +22,7 @@ module Entry = struct
   type elem =
     | Index of int
     | Name of string
+    | NameKey of string
 
   type t = elem list
 
@@ -34,6 +35,9 @@ module Entry = struct
   let make_name (n : string) : t =
     [Name n]
 
+  let make_name_key (n : string) : t =
+    [NameKey n]
+
   let append_entry (x : t) (y : t) : t =
     y @ x
 
@@ -42,6 +46,9 @@ module Entry = struct
 
   let append_name (x : t) (n : string) : t =
     (Name n)::x
+
+  let append_name_key (x : t) (n : string) : t =
+    (NameKey n)::x
 
   let is_empty (x : t) : bool =
     x = []
@@ -52,6 +59,8 @@ module Entry = struct
       Printf.sprintf "[%d]" i
     | Name n ->
       "/" ^ n
+    | NameKey n ->
+      "\\" ^ n
 
   let to_string (x : t) : string =
     let buf = Buffer.create 16 in
@@ -87,6 +96,15 @@ module Entry = struct
     validate (List.fold_right (fun entry l ->
         match entry with
         | (Name m)::x when n = m ->
+          x::l
+        | _ ->
+          l
+      ) s [])
+
+  let move_to_name_key (s : select_t) (n : string) : select_t =
+    validate (List.fold_right (fun entry l ->
+        match entry with
+        | (NameKey m)::x when n = m ->
           x::l
         | _ ->
           l

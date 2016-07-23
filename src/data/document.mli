@@ -59,6 +59,14 @@ module Document : sig
        - list of occurrences
   *)
   val find_ref : Key.t -> t -> Entry.t list MapKey.t
+  (*   Find all occurrences of a PDF name
+       Args    :
+       - name to find (without leading slash)
+       - document
+       Returns :
+       - list of occurrences
+  *)
+  val find_name : string -> t -> Entry.t list MapKey.t
 
   (*   Get the closure of objects referenced by an object
        Args    :
