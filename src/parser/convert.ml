@@ -82,8 +82,6 @@ let int_of_hexa (n1 : char) (n2 : char) : int =
 
 let char_of_hexa (n1 : char) (n2 : char) : char =
   let x = int_of_hexa n1 n2 in
-  if x > 255 then
-    raise (ConvertError "Hexadecimal character is out of bounds");
   char_of_int x
 
 let hexa_digit_of_int (n : int) : char =

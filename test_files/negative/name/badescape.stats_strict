@@ -1,2 +1,2 @@
 Not a PDF file
-Lexing error at offset 62 [0x3e] : invalid escape sequence in name context !
+PDF error : Lexing error : invalid escape sequence in name context at offset 62 [0x3e] in file !

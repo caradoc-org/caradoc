@@ -22,7 +22,6 @@ open Setkey
 open Mapkey
 open Errors
 open Algo
-open Convert
 open Params
 open Entry
 open Console

@@ -26,6 +26,7 @@ open Directobject
 open Indirectobject
 open Intervals
 open Pdfstream
+open Errors
 
 
 module FetchCommon : sig
@@ -125,14 +126,14 @@ module type FetchCompT = sig
        Args    :
        - content of object stream
        - id of object (to use for error report)
-       - offset of object (to use for error report)
+       - error context
        - offset of first object inside the stream
        - number of objects inside the stream
        - traversal context
        Returns :
        - bag of objects contained in the stream
   *)
-  val parseobjstm : string -> Key.t -> BoundedInt.t -> BoundedInt.t -> BoundedInt.t -> FetchCommon.context -> ((DirectObject.t * BoundedInt.t) MapKey.t)
+  val parseobjstm : string -> Key.t -> Errors.error_ctxt -> BoundedInt.t -> BoundedInt.t -> FetchCommon.context -> ((DirectObject.t * BoundedInt.t) MapKey.t)
 
   (*   Fetch an object stream and extract its objects
        Args    :
@@ -141,7 +142,7 @@ module type FetchCompT = sig
        Returns :
        - bag of objects contained in the stream
   *)
-  val fetchobjstm : BoundedInt.t -> FetchCommon.context -> ((DirectObject.t * BoundedInt.t) MapKey.t)
+  val fetchobjstm : Key.t -> FetchCommon.context -> ((DirectObject.t * BoundedInt.t) MapKey.t)
 
 end
 
@@ -149,13 +150,13 @@ end
 (*   Traverse an object and retrieve its content
      Args    :
      - id of object
-     - offset of object
+     - error context
      - traversal context
      - fetch function
      Returns :
      - content of object
 *)
-val traverse_object : Key.t -> BoundedInt.t -> FetchCommon.context -> (Key.t -> BoundedInt.t -> FetchCommon.context -> IndirectObject.t) -> IndirectObject.t
+val traverse_object : Key.t -> Errors.error_ctxt -> FetchCommon.context -> (unit -> IndirectObject.t) -> IndirectObject.t
 
 (*   Parse a stream given an offset in an input channel
      Args    :

@@ -31,7 +31,7 @@ let dump_hole (input : in_channel) (start : BoundedInt.t) (length : BoundedInt.t
 
   let blank =
     try
-      wrap_parser Parser.hole (Some start) lexbuf Errors.ctxt_none;
+      wrap_parser Parser.hole lexbuf (Errors.make_ctxt_pos (Errors.make_pos_file start));
       true
     with _ ->
       false

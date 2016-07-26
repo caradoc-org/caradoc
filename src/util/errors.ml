@@ -23,23 +23,47 @@ open Entry
 
 module Errors = struct
 
+  type pos_t =
+    | File of BoundedInt.t
+    | Stream of Key.t * BoundedInt.t
+    | Objstm of Key.t * BoundedInt.t
+
   type error_ctxt = {
     key : Key.t option;
-    pos : BoundedInt.t option;
+    pos : pos_t option;
     entry : Entry.t;
   }
+
+
+  let make_pos_file (o : BoundedInt.t) : pos_t =
+    File o
+
+  let make_pos_stream (k : Key.t) (o : BoundedInt.t) : pos_t =
+    Stream (k, o)
+
+  let make_pos_objstm (k : Key.t) (id : BoundedInt.t) : pos_t =
+    Objstm (k, id)
+
+  let pos_add_offset (p : pos_t) (o : BoundedInt.t) : pos_t =
+    match p with
+    | File offset ->
+      File (offset +: o)
+    | Stream (k, offset) ->
+      Stream (k, offset +: o)
+    | Objstm _ ->
+      p
 
 
   let ctxt_none : error_ctxt =
     {key = None; pos = None; entry = Entry.empty}
 
-  let make_ctxt (k : Key.t) (p : BoundedInt.t) : error_ctxt =
+  let make_ctxt (k : Key.t) (p : pos_t) : error_ctxt =
     {key = Some k; pos = Some p; entry = Entry.empty}
 
   let make_ctxt_key (k : Key.t) : error_ctxt =
     {key = Some k; pos = None; entry = Entry.empty}
 
-  let make_ctxt_pos (p : BoundedInt.t) : error_ctxt =
+  let make_ctxt_pos (p : pos_t) : error_ctxt =
     {key = None; pos = Some p; entry = Entry.empty}
 
   let make_ctxt_entry (k : Key.t) (e : Entry.t) : error_ctxt =
@@ -51,7 +75,7 @@ module Errors = struct
   let make_ctxt_name (k : Key.t) (n : string) : error_ctxt =
     {key = Some k; pos = None; entry = Entry.make_name n}
 
-  let make_ctxt_full_name (k : Key.t) (p : BoundedInt.t) (n : string) : error_ctxt =
+  let make_ctxt_full_name (k : Key.t) (p : pos_t) (n : string) : error_ctxt =
     {key = Some k; pos = Some p; entry = Entry.make_name n}
 
 
@@ -64,9 +88,33 @@ module Errors = struct
   let ctxt_append_name (c : error_ctxt) (n : string) : error_ctxt =
     {c with entry = Entry.append_name c.entry n}
 
-  let ctxt_set_pos (c : error_ctxt) (p : BoundedInt.t) : error_ctxt =
+  let ctxt_set_pos (c : error_ctxt) (p : pos_t) : error_ctxt =
     {c with pos = Some p}
 
+  let ctxt_add_offset (c : error_ctxt) (o : BoundedInt.t) : error_ctxt =
+    match c.pos with
+    | Some p ->
+      {c with pos = Some (pos_add_offset p o)}
+    | None ->
+      c
+
+
+  let pos_to_buf (p : pos_t) (buf : Buffer.t) : unit =
+    let offset_to_buf offset buf =
+      let i = BoundedInt.to_int offset in
+      Buffer.add_string buf (Printf.sprintf " at offset %d [0x%x]" i i)
+    in
+
+    match p with
+    | File o ->
+      offset_to_buf o buf;
+      Buffer.add_string buf " in file"
+    | Stream (k, o) ->
+      offset_to_buf o buf;
+      Buffer.add_string buf (Printf.sprintf " in stream %s" (Key.to_string k))
+    | Objstm (k, id) ->
+      Buffer.add_string buf (Printf.sprintf " at index %s" (BoundedInt.to_string id));
+      Buffer.add_string buf (Printf.sprintf " in object stream %s" (Key.to_string k))
 
   let ctxt_to_string (ctxt : error_ctxt) : string =
     let buf = Buffer.create 16 in
@@ -84,7 +132,7 @@ module Errors = struct
     begin
       match ctxt.pos with
       | Some p ->
-        Buffer.add_string buf (Printf.sprintf " at offset %d [0x%x]" (BoundedInt.to_int p) (BoundedInt.to_int p));
+        pos_to_buf p buf
       | None -> ()
     end;
     Buffer.contents buf

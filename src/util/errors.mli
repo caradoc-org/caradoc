@@ -23,25 +23,28 @@ open Entry
 
 module Errors : sig
 
-  type error_ctxt = {
-    key : Key.t option;
-    pos : BoundedInt.t option;
-    entry : Entry.t;
-  }
+  type pos_t
+  type error_ctxt
+
+  val make_pos_file : BoundedInt.t -> pos_t
+  val make_pos_stream : Key.t -> BoundedInt.t -> pos_t
+  val make_pos_objstm : Key.t -> BoundedInt.t -> pos_t
+  val pos_add_offset : pos_t -> BoundedInt.t -> pos_t
 
   val ctxt_none : error_ctxt
-  val make_ctxt : Key.t -> BoundedInt.t -> error_ctxt
+  val make_ctxt : Key.t -> pos_t -> error_ctxt
   val make_ctxt_key : Key.t -> error_ctxt
-  val make_ctxt_pos : BoundedInt.t -> error_ctxt
+  val make_ctxt_pos : pos_t -> error_ctxt
   val make_ctxt_entry : Key.t -> Entry.t -> error_ctxt
   val make_ctxt_index : Key.t -> int -> error_ctxt
   val make_ctxt_name : Key.t -> string -> error_ctxt
-  val make_ctxt_full_name : Key.t -> BoundedInt.t -> string -> error_ctxt
+  val make_ctxt_full_name : Key.t -> pos_t -> string -> error_ctxt
 
   val ctxt_append_entry : error_ctxt -> Entry.t -> error_ctxt
   val ctxt_append_index : error_ctxt -> int -> error_ctxt
   val ctxt_append_name : error_ctxt -> string -> error_ctxt
-  val ctxt_set_pos : error_ctxt -> BoundedInt.t -> error_ctxt
+  val ctxt_set_pos : error_ctxt -> pos_t -> error_ctxt
+  val ctxt_add_offset : error_ctxt -> BoundedInt.t -> error_ctxt
 
   val ctxt_to_string : error_ctxt -> string
 

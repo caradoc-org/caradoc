@@ -23,31 +23,30 @@ open Errors
 (*   Calls a parse function on Lexer.token and intercept syntax errors to insert the correct offset
      Args    :
      - parse function
-     - offset of the lexbuf from the beginning of the file
      - lexbuf to parse
      - error context
      Returns :
      - result of the parse function
 *)
-val wrap_parser : ((Lexing.lexbuf -> Parser.token) -> Lexing.lexbuf -> 'a) -> (BoundedInt.t option) -> Lexing.lexbuf -> Errors.error_ctxt -> 'a
+val wrap_parser : ((Lexing.lexbuf -> Parser.token) -> Lexing.lexbuf -> 'a) -> Lexing.lexbuf -> Errors.error_ctxt -> 'a
 
 (*   Calls a parse function on Xreflexer.token and intercept syntax errors to insert the correct offset
      Args    :
      - parse function
-     - offset of the lexbuf from the beginning of the file
      - lexbuf to parse
+     - error context
      Returns :
      - result of the parse function
 *)
-val wrap_xrefparser : ((Lexing.lexbuf -> Xrefparser.token) -> Lexing.lexbuf -> 'a) -> (BoundedInt.t option) -> Lexing.lexbuf -> 'a
+val wrap_xrefparser : ((Lexing.lexbuf -> Xrefparser.token) -> Lexing.lexbuf -> 'a) -> Lexing.lexbuf -> Errors.error_ctxt -> 'a
 
 (*   Calls a parse function on Strictlexer.token and intercept syntax errors to insert the correct offset
      Args    :
      - parse function
-     - offset of the lexbuf from the beginning of the file
      - lexbuf to parse
+     - error context
      Returns :
      - result of the parse function
 *)
-val wrap_strictparser : ((Lexing.lexbuf -> Strictparser.token) -> Lexing.lexbuf -> 'a) -> (BoundedInt.t option) -> Lexing.lexbuf -> 'a
+val wrap_strictparser : ((Lexing.lexbuf -> Strictparser.token) -> Lexing.lexbuf -> 'a) -> Lexing.lexbuf -> Errors.error_ctxt -> 'a
 

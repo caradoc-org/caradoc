@@ -18,7 +18,6 @@
 
 
 open Algo
-open Convert
 
 (***********************)
 (* PDF reference 7.4.2 *)
@@ -42,16 +41,16 @@ module ASCIIHex = struct
 
       while !i < ll do
         if !i + 1 < ll then
-          Buffer.add_char buf (char_of_hexa s.[!i] s.[!i + 1])
+          Buffer.add_char buf (Convert.char_of_hexa s.[!i] s.[!i + 1])
         else
-          Buffer.add_char buf (char_of_hexa s.[!i] '0');
+          Buffer.add_char buf (Convert.char_of_hexa s.[!i] '0');
         i := !i + 2
       done;
 
       Some (Buffer.contents buf)
     with
     | Exit -> None
-    | ConvertError _ -> None
+    | Convert.ConvertError _ -> None
 
 
   let encode (content : string) : string =

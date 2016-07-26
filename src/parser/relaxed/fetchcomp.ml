@@ -36,14 +36,10 @@ module MakeFetchComp (Fetch : FetchT) = struct
   (***********************)
   (* PDF reference 7.5.7 *)
   (***********************)
-  let parseobjstm (content : string) (key : Key.t) (off : BoundedInt.t) (first : BoundedInt.t) (n : BoundedInt.t) (ctxt : FetchCommon.context) : (DirectObject.t * BoundedInt.t) MapKey.t =
-    let error_ctxt = Errors.make_ctxt key off in
-
+  let parseobjstm (content : string) (key : Key.t) (error_ctxt : Errors.error_ctxt) (first : BoundedInt.t) (n : BoundedInt.t) (ctxt : FetchCommon.context) : (DirectObject.t * BoundedInt.t) MapKey.t =
     if Params.global.Params.debug then
       Printf.eprintf "Parse object stream %s\n" (Key.to_string key);
 
-    if n <=: ~:0 then
-      raise (Errors.PDFError ("Number of entries in object stream must be positive", error_ctxt));
     let nm1 = BoundedInt.to_int (n -: ~:1) in
 
     let content_length = ~:(String.length content) in
@@ -53,7 +49,7 @@ module MakeFetchComp (Fetch : FetchT) = struct
     let lexbuf = Lexing.from_string (String.sub content 0 (BoundedInt.to_int first)) in
     let l, m =
       try
-        wrap_parser Parser.intpair_list None lexbuf error_ctxt
+        wrap_parser Parser.intpair_list lexbuf (Errors.make_ctxt_pos (Errors.make_pos_stream key ~:0))
       with _ ->
         raise (Errors.PDFError ("Parsing error in object stream", error_ctxt))
     in
@@ -81,9 +77,6 @@ module MakeFetchComp (Fetch : FetchT) = struct
 
     let bag = ref MapKey.empty in
     for i = 0 to nm1 do
-      if Params.global.Params.debug then
-        Printf.eprintf "In %s : parsing object %s\n" (Key.to_string key) (BoundedInt.to_string idents.(i));
-
       let next =
         if i = nm1 then
           content_length
@@ -93,23 +86,24 @@ module MakeFetchComp (Fetch : FetchT) = struct
       let me = first +: offsets.(i) in
       let len = next -: me in
 
+      let k = Key.make_0 idents.(i) in
+      let error_ctxt_me = Errors.make_ctxt k (Errors.make_pos_stream key me) in
+
+      if MapKey.mem k !bag then
+        raise (Errors.PDFError ("Object appears several times in object stream", error_ctxt_me));
+
+      if Params.global.Params.debug then
+        Printf.eprintf "In %s : parsing object %s\n" (Key.to_string key) (Key.to_string k);
+
       let substr = String.sub content (BoundedInt.to_int me) (BoundedInt.to_int len) in
       let lexbuf = Lexing.from_string substr in
 
       if Params.global.Params.debug then
-        Printf.eprintf "Content of object %s : %s\n" (BoundedInt.to_string idents.(i)) substr;
+        Printf.eprintf "Content of object %s : %s\n" (Key.to_string k) substr;
 
-    (*
-    Printf.eprintf "Compressed %d at %d in %d : %s\n" (BoundedInt.to_int idents.(i)) (BoundedInt.to_int (first +: offsets.(i))) (BoundedInt.to_int (fst key)) substr;
-    *)
-
-      let obj = wrap_parser Parser.one_object None lexbuf error_ctxt in
       (* TODO : check that object is not reference, stream, etc... *)
-      let key = Key.make_0 idents.(i) in
-      if MapKey.mem key !bag then
-        raise (Errors.PDFError (Printf.sprintf "Object %d appears several times in object stream" (BoundedInt.to_int idents.(i)), error_ctxt))
-      else
-        bag := MapKey.add key (obj, ~:i) !bag;
+      let obj = wrap_parser Parser.one_object lexbuf error_ctxt_me in
+      bag := MapKey.add k (obj, ~:i) !bag;
     done;
 
     if Params.global.Params.debug then
@@ -120,9 +114,7 @@ module MakeFetchComp (Fetch : FetchT) = struct
     !bag
 
 
-  let fetchobjstm (id : BoundedInt.t) (ctxt : FetchCommon.context) : (DirectObject.t * BoundedInt.t) MapKey.t =
-    let key = Key.make_0 id in
-
+  let fetchobjstm (key : Key.t) (ctxt : FetchCommon.context) : (DirectObject.t * BoundedInt.t) MapKey.t =
     try
       MapKey.find key ctxt.FetchCommon.decompressed
     with Not_found ->
@@ -136,7 +128,7 @@ module MakeFetchComp (Fetch : FetchT) = struct
         | XRefTable.Inuse -> ()
       end;
 
-      let error_ctxt = Errors.make_ctxt key entry.XRefTable.off in
+      let error_ctxt = Errors.make_ctxt key (Errors.make_pos_file entry.XRefTable.off) in
 
       let obj = Fetch.fetchdecodestream key entry.XRefTable.off ctxt false in
       let stream = IndirectObject.get_stream
@@ -150,8 +142,8 @@ module MakeFetchComp (Fetch : FetchT) = struct
           "Expected non-negative integer" (Errors.ctxt_append_name error_ctxt "First")
           (DirectObject.dict_find dict "First") in
 
-      let n = DirectObject.get_nonnegative_int ()
-          "Expected non-negative integer" (Errors.ctxt_append_name error_ctxt "N")
+      let n = DirectObject.get_positive_int ()
+          "Expected positive integer" (Errors.ctxt_append_name error_ctxt "N")
           (DirectObject.dict_find dict "N") in
 
       let success = PDFStream.decode stream error_ctxt true in
@@ -159,14 +151,15 @@ module MakeFetchComp (Fetch : FetchT) = struct
         raise (Errors.PDFError ("Error decoding object stream", error_ctxt));
 
       let content = PDFStream.get_decoded stream error_ctxt in
-      parseobjstm content key entry.XRefTable.off first n ctxt
+      parseobjstm content key error_ctxt first n ctxt
 
 
-  let fetchcompressed (key : Key.t) (off : BoundedInt.t) (idx : BoundedInt.t) (ctxt : FetchCommon.context) : IndirectObject.t =
-    traverse_object key off ctxt (fun key off ctxt ->
-        let error_ctxt = Errors.make_ctxt key off in
+  let fetchcompressed (key : Key.t) (id : BoundedInt.t) (idx : BoundedInt.t) (ctxt : FetchCommon.context) : IndirectObject.t =
+    let key_objstm = Key.make_0 id in
+    let error_ctxt = Errors.make_ctxt key (Errors.make_pos_objstm key_objstm idx) in
 
-        let bag = fetchobjstm off ctxt in
+    traverse_object key error_ctxt ctxt (fun () ->
+        let bag = fetchobjstm key_objstm ctxt in
         if not (MapKey.mem key bag) then
           raise (Errors.PDFError ("Object not found in object stream", error_ctxt));
 

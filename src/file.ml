@@ -51,11 +51,12 @@ open Pdfstream
      - minor version
 *)
 let check_version (input : in_channel) (_length : BoundedInt.t) (intervals : Key.t Intervals.t) : int * int =
+  let error_ctxt = Errors.make_ctxt_pos (Errors.make_pos_file ~:0) in
   let lexbuf = Lexing.from_channel input in
-  let major, minor = wrap_xrefparser Xrefparser.version (Some ~:0) lexbuf in
+  let major, minor = wrap_xrefparser Xrefparser.version lexbuf error_ctxt in
 
   if major <> 1 || minor < 0 || minor > 7 then
-    raise (Errors.PDFError (Printf.sprintf "Invalid PDF version : %d.%d" major minor, Errors.make_ctxt_pos ~:0));
+    raise (Errors.PDFError (Printf.sprintf "Invalid PDF version : %d.%d" major minor, error_ctxt));
 
   Intervals.add intervals (~:0, ~:((Lexing.lexeme_end lexbuf) - 1)) Key.Version;
   (major, minor)
@@ -126,25 +127,28 @@ let find_xref (input : in_channel) (length : BoundedInt.t) (intervals : Key.t In
         while true do
           let pos, eolbefore = line_before input !eolpos in
 
-          if eolbefore < !eolpos then (
-            seek_in input (BoundedInt.to_int pos);
-            let lexbuf = Lexing.from_channel input in
+          if eolbefore >= !eolpos then
+            raise Exit;
+
+          let error_ctxt = Errors.make_ctxt_pos (Errors.make_pos_file pos) in
+          seek_in input (BoundedInt.to_int pos);
+          let lexbuf = Lexing.from_channel input in
+          begin
             match !status with
             | 3 ->
-              if wrap_xrefparser Xrefparser.eofmarker (Some pos) lexbuf then
+              if wrap_xrefparser Xrefparser.eofmarker lexbuf error_ctxt then
                 status := 2
             | 2 ->
-              let (_:BoundedInt.t) = wrap_xrefparser Xrefparser.startxref2 (Some pos) lexbuf in
+              let (_:BoundedInt.t) = wrap_xrefparser Xrefparser.startxref2 lexbuf error_ctxt in
               status := 1
             | 1 ->
-              let x = wrap_xrefparser Xrefparser.startxref (Some pos) lexbuf in
+              let x = wrap_xrefparser Xrefparser.startxref lexbuf error_ctxt in
               result := x;
               Intervals.add intervals (pos, length -: ~:1) Key.Trailer;
               status := 0
             | _ ->
-              raise Exit;
-          ) else
-            raise Exit;
+              raise Exit
+          end;
 
           if !status = 0 then
             raise Exit;
@@ -188,11 +192,13 @@ let check_header (input : in_channel) (length : BoundedInt.t) (stats : Stats.t) 
 
 
 let check_signature (input : in_channel) (length : BoundedInt.t) (stats : Stats.t) : unit =
+  let error_ctxt = Errors.make_ctxt_pos (Errors.make_pos_file ~:0) in
   if length <: ~:4 then
-    raise (Errors.PDFError ("Invalid PDF signature", Errors.make_ctxt_pos ~:0));
+    raise (Errors.PDFError ("Invalid PDF signature", error_ctxt));
+
   seek_in input 0;
   if not (input_char input == '%' && input_char input == 'P' && input_char input == 'D' && input_char input == 'F') then
-    raise (Errors.PDFError ("Invalid PDF signature", Errors.make_ctxt_pos ~:0));
+    raise (Errors.PDFError ("Invalid PDF signature", error_ctxt));
 
   stats.Stats.version <- Stats.Unknown
 
@@ -225,10 +231,10 @@ let parse_until_xref (input : in_channel) (stats : Stats.t) : (BoundedInt.t * Ke
   let xref = XRefTable.create () in
   let setpos = IntSet.create () in
   let doc = Document.create () in
-  let offset, trailer = parsexref xref input startxref length setpos intervals doc in
+  let error_ctxt, trailer = parsexref xref input startxref length setpos intervals doc in
 
   Document.add_trailer doc trailer;
-  parsetrailer offset trailer xref input length setpos intervals doc stats;
+  parsetrailer error_ctxt trailer xref input length setpos intervals doc stats;
   Document.finalize_trailers doc;
 
   if Params.global.Params.zero_offset_as_free then
@@ -369,7 +375,7 @@ let parse_nonstrict (input : in_channel) (stats : Stats.t) : Document.t =
 let parse_strict (input : in_channel) (stats : Stats.t) : Document.t =
   let lexbuf = Lexing.from_channel input in
 
-  let version, doc = wrap_strictparser Strictparser.file (Some ~:0) lexbuf in
+  let version, doc = wrap_strictparser Strictparser.file lexbuf (Errors.make_ctxt_pos (Errors.make_pos_file ~:0)) in
   close_in input;
   let _vmajor, vminor = version in
   stats.Stats.version <- Stats.Version vminor;

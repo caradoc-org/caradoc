@@ -1,4 +1,4 @@
 Version : 1.5
 Incremental updates : 0
 Neither updates nor object streams nor free objects nor encryption
-PDF error : Circular definition detected in object 7 at offset 457 [0x1c9] !
+PDF error : Circular definition detected in object 7 at offset 457 [0x1c9] in file !

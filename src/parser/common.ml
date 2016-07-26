@@ -33,7 +33,7 @@ module Common = struct
     print_newline ()
 
 
-  let input_substr (input : in_channel) (pos : BoundedInt.t) (len : BoundedInt.t) =
+  let input_substr (input : in_channel) (pos : BoundedInt.t) (len : BoundedInt.t) : string =
     seek_in input (BoundedInt.to_int pos);
     let buf = Buffer.create (BoundedInt.to_int len) in
     Buffer.add_channel buf input (BoundedInt.to_int len);
@@ -41,9 +41,8 @@ module Common = struct
 
   (* Rewind lex buffer n chars back *)
   let rewind (lexbuf : Lexing.lexbuf) (n : int) : unit =
-    if lexbuf.Lexing.lex_curr_pos < n then (
-      raise (Invalid_argument ("index out of bounds"))
-    );
+    if lexbuf.Lexing.lex_curr_pos < n then
+      raise (Invalid_argument ("index out of bounds"));
 
     lexbuf.Lexing.lex_curr_pos <- lexbuf.Lexing.lex_curr_pos - n;
     let curpos = lexbuf.Lexing.lex_curr_p in

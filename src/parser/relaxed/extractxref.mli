@@ -25,6 +25,7 @@ open Intervals
 open Key
 open Document
 open Stats
+open Errors
 
 (*   Seek input channel to the start of xref table
      Args    :
@@ -49,7 +50,7 @@ val parsexref_table : XRefTable.t -> in_channel -> BoundedInt.t -> (Key.t Interv
 (*   Parse one xref stream subsection
      Args    :
      - xref table
-     - position of the xref section
+     - error context position
      - xref stream content
      - first object number of this subsection
      - number of objects in this subsection
@@ -57,7 +58,7 @@ val parsexref_table : XRefTable.t -> in_channel -> BoundedInt.t -> (Key.t Interv
      - widths of entry fields
      - width of an entry
 *)
-val parsexrefstm_subsection : XRefTable.t -> BoundedInt.t -> string -> BoundedInt.t -> BoundedInt.t -> (BoundedInt.t ref) -> (BoundedInt.t array) -> BoundedInt.t -> unit
+val parsexrefstm_subsection : XRefTable.t -> Errors.pos_t -> string -> BoundedInt.t -> BoundedInt.t -> (BoundedInt.t ref) -> (BoundedInt.t array) -> BoundedInt.t -> unit
 
 (*   Parse one xref stream section and returns the associated xref stream dictionary
      Args    :
@@ -82,14 +83,14 @@ val parsexref_stm : XRefTable.t -> in_channel -> BoundedInt.t -> BoundedInt.t ->
      - intervals of objects in file
      - document of retrieved objects
      Returns :
-     - position of the trailer or xref stream object
+     - error context of the trailer or xref stream object
      - trailer or xref stream dictionary
 *)
-val parsexref : XRefTable.t -> in_channel -> BoundedInt.t -> BoundedInt.t -> IntSet.t -> (Key.t Intervals.t) -> Document.t -> (BoundedInt.t * DirectObject.dict_t)
+val parsexref : XRefTable.t -> in_channel -> BoundedInt.t -> BoundedInt.t -> IntSet.t -> (Key.t Intervals.t) -> Document.t -> (Errors.error_ctxt * DirectObject.dict_t)
 
 (*   Parse a trailer and all the previous tables and trailers
      Args    :
-     - position of the trailer object
+     - error context
      - trailer dictionary
      - xref table
      - input channel
@@ -99,5 +100,5 @@ val parsexref : XRefTable.t -> in_channel -> BoundedInt.t -> BoundedInt.t -> Int
      - document of retrieved objects
      - file statistics
 *)
-val parsetrailer : BoundedInt.t -> DirectObject.dict_t -> XRefTable.t -> in_channel -> BoundedInt.t -> IntSet.t -> (Key.t Intervals.t) -> Document.t -> Stats.t -> unit
+val parsetrailer : Errors.error_ctxt -> DirectObject.dict_t -> XRefTable.t -> in_channel -> BoundedInt.t -> IntSet.t -> (Key.t Intervals.t) -> Document.t -> Stats.t -> unit
 

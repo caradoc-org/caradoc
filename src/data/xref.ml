@@ -84,7 +84,7 @@ module XRefTable = struct
   let compare (body : t) (xref : t) : unit =
     (* Iterate over objects in the body *)
     iter_all (fun key value ->
-        let error_ctxt = Errors.make_ctxt key value.off in
+        let error_ctxt = Errors.make_ctxt key (Errors.make_pos_file value.off) in
 
         if not (MapKey.mem key !xref) then
           raise (Errors.PDFError ("Xref table does not contain object", error_ctxt));
@@ -103,7 +103,7 @@ module XRefTable = struct
     (* Iterate over objects in the xref table *)
     iter_all (fun key v ->
         if not (MapKey.mem key !body) then
-          raise (Errors.PDFError ("Xref table contains object that does not exist", Errors.make_ctxt key v.off));
+          raise (Errors.PDFError ("Xref table contains object that does not exist", Errors.make_ctxt key (Errors.make_pos_file v.off)));
       ) xref
 
 

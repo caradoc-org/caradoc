@@ -33,16 +33,14 @@ open Document
 module MakeFetch (FetchComp : FetchCompT) = struct
 
   let rec fetchobject (key : Key.t) (off : BoundedInt.t) (ctxt : FetchCommon.context) =
-    traverse_object key off ctxt (fun key off ctxt ->
-        let error_ctxt = Errors.make_ctxt key off in
-
-        if off <: ctxt.FetchCommon.length then
-          seek_in ctxt.FetchCommon.input (BoundedInt.to_int off)
-        else
+    let error_ctxt = Errors.make_ctxt key (Errors.make_pos_file off) in
+    traverse_object key error_ctxt ctxt (fun () ->
+        if off >=: ctxt.FetchCommon.length then
           raise (Errors.PDFError ("Object position is out of bounds", error_ctxt));
 
+        seek_in ctxt.FetchCommon.input (BoundedInt.to_int off);
         let lexbuf = Lexing.from_channel ctxt.FetchCommon.input in
-        let k, o = wrap_parser Parser.indirectobj (Some off) lexbuf error_ctxt in
+        let k, o = wrap_parser Parser.indirectobj lexbuf error_ctxt in
 
         let endobjpos = off +: ~:((Lexing.lexeme_end lexbuf) - 1) in
 
@@ -112,7 +110,7 @@ module MakeFetch (FetchComp : FetchCompT) = struct
     let obj = fetchobject key off ctxt in
     match obj with
     | IndirectObject.Stream s when not (PDFStream.is_decoded s) ->
-      let (_:bool) = PDFStream.decode s (Errors.make_ctxt key off) relax in
+      let (_:bool) = PDFStream.decode s (Errors.make_ctxt key (Errors.make_pos_file off)) relax in
       let result = IndirectObject.Stream s in
       Document.set ctxt.FetchCommon.doc key result;
 

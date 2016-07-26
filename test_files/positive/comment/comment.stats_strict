@@ -1,2 +1,2 @@
 Not a PDF file
-Lexing error at offset 26 [0x1a] : unexpected character : 0x25 !
+PDF error : Lexing error : unexpected character : 0x25 at offset 26 [0x1a] in file !

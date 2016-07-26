@@ -21,69 +21,57 @@ open Boundedint
 open Errors
 
 
-let raise_syntax (lexbuf : Lexing.lexbuf) (offset : BoundedInt.t option) =
-  let pos = ~:(Lexing.lexeme_start lexbuf) in
-  match offset with
-  | Some o ->
-    raise (Errors.ParseError (Printf.sprintf "syntax error at offset %d [0x%x]" (BoundedInt.to_int (pos +: o)) (BoundedInt.to_int (pos +: o))))
-  | None ->
-    raise (Errors.ParseError (Printf.sprintf "syntax error at offset %d [0x%x]" (BoundedInt.to_int pos) (BoundedInt.to_int pos)))
+let raise_syntax (lexbuf : Lexing.lexbuf) (error_ctxt : Errors.error_ctxt) =
+  let off = ~:(Lexing.lexeme_start lexbuf) in
+  raise (Errors.PDFError ("Syntax error", Errors.ctxt_add_offset error_ctxt off))
 
-let raise_lexer (msg : string) (pos : BoundedInt.t) (offset : BoundedInt.t option) =
-  match offset with
-  | Some o ->
-    raise (Errors.LexingError (msg, pos +: o))
-  | None ->
-    raise (Errors.LexingError (msg, pos))
+let raise_lexer (msg : string) (off : BoundedInt.t) (error_ctxt : Errors.error_ctxt) =
+  raise (Errors.PDFError (Printf.sprintf "Lexing error : %s" msg, Errors.ctxt_add_offset error_ctxt off))
 
-let raise_integer (msg : string) (lexbuf : Lexing.lexbuf) (offset : BoundedInt.t option) =
-  let pos = ~:(Lexing.lexeme_start lexbuf) in
-  match offset with
-  | Some o ->
-    raise (Errors.LexingError (Printf.sprintf "integer error : %s" msg, pos +: o))
-  | None ->
-    raise (Errors.LexingError (Printf.sprintf "integer error : %s" msg, pos))
+let raise_integer (msg : string) (lexbuf : Lexing.lexbuf) (error_ctxt : Errors.error_ctxt) =
+  let off = ~:(Lexing.lexeme_start lexbuf) in
+  raise (Errors.PDFError (Printf.sprintf "Lexing error : integer error : %s" msg, Errors.ctxt_add_offset error_ctxt off))
 
-let raise_pdf (msg : string) (offset : BoundedInt.t option) (error_ctxt : Errors.error_ctxt) =
-  match offset with
-  | Some o ->
-    raise (Errors.PDFError (msg, Errors.ctxt_set_pos error_ctxt o))
-  | None ->
-    raise (Errors.PDFError (msg, error_ctxt))
+let raise_pdf (msg : string) (error_ctxt : Errors.error_ctxt) =
+  raise (Errors.PDFError (msg, error_ctxt))
 
 
-let wrap_parser f (offset : BoundedInt.t option) (lexbuf : Lexing.lexbuf) (error_ctxt : Errors.error_ctxt) =
+let wrap_parser f (lexbuf : Lexing.lexbuf) (error_ctxt : Errors.error_ctxt) =
   try
     f Lexer.token lexbuf
   with
   | Parser.Error ->
-    raise_syntax lexbuf offset
-  | Errors.LexingError (msg, pos) ->
-    raise_lexer msg pos offset
+    raise_syntax lexbuf error_ctxt
+  | Errors.LexingError (msg, off) ->
+    raise_lexer msg off error_ctxt
   | BoundedInt.IntegerError msg ->
-    raise_integer msg lexbuf offset
-  | Errors.PDFError (msg, _) ->
-    raise_pdf msg offset error_ctxt
+    raise_integer msg lexbuf error_ctxt
+  | Errors.PDFError (msg, ctxt) when ctxt = Errors.ctxt_none ->
+    raise_pdf msg error_ctxt
 
-let wrap_xrefparser f (offset : BoundedInt.t option) (lexbuf : Lexing.lexbuf) =
+let wrap_xrefparser f (lexbuf : Lexing.lexbuf) (error_ctxt : Errors.error_ctxt) =
   try
     f Xreflexer.token lexbuf
   with
   | Xrefparser.Error ->
-    raise_syntax lexbuf offset
+    raise_syntax lexbuf error_ctxt
   | Errors.LexingError (msg, pos) ->
-    raise_lexer msg pos offset
+    raise_lexer msg pos error_ctxt
   | BoundedInt.IntegerError msg ->
-    raise_integer msg lexbuf offset
+    raise_integer msg lexbuf error_ctxt
+  | Errors.PDFError (msg, ctxt) when ctxt = Errors.ctxt_none ->
+    raise_pdf msg error_ctxt
 
-let wrap_strictparser f (offset : BoundedInt.t option) (lexbuf : Lexing.lexbuf) =
+let wrap_strictparser f (lexbuf : Lexing.lexbuf) (error_ctxt : Errors.error_ctxt) =
   try
     f Strictlexer.token lexbuf
   with
   | Strictparser.Error ->
-    raise_syntax lexbuf offset
+    raise_syntax lexbuf error_ctxt
   | Errors.LexingError (msg, pos) ->
-    raise_lexer msg pos offset
+    raise_lexer msg pos error_ctxt
   | BoundedInt.IntegerError msg ->
-    raise_integer msg lexbuf offset
+    raise_integer msg lexbuf error_ctxt
+  | Errors.PDFError (msg, ctxt) when ctxt = Errors.ctxt_none ->
+    raise_pdf msg error_ctxt
 

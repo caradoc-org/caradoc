@@ -2,7 +2,6 @@
   open Strictparser
   open Boundedint
   open Errors
-  open Convert
   open Common
 }
 
@@ -170,7 +169,7 @@ and token_string_hex buf = parse
               { token_string_hex buf lexbuf }
   | '>'       { STRING (Buffer.contents buf) }
   | (hexa as n1) whitespace* (hexa as n2)
-              { Buffer.add_char buf (char_of_hexa n1 n2);
+              { Buffer.add_char buf (Convert.char_of_hexa n1 n2);
                 token_string_hex buf lexbuf }
   | eof       { raise (Errors.LexingError ("hexadecimal string is not terminated at end of file", ~:(Lexing.lexeme_start lexbuf))) }
   | _ as c    { raise (Errors.LexingError (Printf.sprintf "unexpected character in hexadecimal string context : 0x%x" (int_of_char c), ~:(Lexing.lexeme_start lexbuf))) }
@@ -181,7 +180,7 @@ and token_string_hex buf = parse
     (***********************)
 and token_name buf = parse
   | '#' (hexa as n1) (hexa as n2)
-              { let c = char_of_hexa n1 n2 in
+              { let c = Convert.char_of_hexa n1 n2 in
                 if c = '\x00' then
                   raise (Errors.LexingError ("null character in escape sequence in name context", ~:(Lexing.lexeme_start lexbuf)));
                 Buffer.add_char buf c;
@@ -232,7 +231,7 @@ and token_string buf nesting = parse
   | '\\' (octal as n1) (octal as n2) (octal as n3)
               { begin
                   try
-                    Buffer.add_char buf (char_of_octal3 n1 n2 n3);
+                    Buffer.add_char buf (Convert.char_of_octal3 n1 n2 n3)
                   with Convert.ConvertError msg ->
                     raise (Errors.LexingError (Printf.sprintf "invalid octal escape in string context (%s)" msg, ~:(Lexing.lexeme_start lexbuf)))
                 end;

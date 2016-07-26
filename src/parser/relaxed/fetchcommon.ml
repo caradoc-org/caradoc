@@ -74,25 +74,24 @@ end
 
 module type FetchCompT = sig
   val fetchcompressed : Key.t -> BoundedInt.t -> BoundedInt.t -> FetchCommon.context -> IndirectObject.t
-  val parseobjstm : string -> Key.t -> BoundedInt.t -> BoundedInt.t -> BoundedInt.t -> FetchCommon.context -> ((DirectObject.t * BoundedInt.t) MapKey.t)
-  val fetchobjstm : BoundedInt.t -> FetchCommon.context -> ((DirectObject.t * BoundedInt.t) MapKey.t)
+  val parseobjstm : string -> Key.t -> Errors.error_ctxt -> BoundedInt.t -> BoundedInt.t -> FetchCommon.context -> ((DirectObject.t * BoundedInt.t) MapKey.t)
+  val fetchobjstm : Key.t -> FetchCommon.context -> ((DirectObject.t * BoundedInt.t) MapKey.t)
 end
 
 
-let traverse_object (key : Key.t) (off : BoundedInt.t) (ctxt : FetchCommon.context) (fetch : Key.t -> BoundedInt.t -> FetchCommon.context -> IndirectObject.t) : IndirectObject.t =
+let traverse_object (key : Key.t) (error_ctxt : Errors.error_ctxt) (ctxt : FetchCommon.context) (fetch : unit -> IndirectObject.t) : IndirectObject.t =
   try
-    let traversed = FetchCommon.is_traversed ctxt key in
-    if traversed then
+    if FetchCommon.is_traversed ctxt key then
       Document.find_obj ctxt.FetchCommon.doc key
     else
-      raise (Errors.PDFError ("Circular definition detected", Errors.make_ctxt key off))
+      raise (Errors.PDFError ("Circular definition detected", error_ctxt))
   with Not_found ->
     (* begin to traverse object *)
     FetchCommon.begin_traversal ctxt key;
     if Params.global.Params.debug then
       Printf.eprintf "Begin object %s\n" (Key.to_string key);
 
-    let content = fetch key off ctxt in
+    let content = fetch () in
     Document.add ctxt.FetchCommon.doc key content;
 
     (* object succesfully traversed *)
@@ -104,14 +103,14 @@ let traverse_object (key : Key.t) (off : BoundedInt.t) (ctxt : FetchCommon.conte
 
 
 let parsestream (key : Key.t) (offset : BoundedInt.t) (stream_length : BoundedInt.t) (input : in_channel) (length : BoundedInt.t) (stream_dict : DirectObject.dict_t) : PDFStream.t * BoundedInt.t =
-  let error_ctxt = Errors.make_ctxt key offset in
+  let error_ctxt = Errors.make_ctxt key (Errors.make_pos_file offset) in
   if offset +: stream_length >=: length then
     raise (Errors.PDFError ("Stream size is out of bounds", Errors.ctxt_append_name error_ctxt "Length"));
 
   let rawcontent = Common.input_substr input offset stream_length in
 
   let lexbuf = Lexing.from_channel input in
-  wrap_parser Parser.endstream (Some (offset +: stream_length)) lexbuf error_ctxt;
+  wrap_parser Parser.endstream lexbuf (Errors.ctxt_add_offset error_ctxt stream_length);
   let endstreampos = offset +: stream_length +: ~:((Lexing.lexeme_end lexbuf) - 1) in
   (* TODO : reject streams from external file *)
 

@@ -56,20 +56,11 @@ file:
     { let doc, xbody = b in
       let xrefpos, xxref = x in
       let dict, pos = t in
+      let error_ctxt = Errors.Errors.make_ctxt Key.Trailer (Errors.Errors.make_pos_file xrefpos) in
 
       if xrefpos <> pos then
-        raise (Errors.Errors.PDFError ("Startxref does not match real position", Errors.Errors.make_ctxt Key.Trailer xrefpos));
+        raise (Errors.Errors.PDFError ("Startxref does not match real position", error_ctxt));
       Xref.XRefTable.compare xbody xxref;
-      (*
-      (* TODO : comparison seems to fail for some equal tables ?! *)
-      if xbody <> xxref then (
-        Printf.eprintf "Body :\n";
-        Xref.XRefTable.debug stderr xbody;
-        Printf.eprintf "Xref :\n";
-        Xref.XRefTable.debug stderr xxref;
-        raise (Errors.Errors.PDFError ("Xref table does not match positions of objects", Errors.ctxt_none));
-      );
-      *)
 
       Document.Document.add_trailer doc dict;
       v, doc }
@@ -89,10 +80,10 @@ xref:
   h = xrefhead s = xrefsection
     { let xrefpos, xstart, headcount = h in
       let x2, seccount = s in
-      let error_ctxt = Errors.Errors.make_ctxt Key.Trailer xrefpos in
+      let error_ctxt = Errors.Errors.make_ctxt Key.Trailer (Errors.Errors.make_pos_file xrefpos) in
 
       if headcount <> seccount then
-        raise (Errors.Errors.PDFError ("Object count does not match in xref", error_ctxt));
+        raise (Errors.Errors.PDFError ("Missmatch between number of entries and xref section header", error_ctxt));
       if xstart <> ~:0 then
         raise (Errors.Errors.PDFError ("Xref does not start at object 0", error_ctxt));
       (xrefpos, x2) }
