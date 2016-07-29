@@ -249,6 +249,20 @@ module DirectObject : sig
     string -> Errors.error_ctxt ->
     t -> BoundedInt.t
 
+  (*   Check and extract a string from an object, or raise an exception
+       Args    :
+       - [optional] default value for null object
+       - error message
+       - error context
+       - object
+       Returns :
+       - string value of object
+  *)
+  val get_string :
+    ?default:string -> unit ->
+    string -> Errors.error_ctxt ->
+    t -> string
+
   (*   Check and extract a name from an object, or raise an exception
        Args    :
        - [optional] default value for null object

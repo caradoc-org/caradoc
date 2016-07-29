@@ -35,6 +35,10 @@ module Stats = struct
     mutable knowntypes : int;
     mutable incompletetypes : bool;
     mutable nographerror : bool;
+    mutable producer : string option;
+    mutable creator : string option;
+    mutable creation_date : string option;
+    mutable mod_date : string option;
   }
 
 
@@ -50,6 +54,10 @@ module Stats = struct
       knowntypes = -1;
       incompletetypes = false;
       nographerror = false;
+      producer = None;
+      creator = None;
+      creation_date = None;
+      mod_date = None;
     }
 
   let print_version (x : t) : bool =
@@ -100,6 +108,17 @@ module Stats = struct
         )
       )
     );
+
+    let print_some (x : string option) (title : string) : unit =
+      match x with
+      | Some s -> Printf.printf "/%s : %s\n" title s
+      | None -> ()
+    in
+    print_some x.producer "Producer";
+    print_some x.creator "Creator";
+    print_some x.creation_date "CreationDate";
+    print_some x.mod_date "ModDate";
+
     if x.nographerror && (not x.incompletetypes) && (x.knowntypes = x.objcount) then
       Printf.printf "No error found\n"
 

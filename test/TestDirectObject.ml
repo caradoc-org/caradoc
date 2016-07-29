@@ -336,6 +336,26 @@ let tests =
                     (fun () -> get_nonnegative_int ~default:(~:123456) () "msg" Errors.ctxt_none (Name "blabla"))) ;
     ] ;
 
+    "get_string" >:::
+    [
+      "(1)" >:: (fun _ -> assert_equal
+                    (get_string () "msg" Errors.ctxt_none (String "blabla"))
+                    "blabla") ;
+      "(2)" >:: (fun _ -> assert_equal
+                    (get_string ~default:("test") () "msg" Errors.ctxt_none (String "blabla"))
+                    "blabla") ;
+      "(3)" >:: (fun _ -> assert_equal
+                    (get_string ~default:("test") () "msg" Errors.ctxt_none Null)
+                    "test") ;
+
+      "(4)" >:: (fun _ -> assert_raises
+                    (Errors.PDFError ("msg", Errors.ctxt_none))
+                    (fun () -> get_string () "msg" Errors.ctxt_none (Name "blabla"))) ;
+      "(5)" >:: (fun _ -> assert_raises
+                    (Errors.PDFError ("msg", Errors.ctxt_none))
+                    (fun () -> get_string ~default:("test") () "msg" Errors.ctxt_none (Int ~:123))) ;
+    ] ;
+
     "get_name" >:::
     [
       "(1)" >:: (fun _ -> assert_equal

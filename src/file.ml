@@ -463,6 +463,41 @@ let extract_filters (filter_hash : (string, int) Hashtbl.t) (key : Key.t) (obj :
   | _ ->
     ()
 
+let extract_info (doc : Document.t) (stats : Stats.t) : unit =
+  let get_entry (infodict : DirectObject.dict_t) (key : string) : string =
+    let tmp, (_:Errors.error_ctxt) = Document.remove_ref doc (DirectObject.dict_find infodict key) Errors.ctxt_none in
+    IndirectObject.get_direct_of
+      "" Errors.ctxt_none
+      ~transform:(DirectObject.get_string ())
+      tmp
+  in
+
+  try
+    let info, (_:Errors.error_ctxt) = Document.remove_ref doc (DirectObject.dict_find (Document.main_trailer doc) "Info") Errors.ctxt_none in
+    let infodict = IndirectObject.get_direct_of
+        "" Errors.ctxt_none
+        ~transform:(DirectObject.get_dict ())
+        info in
+
+    begin
+      try stats.Stats.producer <- Some (get_entry infodict "Producer")
+      with _ -> ()
+    end;
+    begin
+      try stats.Stats.creator <- Some (get_entry infodict "Creator")
+      with _ -> ()
+    end;
+    begin
+      try stats.Stats.creation_date <- Some (get_entry infodict "CreationDate")
+      with _ -> ()
+    end;
+    begin
+      try stats.Stats.mod_date <- Some (get_entry infodict "ModDate")
+      with _ -> ()
+    end;
+  with _ ->
+    ()
+
 let statistics (input : in_channel) (stats : Stats.t) : unit =
   let doc =
     if Params.global.Params.strict_parser then
@@ -470,6 +505,8 @@ let statistics (input : in_channel) (stats : Stats.t) : unit =
     else
       parse_nonstrict input stats
   in
+
+  extract_info doc stats;
 
   stats.Stats.objcount <- (Document.fold_objects (fun _ _ n -> n + 1) doc 0);
   Document.iter_objects (extract_filters stats.Stats.filters) doc;

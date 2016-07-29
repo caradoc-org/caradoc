@@ -473,6 +473,14 @@ module DirectObject = struct
     | _ -> raise (Errors.PDFError (error_msg, ctxt))
 
 
+  let get_string ?default () error_msg ctxt x =
+    match x, default with
+    | (String s), _
+    | Null, (Some s) ->
+      s
+    | _ -> raise (Errors.PDFError (error_msg, ctxt))
+
+
   let get_name ?default () error_msg ctxt x =
     match x, default with
     | (Name n), _

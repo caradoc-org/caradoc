@@ -45,6 +45,14 @@ module Stats : sig
     mutable incompletetypes : bool;
     (* No error found on graph *)
     mutable nographerror : bool;
+    (* ∕Producer field in /Info dictionary *)
+    mutable producer : string option;
+    (* ∕Creator field in /Info dictionary *)
+    mutable creator : string option;
+    (* ∕CreationDate field in /Info dictionary *)
+    mutable creation_date : string option;
+    (* ∕ModDate field in /Info dictionary *)
+    mutable mod_date : string option;
   }
 
   val create : unit -> t
