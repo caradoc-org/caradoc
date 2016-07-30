@@ -77,7 +77,16 @@ module IndirectObject = struct
     make_fun_dict DirectObject.refs DirectObject.refs_dict
 
 
-  let rec relink (newkeys : Key.t MapKey.t) (ctxt : Errors.error_ctxt) (x : t) : t =
+  let undef_refs_to_null (defined : 'a MapKey.t) (ctxt : Errors.error_ctxt) (x : t) : t =
+    match x with
+    | Direct y ->
+      Direct (DirectObject.undef_refs_to_null defined ctxt y)
+    | Stream s ->
+      let d = (DirectObject.undef_refs_to_null_dict defined ctxt (PDFStream.get_dict s)) in
+      Stream (PDFStream.set_dict s d)
+
+
+  let relink (newkeys : Key.t MapKey.t) (ctxt : Errors.error_ctxt) (x : t) : t =
     match x with
     | Direct y ->
       Direct (DirectObject.relink newkeys ctxt y)
@@ -100,11 +109,7 @@ module IndirectObject = struct
         try
           simple_ref key (MapKey.find key objects)
         with Not_found ->
-          if Params.global.Params.undefined_ref_as_null then (
-            Printf.eprintf "Warning : Reference to unknown object %s%s\n" (Key.to_string key) (Errors.ctxt_to_string ctxt);
-            DirectObject.Null
-          ) else
-            raise (Errors.PDFError (Printf.sprintf "Reference to unknown object : %s" (Key.to_string key), ctxt))
+          raise (Errors.PDFError (Printf.sprintf "Reference to unknown object : %s" (Key.to_string key), ctxt))
       end
     | DirectObject.Array l ->
       DirectObject.Array (List.mapi (fun i x -> simplify_refs_direct objects (Errors.ctxt_append_index ctxt i) x) l)

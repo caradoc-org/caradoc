@@ -435,7 +435,11 @@ let parse_file (filename : string) (stats : Stats.t) : Document.t =
       parse_nonstrict input stats
   in
 
-  (* TODO : if undefined_ref_as_null then cleanup references *)
+  if Params.global.Params.undefined_ref_as_null then (
+    if Params.global.Params.verbose then
+      Printf.printf "Replacing undefined references by null object\n";
+    Document.undef_refs_to_null doc
+  );
 
   if Params.global.Params.decode_streams then (
     if Params.global.Params.verbose then

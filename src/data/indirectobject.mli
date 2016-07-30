@@ -104,6 +104,16 @@ module IndirectObject : sig
   *)
   val refs : t -> Entry.t MapKey.t
 
+  (*   Replace all undefined references by the null object
+       Args    :
+       - set of defined references
+       - error context
+       - object
+       Returns :
+       - converted object
+  *)
+  val undef_refs_to_null : 'a MapKey.t -> Errors.error_ctxt -> t -> t
+
   (*   Change all references according to a conversion table
        Args    :
        - conversion table

@@ -9,6 +9,7 @@ New features:
 
 Misc:
 - Improved error handling.
+- Improved implementation of --undefined-ref-as-null option.
 
 -------------------
 Version 0.2 (beta):

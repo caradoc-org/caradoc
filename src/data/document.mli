@@ -68,6 +68,12 @@ module Document : sig
   *)
   val find_name : string -> t -> Entry.t list MapKey.t
 
+  (*   Replace all undefined references by the null object
+       Args    :
+       - document
+  *)
+  val undef_refs_to_null : t -> unit
+
   (*   Get the closure of objects referenced by an object
        Args    :
        - document

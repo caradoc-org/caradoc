@@ -137,29 +137,21 @@ module Document = struct
     find IndirectObject.find_name DirectObject.find_name_dict
 
 
+  let undef_refs_to_null (x : t) : unit =
+    x.trailers <- List.map (DirectObject.undef_refs_to_null_dict x.objects (Errors.make_ctxt_key Key.Trailer)) x.trailers;
+    x.objects <- MapKey.mapi (fun key obj ->
+        IndirectObject.undef_refs_to_null x.objects (Errors.make_ctxt_key key) obj
+      ) x.objects
+
   let check_refs (objects : IndirectObject.t MapKey.t) (refs : Entry.t MapKey.t) (ctxt : Errors.error_ctxt) : SetKey.t =
-    let s = MapKey.fold (fun key _ result ->
+    MapKey.iter (fun key entry ->
+        if not (MapKey.mem key objects) then
+          raise (Errors.PDFError (Printf.sprintf "Reference to unknown object : %s" (Key.to_string key), Errors.ctxt_append_entry ctxt entry))
+      ) refs;
+
+    MapKey.fold (fun key _ result ->
         SetKey.add key result
       ) refs SetKey.empty
-    in
-
-    if Params.global.Params.undefined_ref_as_null then (
-      let unknown_refs = MapKey.fold (fun key entry unknown_refs ->
-          if not (MapKey.mem key objects) then (
-            Printf.eprintf "Warning : Reference to unknown object %s%s\n" (Key.to_string key) (Errors.ctxt_to_string (Errors.ctxt_append_entry ctxt entry));
-            SetKey.add key unknown_refs
-          ) else
-            unknown_refs
-        ) refs SetKey.empty
-      in
-      SetKey.diff s unknown_refs
-    ) else (
-      MapKey.iter (fun key entry ->
-          if not (MapKey.mem key objects) then
-            raise (Errors.PDFError (Printf.sprintf "Reference to unknown object : %s" (Key.to_string key), Errors.ctxt_append_entry ctxt entry))
-        ) refs;
-      s
-    )
 
   let ref_closure (x : t) (o : IndirectObject.t) (k : Key.t) : SetKey.t =
     let result = ref (SetKey.empty) in

@@ -416,14 +416,29 @@ module DirectObject = struct
     refs_dict_impl Entry.empty d
 
 
+  let rec undef_refs_to_null (defined : 'a MapKey.t) (ctxt : Errors.error_ctxt) (x : t) : t =
+    match x with
+    | Null | Bool _ | Int _ | Real _ | String _ | Name _ ->
+      x
+    | Array l ->
+      Array (List.mapi (fun i x -> undef_refs_to_null defined (Errors.ctxt_append_index ctxt i) x) l)
+    | Dictionary d ->
+      Dictionary (undef_refs_to_null_dict defined ctxt d)
+    | Reference key ->
+      if MapKey.mem key defined then
+        Reference key
+      else (
+        Printf.eprintf "Warning : Reference to unknown object %s%s\n" (Key.to_string key) (Errors.ctxt_to_string ctxt);
+        Null
+      )
+
+  and undef_refs_to_null_dict (defined : 'a MapKey.t) (ctxt : Errors.error_ctxt) (d : dict_t) : dict_t =
+    dict_map_key (fun key x -> undef_refs_to_null defined (Errors.ctxt_append_name ctxt key) x) d
+
+
   let rec relink (newkeys : Key.t MapKey.t) (ctxt : Errors.error_ctxt) (x : t) : t =
     match x with
-    | Null
-    | Bool _
-    | Int _
-    | Real _
-    | String _
-    | Name _ ->
+    | Null | Bool _ | Int _ | Real _ | String _ | Name _ ->
       x
     | Array l ->
       Array (List.mapi (fun i x -> relink newkeys (Errors.ctxt_append_index ctxt i) x) l)
@@ -434,11 +449,7 @@ module DirectObject = struct
         try
           Reference (MapKey.find key newkeys)
         with Not_found ->
-          if Params.global.Params.undefined_ref_as_null then (
-            Printf.eprintf "Warning : Reference to unknown object %s%s\n" (Key.to_string key) (Errors.ctxt_to_string ctxt);
-            Null
-          ) else
-            raise (Errors.PDFError (Printf.sprintf "Reference to unknown object : %s" (Key.to_string key), ctxt))
+          raise (Errors.PDFError (Printf.sprintf "Reference to unknown object : %s" (Key.to_string key), ctxt))
       end
 
   and relink_dict (newkeys : Key.t MapKey.t) (ctxt : Errors.error_ctxt) (d : dict_t) : dict_t =
