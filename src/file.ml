@@ -44,13 +44,12 @@ open Pdfstream
 (*   Find version of PDF file and check that it is in [1.0, 1.7]
      Args    :
      - input channel
-     - length of input
      - intervals of objects in file
      Returns :
      - major version
      - minor version
 *)
-let check_version (input : in_channel) (_length : BoundedInt.t) (intervals : Key.t Intervals.t) : int * int =
+let check_version (input : in_channel) (intervals : Key.t Intervals.t) : int * int =
   let error_ctxt = Errors.make_ctxt_pos (Errors.make_pos_file ~:0) in
   let lexbuf = Lexing.from_channel input in
   let major, minor = wrap_xrefparser Xrefparser.version lexbuf error_ctxt in
@@ -59,7 +58,7 @@ let check_version (input : in_channel) (_length : BoundedInt.t) (intervals : Key
     raise (Errors.PDFError (Printf.sprintf "Invalid PDF version : %d.%d" major minor, error_ctxt));
 
   Intervals.add intervals (~:0, ~:((Lexing.lexeme_end lexbuf) - 1)) Key.Version;
-  (major, minor)
+  major, minor
 
 
 (*   Find the beginning of the line
@@ -89,7 +88,7 @@ let line_before (input : in_channel) (pos : BoundedInt.t) : BoundedInt.t * Bound
         | '\x0A' ->
           status := c;
           eolbefore := ~:i;
-          startline := (~:i) +: ~:1;
+          startline := ~:i +: ~:1;
           raise Exit
         | _ -> ()
       done
@@ -100,11 +99,11 @@ let line_before (input : in_channel) (pos : BoundedInt.t) : BoundedInt.t * Bound
   (* Handle CRLF *)
   if !status = '\x0A' && !eolbefore >: ~:0 then (
     seek_in input (BoundedInt.to_int (!eolbefore -: ~:1));
-    if (input_char input) = '\x0D' then
+    if input_char input = '\x0D' then
       eolbefore := !eolbefore -: ~:1;
   );
 
-  (!startline, !eolbefore)
+  !startline, !eolbefore
 
 
 (*   Find the start of the xref table
@@ -159,7 +158,7 @@ let find_xref (input : in_channel) (length : BoundedInt.t) (intervals : Key.t In
         ()
     );
 
-  (!status = 0, !result)
+  !status = 0, !result
 
 
 (*   Print the xref table entries into a file
@@ -184,8 +183,8 @@ let dump_objects (doc : Document.t) (filename : string) : unit =
   close_out out
 
 
-let check_header (input : in_channel) (length : BoundedInt.t) (stats : Stats.t) (intervals : Key.t Intervals.t) : unit =
-  let vmajor, vminor = check_version input length intervals in
+let check_header (input : in_channel) (stats : Stats.t) (intervals : Key.t Intervals.t) : unit =
+  let vmajor, vminor = check_version input intervals in
   stats.Stats.version <- Stats.Version vminor;
   if Params.global.Params.verbose then
     Printf.printf "File version is : %d.%d\n" vmajor vminor
@@ -204,14 +203,14 @@ let check_signature (input : in_channel) (length : BoundedInt.t) (stats : Stats.
 
 
 let parse_until_xref (input : in_channel) (stats : Stats.t) : (BoundedInt.t * Key.t Intervals.t * XRefTable.t * Document.t) =
-  let length = ~: (in_channel_length input) in
+  let length = ~:(in_channel_length input) in
   if Params.global.Params.verbose then
     Printf.printf "File has length : %d [0x%x]\n" (BoundedInt.to_int length) (BoundedInt.to_int length);
 
   let intervals = Intervals.create () in
   if Params.global.Params.allow_invalid_version then
     try
-      check_header input length stats intervals
+      check_header input stats intervals
     with
     | Errors.LexingError _
     | Errors.ParseError _
@@ -219,9 +218,9 @@ let parse_until_xref (input : in_channel) (stats : Stats.t) : (BoundedInt.t * Ke
       check_signature input length stats;
       Printf.eprintf "Warning : Invalid PDF version\n"
   else
-    check_header input length stats intervals;
+    check_header input stats intervals;
 
-  let (found, startxref) = find_xref input length intervals in
+  let found, startxref = find_xref input length intervals in
   if not found then
     raise (Errors.PDFError ("No startxref found", Errors.ctxt_none));
 
@@ -239,7 +238,7 @@ let parse_until_xref (input : in_channel) (stats : Stats.t) : (BoundedInt.t * Ke
 
   if Params.global.Params.zero_offset_as_free then
     XRefTable.cleanup_zero_offsets xref;
-  (length, intervals, xref, doc)
+  length, intervals, xref, doc
 
 
 (*   Decode an object if it is a stream
@@ -283,7 +282,7 @@ let extract_object (input : in_channel) (key : Key.t) : IndirectObject.t =
   let entry = XRefTable.find xref key "Object not found in xref table" in
 
   let ctxt = FetchCommon.make_context input length xref intervals doc in
-  let obj = (
+  let obj =
     match entry.XRefTable.kind with
     | XRefTable.Inuse ->
       FetchImpl.fetchobject key entry.XRefTable.off ctxt
@@ -291,7 +290,7 @@ let extract_object (input : in_channel) (key : Key.t) : IndirectObject.t =
       FetchCompImpl.fetchcompressed key entry.XRefTable.off index ctxt
     | XRefTable.Free ->
       raise (Errors.PDFError ("Object is free", Errors.make_ctxt_key key))
-  ) in
+  in
 
   close_in input;
   if Params.global.Params.decode_streams then
@@ -313,16 +312,7 @@ let apply_option (f : 'a -> 'b) (x : 'a option) : 'b =
   | Some y -> f y
 
 
-(*   Parse a PDF file until extraction of objects, i.e. version, xref tables/streams, trailers, objects
-     Args    :
-     - input channel
-     - file statistics
-     Returns :
-     - length of input
-     - intervals of objects in file
-     - document
-*)
-let parse_until_objects (input : in_channel) (stats : Stats.t) : (BoundedInt.t * Key.t Intervals.t * Document.t) =
+let parse_nonstrict (input : in_channel) (stats : Stats.t) : Document.t =
   let length, intervals, xref, doc = parse_until_xref input stats in
 
   if Params.global.Params.verbose then
@@ -348,21 +338,17 @@ let parse_until_objects (input : in_channel) (stats : Stats.t) : (BoundedInt.t *
   parseobjects input length xref intervals doc;
   if Params.global.Params.verbose then
     Printf.printf "Objects extracted successfully\n";
-  length, intervals, doc
-
-
-let parse_nonstrict (input : in_channel) (stats : Stats.t) : Document.t =
-  let length, intervals, doc = parse_until_objects input stats in
 
   apply_option (fun f -> dump_intervals intervals f input length) Params.global.Params.loc_filename;
   apply_option (fun f -> dump_holes intervals f input length) Params.global.Params.holes_filename;
 
-  let overlap = Intervals.check_overlaps intervals in
-
-  apply_option (fun ((low1, high1), key1, (low2, high2), key2) ->
-      let message = Printf.sprintf "The following objects overlap : %s at [0x%x, 0x%x] and %s at [0x%x, 0x%x]" (Key.to_string key1) (BoundedInt.to_int low1) (BoundedInt.to_int high1) (Key.to_string key2) (BoundedInt.to_int low2) (BoundedInt.to_int high2) in
-      raise (Errors.PDFError (message, Errors.ctxt_none))
-    ) overlap;
+  if not Params.global.Params.allow_overlaps then (
+    let overlap = Intervals.check_overlaps intervals in
+    apply_option (fun ((low1, high1), key1, (low2, high2), key2) ->
+        let message = Printf.sprintf "The following objects overlap : %s at [0x%x, 0x%x] and %s at [0x%x, 0x%x]" (Key.to_string key1) (BoundedInt.to_int low1) (BoundedInt.to_int high1) (Key.to_string key2) (BoundedInt.to_int low2) (BoundedInt.to_int high2) in
+        raise (Errors.PDFError (message, Errors.ctxt_none))
+      ) overlap
+  );
 
   (* TODO check content of holes in file ? *)
 
@@ -440,6 +426,26 @@ let parse_strict (input : in_channel) (stats : Stats.t) : Document.t =
   doc
 
 
+let parse_file (filename : string) (stats : Stats.t) : Document.t =
+  let input = open_in_bin filename in
+  let doc =
+    if Params.global.Params.strict_parser then
+      parse_strict input stats
+    else
+      parse_nonstrict input stats
+  in
+
+  (* TODO : if undefined_ref_as_null then cleanup references *)
+
+  if Params.global.Params.decode_streams then (
+    if Params.global.Params.verbose then
+      Printf.printf "Decoding streams\n";
+    Document.map_objects objdecodestream doc
+  );
+
+  doc
+
+
 let record_filter (filter_hash : (string, int) Hashtbl.t) (filter_name : string) : unit =
   try
     let old_val = Hashtbl.find filter_hash filter_name in
@@ -498,13 +504,8 @@ let extract_info (doc : Document.t) (stats : Stats.t) : unit =
   with _ ->
     ()
 
-let statistics (input : in_channel) (stats : Stats.t) : unit =
-  let doc =
-    if Params.global.Params.strict_parser then
-      parse_strict input stats
-    else
-      parse_nonstrict input stats
-  in
+let statistics (filename : string) (stats : Stats.t) : unit =
+  let doc = parse_file filename stats in
 
   extract_info doc stats;
 
@@ -524,23 +525,8 @@ let statistics (input : in_channel) (stats : Stats.t) : unit =
   ()
 
 
-let parse_file (filename : string) : Document.t =
-  let input = open_in_bin filename in
-  let doc =
-    if Params.global.Params.strict_parser then
-      parse_strict input (Stats.create ())
-    else
-      parse_nonstrict input (Stats.create ())
-  in
-
-  if Params.global.Params.decode_streams then
-    Document.map_objects objdecodestream doc;
-
-  doc
-
-
 let check_file (filename : string) : unit =
-  let doc = parse_file filename in
+  let doc = parse_file filename (Stats.create ()) in
 
   apply_option (fun f -> dump_objects doc f) Params.global.Params.dump_filename;
 
@@ -558,16 +544,8 @@ let check_file (filename : string) : unit =
   Printf.printf "No error detected !\n"
 
 
-
-let cleanup (input : in_channel) (out_filename : string) : unit =
-  let _length, _intervals, doc = parse_until_objects input (Stats.create ()) in
-  close_in input;
-
-  if Params.global.Params.decode_streams then (
-    if Params.global.Params.verbose then
-      Printf.printf "Decoding streams\n";
-    Document.map_objects objdecodestream doc
-  );
+let cleanup (filename : string) (out_filename : string) : unit =
+  let doc = parse_file filename (Stats.create ()) in
 
   begin
     match Params.global.Params.reencode_streams with

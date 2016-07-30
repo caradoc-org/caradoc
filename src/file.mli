@@ -57,10 +57,10 @@ val extract_trailers : in_channel -> (DirectObject.dict_t list)
 
 (*   Extract statistics from a PDF file
      Args    :
-     - input channel
+     - input file name
      - file statistics
 *)
-val statistics : in_channel -> Stats.t -> unit
+val statistics : string -> Stats.t -> unit
 
 (*   Parse a PDF file and extract various data
      Args    :
@@ -68,7 +68,7 @@ val statistics : in_channel -> Stats.t -> unit
      Returns :
      - parsed document
 *)
-val parse_file : string -> Document.t
+val parse_file : string -> Stats.t -> Document.t
 
 (*   Parse a PDF file and extract various data
      Args    :
@@ -78,8 +78,8 @@ val check_file : string -> unit
 
 (*   Write a cleaned up version of a file to stdout
      Args    :
-     - input channel
+     - input file name
      - output file name
 *)
-val cleanup : in_channel -> string -> unit
+val cleanup : string -> string -> unit
 

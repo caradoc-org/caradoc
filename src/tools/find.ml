@@ -25,6 +25,7 @@ open Errors
 open Entry
 open Directobject
 open Indirectobject
+open Stats
 
 
 module Find = struct
@@ -67,12 +68,12 @@ module Find = struct
 
 
   let find_ref (key : Key.t) (filename : string) (show_ctxt : bool) (highlight : bool) : unit =
-    let doc = File.parse_file filename in
+    let doc = File.parse_file filename (Stats.create ()) in
     let occurrences = Document.find_ref key doc in
     print_occurrences occurrences doc show_ctxt highlight
 
   let find_name (name : string) (filename : string) (show_ctxt : bool) (highlight : bool) : unit =
-    let doc = File.parse_file filename in
+    let doc = File.parse_file filename (Stats.create ()) in
     let occurrences = Document.find_name name doc in
     print_occurrences occurrences doc show_ctxt highlight
 

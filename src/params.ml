@@ -43,6 +43,8 @@ module Params = struct
     (* Allow names to contain non-ASCII characters verbatim instead of an escape sequence *)
     (* The specification does not strictly forbid this, but escape sequences should be used *)
     mutable allow_nonascii_in_names : bool;
+    (* Allow objects to overlap inside a file *)
+    mutable allow_overlaps : bool;
 
     (**** Type-checking parameters ****)
     (* Allow a dictionary of "info" type to contain arbitrary (custom) entries *)
@@ -95,6 +97,7 @@ module Params = struct
     zero_offset_as_free = false;
     undefined_ref_as_null = false;
     allow_nonascii_in_names = false;
+    allow_overlaps = false;
     (* Type-checking parameters *)
     allow_arbitrary_info = false;
     (* Output parameters *)
@@ -128,6 +131,7 @@ module Params = struct
     global.zero_offset_as_free <- false;
     global.undefined_ref_as_null <- false;
     global.allow_nonascii_in_names <- false;
+    global.allow_overlaps <- false;
     global.allow_arbitrary_info <- false;
     global.sort_dicts <- false;
     global.expand_streams <- false;
@@ -163,6 +167,9 @@ module Params = struct
       true
     | "allow-nonascii-in-names" ->
       params.allow_nonascii_in_names <- true;
+      true
+    | "allow-overlaps" ->
+      params.allow_overlaps <- true;
       true
     | "allow-arbitrary-info" ->
       params.allow_arbitrary_info <- true;

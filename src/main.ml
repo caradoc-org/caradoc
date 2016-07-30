@@ -97,12 +97,10 @@ let command_stats =
       Params.load_file Params.global !options_filename;
 
     let stats = Stats.create () in
-    let input = open_in_bin filename in
     let fail = ref false in
     Errors.catch ~fail:(fun () -> fail := true) (fun () ->
-        File.statistics input stats
+        File.statistics filename stats
       );
-    close_in input;
     Stats.print stats;
     if !fail then
       exit 2
@@ -234,8 +232,7 @@ let command_cleanup =
     if !options_filename <> "" then
       Params.load_file Params.global !options_filename;
 
-    let input = open_in_bin filename in
-    File.cleanup input !out_filename
+    File.cleanup filename !out_filename
   in
 
   let options = [
