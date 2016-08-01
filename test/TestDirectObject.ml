@@ -246,6 +246,47 @@ let tests =
                     (TestMapkey.add_all [Key.make_gen ~:2 ~:1, Entry.make_name "Foo" ; Key.make_0 ~:5, Entry.make_name "Bar"])) ;
     ] ;
 
+    "undef_refs_to_null" >:::
+    [
+      "(1)" >:: (fun _ -> assert_equal
+                    (let w = ref [] in let x = undef_refs_to_null MapKey.empty w (Errors.make_ctxt_key Key.Trailer) Null in x, !w)
+                    (Null, [])) ;
+      "(2)" >:: (fun _ -> assert_equal
+                    (let w = ref [] in let x = undef_refs_to_null MapKey.empty w (Errors.make_ctxt_key Key.Trailer) (Bool false) in x, !w)
+                    (Bool false, [])) ;
+      "(3)" >:: (fun _ -> assert_equal
+                    (let w = ref [] in let x = undef_refs_to_null MapKey.empty w (Errors.make_ctxt_key Key.Trailer) (Int ~:123) in x, !w)
+                    (Int ~:123, [])) ;
+      "(4)" >:: (fun _ -> assert_equal
+                    (let w = ref [] in let x = undef_refs_to_null MapKey.empty w (Errors.make_ctxt_key Key.Trailer) (Real "1.02") in x, !w)
+                    (Real "1.02", [])) ;
+      "(5)" >:: (fun _ -> assert_equal
+                    (let w = ref [] in let x = undef_refs_to_null MapKey.empty w (Errors.make_ctxt_key Key.Trailer) (String "test") in x, !w)
+                    (String "test", [])) ;
+      "(6)" >:: (fun _ -> assert_equal
+                    (let w = ref [] in let x = undef_refs_to_null MapKey.empty w (Errors.make_ctxt_key Key.Trailer) (Name "key") in x, !w)
+                    (Name "key", [])) ;
+      "(7)" >:: (fun _ -> assert_equal
+                    (let w = ref [] in let x = undef_refs_to_null (TestMapkey.add_all [Key.make_0 ~:1, ()]) w (Errors.make_ctxt_key Key.Trailer)
+                                           (Array [Reference (Key.make_0 ~:1) ; Reference (Key.make_0 ~:2) ; Array [Reference (Key.make_0 ~:3)]]) in x, !w)
+                    (Array [Reference (Key.make_0 ~:1) ; Null ; Array [Null]],
+                     [Key.make_0 ~:3, Errors.make_ctxt_entry Key.Trailer (Entry.append_index (Entry.make_index 2) 0) ; Key.make_0 ~:2, Errors.make_ctxt_entry Key.Trailer (Entry.make_index 1)])) ;
+      "(8)" >:: (fun _ -> assert_equal
+                    (let w = ref [] in let x = undef_refs_to_null_dict (TestMapkey.add_all [Key.make_0 ~:1, ()]) w (Errors.make_ctxt_key Key.Trailer)
+                                           (TestDict.add_all ["Key", Reference (Key.make_0 ~:1) ; "Other", Reference (Key.make_0 ~:2)]) in x, !w)
+                    (TestDict.add_all ["Key", Reference (Key.make_0 ~:1)],
+                     [Key.make_0 ~:2, Errors.make_ctxt_entry Key.Trailer (Entry.make_name "Other")])) ;
+      "(9)" >:: (fun _ -> assert_equal
+                    (let w = ref [] in let x = undef_refs_to_null (TestMapkey.add_all [Key.make_0 ~:1, ()]) w (Errors.make_ctxt_key Key.Trailer)
+                                           (Reference (Key.make_0 ~:1)) in x, !w)
+                    (Reference (Key.make_0 ~:1), [])) ;
+      "(10)" >:: (fun _ -> assert_equal
+                     (let w = ref [] in let x = undef_refs_to_null (TestMapkey.add_all [Key.make_0 ~:1, ()]) w (Errors.make_ctxt_key Key.Trailer)
+                                            (Reference (Key.make_0 ~:2)) in x, !w)
+                     (Null,
+                      [Key.make_0 ~:2, Errors.make_ctxt_key Key.Trailer])) ;
+    ] ;
+
     "relink" >:::
     [
       "(1)" >:: (fun _ -> assert_equal

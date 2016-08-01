@@ -138,10 +138,14 @@ module Document = struct
 
 
   let undef_refs_to_null (x : t) : unit =
-    x.trailers <- List.map (DirectObject.undef_refs_to_null_dict x.objects (Errors.make_ctxt_key Key.Trailer)) x.trailers;
+    let warnings = ref [] in
+    x.trailers <- List.map (DirectObject.undef_refs_to_null_dict x.objects warnings (Errors.make_ctxt_key Key.Trailer)) x.trailers;
     x.objects <- MapKey.mapi (fun key obj ->
-        IndirectObject.undef_refs_to_null x.objects (Errors.make_ctxt_key key) obj
-      ) x.objects
+        IndirectObject.undef_refs_to_null x.objects warnings (Errors.make_ctxt_key key) obj
+      ) x.objects;
+    List.iter (fun (key, ctxt) ->
+        Printf.eprintf "Warning : Reference to unknown object %s%s\n" (Key.to_string key) (Errors.ctxt_to_string ctxt)
+      ) (List.rev !warnings)
 
   let check_refs (objects : IndirectObject.t MapKey.t) (refs : Entry.t MapKey.t) (ctxt : Errors.error_ctxt) : SetKey.t =
     MapKey.iter (fun key entry ->

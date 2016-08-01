@@ -416,24 +416,24 @@ module DirectObject = struct
     refs_dict_impl Entry.empty d
 
 
-  let rec undef_refs_to_null (defined : 'a MapKey.t) (ctxt : Errors.error_ctxt) (x : t) : t =
+  let rec undef_refs_to_null (defined : 'a MapKey.t) (warnings : (Key.t * Errors.error_ctxt) list ref) (ctxt : Errors.error_ctxt) (x : t) : t =
     match x with
     | Null | Bool _ | Int _ | Real _ | String _ | Name _ ->
       x
     | Array l ->
-      Array (List.mapi (fun i x -> undef_refs_to_null defined (Errors.ctxt_append_index ctxt i) x) l)
+      Array (List.mapi (fun i x -> undef_refs_to_null defined warnings (Errors.ctxt_append_index ctxt i) x) l)
     | Dictionary d ->
-      Dictionary (undef_refs_to_null_dict defined ctxt d)
+      Dictionary (undef_refs_to_null_dict defined warnings ctxt d)
     | Reference key ->
       if MapKey.mem key defined then
         Reference key
       else (
-        Printf.eprintf "Warning : Reference to unknown object %s%s\n" (Key.to_string key) (Errors.ctxt_to_string ctxt);
+        warnings := (key, ctxt)::(!warnings);
         Null
       )
 
-  and undef_refs_to_null_dict (defined : 'a MapKey.t) (ctxt : Errors.error_ctxt) (d : dict_t) : dict_t =
-    dict_map_key (fun key x -> undef_refs_to_null defined (Errors.ctxt_append_name ctxt key) x) d
+  and undef_refs_to_null_dict (defined : 'a MapKey.t) (warnings : (Key.t * Errors.error_ctxt) list ref) (ctxt : Errors.error_ctxt) (d : dict_t) : dict_t =
+    dict_map_key (fun key x -> undef_refs_to_null defined warnings (Errors.ctxt_append_name ctxt key) x) d
 
 
   let rec relink (newkeys : Key.t MapKey.t) (ctxt : Errors.error_ctxt) (x : t) : t =

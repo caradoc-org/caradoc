@@ -77,12 +77,12 @@ module IndirectObject = struct
     make_fun_dict DirectObject.refs DirectObject.refs_dict
 
 
-  let undef_refs_to_null (defined : 'a MapKey.t) (ctxt : Errors.error_ctxt) (x : t) : t =
+  let undef_refs_to_null (defined : 'a MapKey.t) (warnings : (Key.t * Errors.error_ctxt) list ref) (ctxt : Errors.error_ctxt) (x : t) : t =
     match x with
     | Direct y ->
-      Direct (DirectObject.undef_refs_to_null defined ctxt y)
+      Direct (DirectObject.undef_refs_to_null defined warnings ctxt y)
     | Stream s ->
-      let d = (DirectObject.undef_refs_to_null_dict defined ctxt (PDFStream.get_dict s)) in
+      let d = DirectObject.undef_refs_to_null_dict defined warnings ctxt (PDFStream.get_dict s) in
       Stream (PDFStream.set_dict s d)
 
 
@@ -91,7 +91,7 @@ module IndirectObject = struct
     | Direct y ->
       Direct (DirectObject.relink newkeys ctxt y)
     | Stream s ->
-      let d = (DirectObject.relink_dict newkeys ctxt (PDFStream.get_dict s)) in
+      let d = DirectObject.relink_dict newkeys ctxt (PDFStream.get_dict s) in
       Stream (PDFStream.set_dict s d)
 
 
