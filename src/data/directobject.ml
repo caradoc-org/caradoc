@@ -71,15 +71,9 @@ module DirectObject = struct
       Hashtbl.replace x key value
 
   let dict_add (allow_duplicates : bool) (x : dict_t) (key, value) : unit =
-    if Hashtbl.mem x key then (
-      let error_msg = Printf.sprintf "The same name appears several times in dictionary : /%s" key in
-      if allow_duplicates then (
-        Printf.eprintf "Warning : %s\n" error_msg;
-        dict_set x (key, value)
-      ) else
-        raise (Errors.PDFError (error_msg, Errors.ctxt_none))
-    ) else
-      dict_set x (key, value)
+    if Hashtbl.mem x key then
+      Errors.warning_or_pdf_error allow_duplicates (Printf.sprintf "The same name appears several times in dictionary : /%s" key) Errors.ctxt_none;
+    dict_set x (key, value)
 
 
   let dict_mem (x : dict_t) (key : string) : bool =

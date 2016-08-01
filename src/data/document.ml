@@ -144,7 +144,7 @@ module Document = struct
         IndirectObject.undef_refs_to_null x.objects warnings (Errors.make_ctxt_key key) obj
       ) x.objects;
     List.iter (fun (key, ctxt) ->
-        Printf.eprintf "Warning : Reference to unknown object %s%s\n" (Key.to_string key) (Errors.ctxt_to_string ctxt)
+        Errors.warning (Printf.sprintf "Reference to unknown object : %s" (Key.to_string key)) ctxt
       ) (List.rev !warnings)
 
   let check_refs (objects : IndirectObject.t MapKey.t) (refs : Entry.t MapKey.t) (ctxt : Errors.error_ctxt) : SetKey.t =

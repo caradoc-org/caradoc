@@ -72,7 +72,7 @@ module TypeChecker = struct
         Printf.eprintf "Remaining objects : %d -- checking object : %s " (List.length ctxt.Type.to_check) (Key.to_string key);
 
       if not (Document.mem_obj doc key) then
-        raise (Errors.PDFError (Printf.sprintf "Reference to unknown object : %s" (Key.to_string key), error_ctxt));
+        raise (Errors.PDFError (Printf.sprintf "Reference to unknown object during type checking : %s" (Key.to_string key), error_ctxt));
 
       let typ = {
         Type.kind = MapKey.find key ctxt.Type.types;

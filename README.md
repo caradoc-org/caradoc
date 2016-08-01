@@ -102,6 +102,8 @@ The following options are defined, to cope with common errors produced by variou
 - `zero-offset-as-free` : treat an xref table entry with an offset of zero as a *free* object. Some software produce such ill-formed PDFs.
 - `undefined-ref-as-null` : treat a reference to an undeclared object as the *null* object. By default, such references trigger an error.
 - `allow-nonascii-in-names` : allow non-ASCII characters in PDF names, even when they are not represented by an escape sequence. By default, non-ASCII characters are only allowed in the form of an escape sequence.
+- `allow-overlaps` : allow several objects to overlap in a file, according to the positions declared in xref tables.
+- `xref-stream-default-zero` : when the last field is not present in a xref stream (i.e. the /W value for this field is 0), use a default value of 0. The specification defines a default value only for entries of type 1, this option extends it to all types.
 - `allow-arbitrary-info` : allow the *Info* dictionary to contain arbitrary (metadata) keys. Otherwise, unknown keys trigger an error in the type checker.
 
 ## Structure of the code

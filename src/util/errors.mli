@@ -55,6 +55,35 @@ module Errors : sig
   exception UnexpectedError of string
 
 
+  (*   Print a warning
+       Args    :
+       - error message
+       - error context
+  *)
+  val warning : string -> error_ctxt -> unit
+  (*   Print a warning if a predicate is true, raise a PDFError otherwise
+       Args    :
+       - whether to issue a warning
+       - error message
+       - error context
+  *)
+  val warning_or_pdf_error : bool -> string -> error_ctxt -> unit
+  (*   Print a warning if a predicate is true, raise a TypeError otherwise
+       Args    :
+       - whether to issue a warning
+       - verbose
+       - error message
+       - error context
+  *)
+  val warning_or_type_error : bool -> bool -> string -> error_ctxt -> unit
+  (*   Print a warning if a predicate is true, raise a LexingError otherwise
+       Args    :
+       - whether to issue a warning
+       - error message
+       - error context
+  *)
+  val warning_or_lexing_error : bool -> string -> BoundedInt.t -> unit
+
   (*   Call a function and call fail if an exception is caught
        Args    :
        - function to call in case of failure

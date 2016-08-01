@@ -49,6 +49,9 @@ let parsexref_table (xref : XRefTable.t) (input : in_channel) (offset : BoundedI
 
   while not !trail do
     let error_ctxt = Errors.make_ctxt_pos (Errors.make_pos_file !pos) in
+    if Params.global.Params.debug then
+      Printf.eprintf "Parsing xref table section%s\n" (Errors.ctxt_to_string error_ctxt);
+
     let ( &> ) p lexbuf = wrap_xrefparser p lexbuf error_ctxt in
 
     try
@@ -92,12 +95,17 @@ let parsexrefstm_subsection (xref : XRefTable.t) (error_pos : Errors.pos_t) (con
 
     let obj_num = start +: ~:i in
     let error_ctxt = Errors.make_ctxt (Key.make_0 obj_num) (Errors.pos_add_offset error_pos !pos) in
+    if Params.global.Params.debug then
+      Printf.eprintf "Xref stream entry : type = %s%s\n" (BoundedInt.to_string typ) (Errors.ctxt_to_string error_ctxt);
+
     begin
       try
         match (BoundedInt.to_int typ) with
         | 0 ->
           let next_free = f1 () in
-          let next_gen = f2 () in
+          if w.(2) = ~:0 then
+            Errors.warning_or_pdf_error Params.global.Params.xref_stream_default_zero "Free object entry in xref stream has no next generation number" error_ctxt;
+          let next_gen = f2 ~default:(~:0) () in
           XRefTable.add xref (Key.make_gen obj_num next_gen) (XRefTable.make_value next_free XRefTable.Free)
 
         | 1 ->
@@ -107,7 +115,9 @@ let parsexrefstm_subsection (xref : XRefTable.t) (error_pos : Errors.pos_t) (con
 
         | 2 ->
           let obj_stm = f1 () in
-          let obj_idx = f2 () in
+          if w.(2) = ~:0 then
+            Errors.warning_or_pdf_error Params.global.Params.xref_stream_default_zero "Compressed object entry in xref stream has no index" error_ctxt;
+          let obj_idx = f2 ~default:(~:0) () in
           XRefTable.add xref (Key.make_0 obj_num) (XRefTable.make_value obj_stm (XRefTable.Compressed obj_idx))
 
         | _ ->
@@ -123,10 +133,12 @@ let parsexrefstm_subsection (xref : XRefTable.t) (error_pos : Errors.pos_t) (con
 (* PDF reference 7.5.8 *)
 (***********************)
 let parsexref_stm (xref : XRefTable.t) (input : in_channel) (offset : BoundedInt.t) (length : BoundedInt.t) (doc : Document.t) : BoundedInt.t * DirectObject.dict_t =
+  let error_ctxt_pos = Errors.make_ctxt_pos (Errors.make_pos_file offset) in
+  if Params.global.Params.debug then
+    Printf.eprintf "Parsing xref stream%s\n" (Errors.ctxt_to_string error_ctxt_pos);
+
   seek_xref input offset length;
   let lexbuf = Lexing.from_channel input in
-
-  let error_ctxt_pos = Errors.make_ctxt_pos (Errors.make_pos_file offset) in
   let key, obj = wrap_parser Parser.indirectobj lexbuf error_ctxt_pos in
 
   let error_ctxt = Errors.make_ctxt key (Errors.make_pos_file offset) in
@@ -149,24 +161,33 @@ let parsexref_stm (xref : XRefTable.t) (input : in_channel) (offset : BoundedInt
   (*************************)
   (* PDF reference 7.5.8.2 *)
   (*************************)
+  if Params.global.Params.debug then
+    Printf.eprintf "Decoding xref stream%s\n" (Errors.ctxt_to_string error_ctxt);
+
   let error_ctxt_w = Errors.ctxt_append_name error_ctxt "W" in
+  let error_ctxt_size = Errors.ctxt_append_name error_ctxt "Size" in
+  let error_ctxt_index = Errors.ctxt_append_name error_ctxt "Index" in
+
+  let obj_w = DirectObject.dict_find stream_dict "W" in
+  let obj_size = DirectObject.dict_find stream_dict "Size" in
+  let obj_index = DirectObject.dict_find stream_dict "Index" in
+
+  if Params.global.Params.debug then
+    Printf.eprintf "\t/W = %s\n\t/Size = %s\n\t/Index = %s\n" (DirectObject.to_string obj_w) (DirectObject.to_string obj_size) (DirectObject.to_string obj_index);
+
   let w = DirectObject.get_array_of
       ~length:3 ()
       "Expected array of 3 non-negative ints" error_ctxt_w
       ~transform:(DirectObject.get_nonnegative_int ())
-      (DirectObject.dict_find stream_dict "W") in
-
-  let error_ctxt_size = Errors.ctxt_append_name error_ctxt "Size" in
+      obj_w in
   let size = DirectObject.get_nonnegative_int ()
       "Expected non-negative integer" error_ctxt_size
-      (DirectObject.dict_find stream_dict "Size") in
-
-  let error_ctxt_index = Errors.ctxt_append_name error_ctxt "Index" in
+      obj_size in
   let index = DirectObject.get_array_of
       ~default:[DirectObject.Int ~:0 ; DirectObject.Int size] ()
       "Expected array of non-negative ints" error_ctxt_index
       ~transform:(DirectObject.get_nonnegative_int ())
-      (DirectObject.dict_find stream_dict "Index") in
+      obj_index in
 
   let idxlen = ~:(Array.length index) in
   if (BoundedInt.rem idxlen ~:2) <> ~:0 || idxlen <=: ~:0 then
@@ -198,6 +219,9 @@ let parsexref_stm (xref : XRefTable.t) (input : in_channel) (offset : BoundedInt
 
 let parsexref (xref : XRefTable.t) (input : in_channel) (offset : BoundedInt.t) (length : BoundedInt.t) (setpos : IntSet.t) (intervals : Key.t Intervals.t) (doc : Document.t) : Errors.error_ctxt * DirectObject.dict_t =
   let error_ctxt = Errors.make_ctxt_pos (Errors.make_pos_file offset) in
+  if Params.global.Params.debug then
+    Printf.eprintf "Parsing xref table%s\n" (Errors.ctxt_to_string error_ctxt);
+
   if not (IntSet.add setpos offset) then
     raise (Errors.PDFError ("Cyclic xref tables detected", error_ctxt));
 

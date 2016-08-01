@@ -146,7 +146,7 @@ module CheckObjectType = struct
       ctxt.incomplete <- true;
 
       if Params.global.Params.verbose then
-        Printf.eprintf "Warning : any type specified%s\n" (Errors.ctxt_to_string ectxt);
+        Errors.warning "Any type specified" ectxt;
       typ
 
     | _ ->
@@ -329,10 +329,7 @@ module CheckObjectType = struct
     (* Iterate over additional entries *)
     Hashtbl.iter
       (fun name _ ->
-         if strict then
-           raise (Errors.TypeError (Printf.sprintf "Unexpected entry /%s in instance of class %s" name typename, ectxt))
-         else if Params.global.Params.verbose then
-           Printf.eprintf "Warning : unexpected entry /%s in instance of class %s%s\n" name typename (Errors.ctxt_to_string ectxt);
+         Errors.warning_or_type_error (not strict) Params.global.Params.verbose (Printf.sprintf "Unexpected entry /%s in instance of class %s" name typename) ectxt
       ) entries
 
   and check_subclass (ctxt : context) (dict : DirectObject.dict_t) (typename : string) (ectxt : Errors.error_ctxt) (entries : (string, bool) Hashtbl.t) : bool =

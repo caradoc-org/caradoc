@@ -145,6 +145,28 @@ module Errors = struct
   exception UnexpectedError of string
 
 
+  let warning (msg : string) (ctxt : error_ctxt) : unit =
+    Printf.eprintf "Warning : %s%s\n" msg (ctxt_to_string ctxt)
+
+  let warning_or_pdf_error (warn : bool) (msg : string) (ctxt : error_ctxt) : unit =
+    if warn then
+      warning msg ctxt
+    else
+      raise (PDFError (msg, ctxt))
+
+  let warning_or_type_error (warn : bool) (verbose : bool) (msg : string) (ctxt : error_ctxt) : unit =
+    if not warn then
+      raise (TypeError (msg, ctxt))
+    else if verbose then
+      warning msg ctxt
+
+  let warning_or_lexing_error (warn : bool) (msg : string) (ctxt : BoundedInt.t) : unit =
+    if warn then
+      warning msg ctxt_none
+    else
+      raise (LexingError (msg, ctxt))
+
+
   let catch ~fail (f : unit -> 'a) : 'a =
     try
       f ()

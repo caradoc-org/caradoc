@@ -45,6 +45,8 @@ module Params = struct
     mutable allow_nonascii_in_names : bool;
     (* Allow objects to overlap inside a file *)
     mutable allow_overlaps : bool;
+    (* Treat missing values in xref streams as zero *)
+    mutable xref_stream_default_zero : bool;
 
     (**** Type-checking parameters ****)
     (* Allow a dictionary of "info" type to contain arbitrary (custom) entries *)
@@ -98,6 +100,7 @@ module Params = struct
     undefined_ref_as_null = false;
     allow_nonascii_in_names = false;
     allow_overlaps = false;
+    xref_stream_default_zero = false;
     (* Type-checking parameters *)
     allow_arbitrary_info = false;
     (* Output parameters *)
@@ -132,6 +135,7 @@ module Params = struct
     global.undefined_ref_as_null <- false;
     global.allow_nonascii_in_names <- false;
     global.allow_overlaps <- false;
+    global.xref_stream_default_zero <- false;
     global.allow_arbitrary_info <- false;
     global.sort_dicts <- false;
     global.expand_streams <- false;
@@ -170,6 +174,9 @@ module Params = struct
       true
     | "allow-overlaps" ->
       params.allow_overlaps <- true;
+      true
+    | "xref-stream-default-zero" ->
+      params.xref_stream_default_zero <- true;
       true
     | "allow-arbitrary-info" ->
       params.allow_arbitrary_info <- true;

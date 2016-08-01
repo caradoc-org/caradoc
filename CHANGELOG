@@ -4,6 +4,8 @@ New features:
 - Added --allow-nonascii-in-names option to allow names to contain non-ASCII
   characters instead of the corresponding escape sequence.
 - Added --allow-overlaps option to allow several objects to overlap in a file.
+- Added --xref-stream-default-zero option to use a default value of 0 when the
+  last field is not present in xref stream entries.
 - When available, the 'stats' command also outputs main metadata from the /Info
   dictionary (/Producer, /Creator, /CreationDate and /ModDate).
 

@@ -116,7 +116,7 @@ module PDFStream = struct
         match decoded1 with
         (* TODO : don't accept malformed streams ? *)
         | None when len > 0 && content.[len - 1] = '\x0A' ->
-          Printf.eprintf "%s\n" "Warning : Flate/Zlib stream with appended newline";
+          Errors.warning "Flate/Zlib stream with appended newline" ctxt;
           Zlib.decode (String.sub content 0 (len - 1))
         | _ ->
           decoded1

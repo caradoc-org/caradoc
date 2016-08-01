@@ -3,6 +3,7 @@
   open Boundedint
   open Errors
   open Common
+  open Params
 }
 
 
@@ -187,13 +188,11 @@ and token_name buf = parse
                 token_name buf lexbuf }
   | '#'       { raise (Errors.LexingError ("invalid escape sequence in name context", ~:(Lexing.lexeme_start lexbuf))) }
   | regular as c
-              { 
-                let i = int_of_char c in
-                if i >= 0x21 && i <= 0x7E then (
-                  Buffer.add_char buf c;
-                  token_name buf lexbuf
-                ) else
-                  raise (Errors.LexingError (Printf.sprintf "non-ASCII character in name context : 0x%x" (int_of_char c), ~:(Lexing.lexeme_start lexbuf))) }
+              { let i = int_of_char c in
+                if i < 0x21 || i > 0x7E then
+                  Errors.warning_or_lexing_error Params.global.Params.allow_nonascii_in_names (Printf.sprintf "non-ASCII character in name context : 0x%x" i) ~:(Lexing.lexeme_start lexbuf);
+                Buffer.add_char buf c;
+                token_name buf lexbuf }
   | eof
               { NAME (Buffer.contents buf) }
   | _         { Common.rewind lexbuf 1;
