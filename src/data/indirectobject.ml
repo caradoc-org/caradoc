@@ -47,6 +47,13 @@ module IndirectObject = struct
   let make_fun_dict (fun_direct : DirectObject.t -> 'a) (fun_dict : DirectObject.dict_t -> 'a) : t -> 'a =
     make_fun fun_direct (fun s -> fun_dict (PDFStream.get_dict s))
 
+  let make_map_dict (fun_direct : DirectObject.t -> DirectObject.t) (fun_dict : DirectObject.dict_t -> DirectObject.dict_t) (x : t) : t =
+    match x with
+    | Direct y ->
+      Direct (fun_direct y)
+    | Stream s ->
+      Stream (PDFStream.set_dict s (fun_dict (PDFStream.get_dict s)))
+
 
   let to_string : t -> string =
     make_fun DirectObject.to_string PDFStream.to_string
@@ -77,30 +84,16 @@ module IndirectObject = struct
     make_fun_dict DirectObject.refs DirectObject.refs_dict
 
 
-  let undef_refs_to_null (defined : 'a MapKey.t) (warnings : (Key.t * Errors.error_ctxt) list ref) (ctxt : Errors.error_ctxt) (x : t) : t =
-    match x with
-    | Direct y ->
-      Direct (DirectObject.undef_refs_to_null defined warnings ctxt y)
-    | Stream s ->
-      let d = DirectObject.undef_refs_to_null_dict defined warnings ctxt (PDFStream.get_dict s) in
-      Stream (PDFStream.set_dict s d)
+  let undef_refs_to_null (defined : 'a MapKey.t) (warnings : (Key.t * Errors.error_ctxt) list ref) (ctxt : Errors.error_ctxt) : t -> t =
+    make_map_dict (DirectObject.undef_refs_to_null defined warnings ctxt) (DirectObject.undef_refs_to_null_dict defined warnings ctxt)
 
 
-  let relink (newkeys : Key.t MapKey.t) (ctxt : Errors.error_ctxt) (x : t) : t =
-    match x with
-    | Direct y ->
-      Direct (DirectObject.relink newkeys ctxt y)
-    | Stream s ->
-      let d = DirectObject.relink_dict newkeys ctxt (PDFStream.get_dict s) in
-      Stream (PDFStream.set_dict s d)
+  let relink (newkeys : Key.t MapKey.t) (ctxt : Errors.error_ctxt) : t -> t =
+    make_map_dict (DirectObject.relink newkeys ctxt) (DirectObject.relink_dict newkeys ctxt)
 
 
-  let simple_ref (key : Key.t) (x : t) : DirectObject.t =
-    match x with
-    | Direct y ->
-      DirectObject.simple_ref key y
-    | Stream _ ->
-      DirectObject.Reference key
+  let simple_ref (key : Key.t) : t -> DirectObject.t =
+    make_fun (DirectObject.simple_ref key) (fun _ -> DirectObject.Reference key)
 
   let rec simplify_refs_direct (objects : t MapKey.t) (ctxt : Errors.error_ctxt) (x : DirectObject.t) : DirectObject.t =
     match x with
@@ -120,13 +113,8 @@ module IndirectObject = struct
   and simplify_refs_dict (objects : t MapKey.t) (ctxt : Errors.error_ctxt) (d : DirectObject.dict_t) : DirectObject.dict_t =
     DirectObject.dict_map_key (fun key x -> simplify_refs_direct objects (Errors.ctxt_append_name ctxt key) x) d
 
-  let simplify_refs (objects : t MapKey.t) (ctxt : Errors.error_ctxt) (x : t) : t =
-    match x with
-    | Direct y ->
-      Direct (simplify_refs_direct objects ctxt y)
-    | Stream s ->
-      let d = simplify_refs_dict objects ctxt (PDFStream.get_dict s) in
-      Stream (PDFStream.set_dict s d)
+  let simplify_refs (objects : t MapKey.t) (ctxt : Errors.error_ctxt) : t -> t =
+    make_map_dict (simplify_refs_direct objects ctxt) (simplify_refs_dict objects ctxt)
 
 
   let get_direct error_msg ctxt x =
