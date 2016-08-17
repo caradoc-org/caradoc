@@ -25,6 +25,7 @@ open Typesaction
 open Typesannot
 open Typescolorspace
 open Typesfont
+open Typesfunction
 open Typesgraphic
 open Typesoutline
 open Typespage
@@ -66,7 +67,6 @@ let register_util ctxt =
   register_alias ctxt.pool "color_rgb" (ArraySized (type_alias "num01", 3));
 
   register_alias ctxt.pool "stream_or_bytes" (Variant [Stream "stream_base" ; String]);
-  register_alias ctxt.pool "function" Any;
   ()
 
 
@@ -77,6 +77,7 @@ let load_types ctxt =
   register_annot ctxt;
   register_colorspace ctxt;
   register_font ctxt;
+  register_function ctxt;
   register_graphic ctxt;
   register_outline ctxt;
   register_page ctxt;

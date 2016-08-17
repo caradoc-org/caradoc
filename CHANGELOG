@@ -9,6 +9,9 @@ New features:
 - When available, the 'stats' command also outputs main metadata from the /Info
   dictionary (/Producer, /Creator, /CreationDate and /ModDate).
 
+Improvements:
+- Added type checking of functions (see PDF reference 7.10).
+
 Misc:
 - Improved error handling.
 - Improved implementation of --undefined-ref-as-null option.

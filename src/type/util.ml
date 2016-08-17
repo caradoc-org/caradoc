@@ -78,6 +78,12 @@ let entry_name_in ?(allow_ind=true) ~optional names =
   make_entry ~optional (type_name_in ~allow_ind names)
 
 
+let type_int_exact ?(allow_ind=true) value =
+  make_type ~allow_ind (IntExact ~:value)
+
+let entry_int_exact ?(allow_ind=true) ~optional value =
+  make_entry ~optional (type_int_exact ~allow_ind value)
+
 let kind_int_in values =
   IntIn (Array.map (fun x -> ~:x) values)
 

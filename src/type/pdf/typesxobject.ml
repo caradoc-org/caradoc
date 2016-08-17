@@ -94,7 +94,7 @@ let register_xobject ctxt =
   ] [
     "ImageMask", make_entry_type ~optional:false (BoolExact true) ;
 
-    "BitsPerComponent", make_entry_type ~optional:true (IntExact ~:1) ;
+    "BitsPerComponent", entry_int_exact ~optional:true 1 ;
   ];
 
   register_class ~strict:false ctxt.pool "xobject_image_smask" ~includes:[
@@ -131,7 +131,7 @@ let register_xobject ctxt =
     "Subtype", entry_name_exact ~optional:false "Form" ;
     "BBox", entry_alias ~optional:false "rectangle" ;
 
-    "FormType", make_entry_type ~optional:true (IntExact ~:1) ;
+    "FormType", entry_int_exact ~optional:true 1 ;
     "Matrix", entry_alias ~optional:true "matrix6" ;
     "Resources", entry_class ~optional:true "resources" ;
     "LastModified", make_entry_type ~optional:true Date ;

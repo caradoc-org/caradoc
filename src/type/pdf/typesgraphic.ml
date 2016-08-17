@@ -91,7 +91,7 @@ let register_graphic ctxt =
     "stream_base" ;
     "pattern_base" ;
   ] [
-    "PatternType", make_entry_type ~optional:false (IntExact ~:1) ;
+    "PatternType", entry_int_exact ~optional:false 1 ;
     "PaintType", make_entry_type ~optional:false Int ;
     "TilingType", make_entry_type ~optional:false Int ;
     "BBox", entry_alias ~optional:false "rectangle" ;
@@ -103,7 +103,7 @@ let register_graphic ctxt =
   register_class ctxt.pool "shading_pattern" ~includes:[
     "pattern_base" ;
   ] [
-    "PatternType", make_entry_type ~optional:false (IntExact ~:2) ;
+    "PatternType", entry_int_exact ~optional:false 2 ;
     "Shading", entry_alias ~optional:false "shading" ;
     "ExtGState", entry_class ~optional:true "graphic_state" ;
   ];
@@ -132,7 +132,7 @@ let register_graphic ctxt =
   register_class ctxt.pool "shading_1" ~includes:[
     "shading_base" ;
   ] [
-    "ShadingType", make_entry_type ~allow_ind:false ~optional:false (IntExact ~:1) ;
+    "ShadingType", entry_int_exact ~allow_ind:false ~optional:false 1 ;
 
     "Domain", entry_alias ~optional:true "rectangle" ;
     "Matrix", entry_alias ~optional:true "matrix6" ;
@@ -141,7 +141,7 @@ let register_graphic ctxt =
   register_class ctxt.pool "shading_2" ~includes:[
     "shading_base" ;
   ] [
-    "ShadingType", make_entry_type ~allow_ind:false ~optional:false (IntExact ~:2) ;
+    "ShadingType", entry_int_exact ~allow_ind:false ~optional:false 2 ;
 
     "Coords", entry_sized_array ~optional:false 4 (type_alias "number") ;
     "Domain", entry_sized_array ~optional:true 2 (type_alias "number") ;
@@ -151,7 +151,7 @@ let register_graphic ctxt =
   register_class ctxt.pool "shading_3" ~includes:[
     "shading_base" ;
   ] [
-    "ShadingType", make_entry_type ~allow_ind:false ~optional:false (IntExact ~:3) ;
+    "ShadingType", entry_int_exact ~allow_ind:false ~optional:false 3 ;
 
     "Coords", entry_sized_array ~optional:false 6 (type_alias "number") ;
     "Domain", entry_sized_array ~optional:true 2 (type_alias "number") ;
@@ -177,23 +177,23 @@ let register_graphic ctxt =
   register_class ctxt.pool "shading_4" ~includes:[
     "shading_467" ;
   ] [
-    "ShadingType", make_entry_type ~allow_ind:false ~optional:false (IntExact ~:4) ;
+    "ShadingType", entry_int_exact ~allow_ind:false ~optional:false 4 ;
   ];
   register_class ctxt.pool "shading_5" ~includes:[
     "shading_stream_base" ;
   ] [
-    "ShadingType", make_entry_type ~allow_ind:false ~optional:false (IntExact ~:5) ;
+    "ShadingType", entry_int_exact ~allow_ind:false ~optional:false 5 ;
 
     "VerticesPerRow", make_entry_type ~optional:false (IntRange (Some ~:2, None)) ;
   ];
   register_class ctxt.pool "shading_6" ~includes:[
     "shading_467" ;
   ] [
-    "ShadingType", make_entry_type ~allow_ind:false ~optional:false (IntExact ~:6) ;
+    "ShadingType", entry_int_exact ~allow_ind:false ~optional:false 6 ;
   ];
   register_class ctxt.pool "shading_7" ~includes:[
     "shading_467" ;
   ] [
-    "ShadingType", make_entry_type ~allow_ind:false ~optional:false (IntExact ~:7) ;
+    "ShadingType", entry_int_exact ~allow_ind:false ~optional:false 7 ;
   ];
 
