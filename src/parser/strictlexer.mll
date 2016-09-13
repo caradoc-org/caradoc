@@ -46,7 +46,7 @@ rule token = parse
     (* PDF reference 7.5.2 *)
     (***********************)
   | "%PDF-1." (version as v) eol
-              { VERSION (1, (int_of_char v) - (int_of_char '0')) }
+              { VERSION (1, (Char.code v) - (Char.code '0')) }
   | '%' nonascii nonascii nonascii nonascii eol
               { NOTASCII }
     (***********************)
@@ -135,7 +135,7 @@ rule token = parse
     (* Lexical error *)
   | ['a'-'z''A'-'Z''0'-'9']+
               { raise (Errors.LexingError ("unexpected word", ~:(Lexing.lexeme_start lexbuf))) }
-  | _ as c    { raise (Errors.LexingError (Printf.sprintf "unexpected character : 0x%x" (int_of_char c), ~:(Lexing.lexeme_start lexbuf))) }
+  | _ as c    { raise (Errors.LexingError (Printf.sprintf "unexpected character : 0x%x" (Char.code c), ~:(Lexing.lexeme_start lexbuf))) }
   | eof       { raise (Errors.LexingError ("unexpected end-of-file", ~:(Lexing.lexeme_start lexbuf))) }
 
 
@@ -173,7 +173,7 @@ and token_string_hex buf = parse
               { Buffer.add_char buf (Convert.char_of_hexa n1 n2);
                 token_string_hex buf lexbuf }
   | eof       { raise (Errors.LexingError ("hexadecimal string is not terminated at end of file", ~:(Lexing.lexeme_start lexbuf))) }
-  | _ as c    { raise (Errors.LexingError (Printf.sprintf "unexpected character in hexadecimal string context : 0x%x" (int_of_char c), ~:(Lexing.lexeme_start lexbuf))) }
+  | _ as c    { raise (Errors.LexingError (Printf.sprintf "unexpected character in hexadecimal string context : 0x%x" (Char.code c), ~:(Lexing.lexeme_start lexbuf))) }
 
 
     (***********************)
@@ -188,7 +188,7 @@ and token_name buf = parse
                 token_name buf lexbuf }
   | '#'       { raise (Errors.LexingError ("invalid escape sequence in name context", ~:(Lexing.lexeme_start lexbuf))) }
   | regular as c
-              { let i = int_of_char c in
+              { let i = Char.code c in
                 if i < 0x21 || i > 0x7E then
                   Errors.warning_or_lexing_error Params.global.Params.allow_nonascii_in_names (Printf.sprintf "non-ASCII character in name context : 0x%x" i) ~:(Lexing.lexeme_start lexbuf);
                 Buffer.add_char buf c;

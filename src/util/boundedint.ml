@@ -26,10 +26,10 @@ module BoundedInt = struct
   let max = 0x7fff_ffffL
   let max_abs = 0x8000_0000L
 
-  let int_of_char (c : char) : t =
-    let i = int_of_char c in
-    if i >= (int_of_char '0') && i <= (int_of_char '9') then
-      Int64.of_int (i - (int_of_char '0'))
+  let my_int_of_char (c : char) : t =
+    let i = Char.code c in
+    if i >= (Char.code '0') && i <= (Char.code '9') then
+      Int64.of_int (i - (Char.code '0'))
     else
       raise (IntegerError "string contains a non-digit character")
 
@@ -73,7 +73,7 @@ module BoundedInt = struct
     let sign, start, len = sign_of_string s in
 
     for i = start to len - 1 do
-      result := check_abs (Int64.add (Int64.mul !result 10L) (int_of_char s.[i]))
+      result := check_abs (Int64.add (Int64.mul !result 10L) (my_int_of_char s.[i]))
     done;
     check (Int64.mul !result (Int64.of_int sign))
 
@@ -82,7 +82,7 @@ module BoundedInt = struct
     let len = String.length s in
 
     for i = 0 to len - 1 do
-      result := check (Int64.add (Int64.mul !result 10L) (int_of_char s.[i]))
+      result := check (Int64.add (Int64.mul !result 10L) (my_int_of_char s.[i]))
     done;
     !result
 

@@ -39,7 +39,7 @@ rule token = parse
     (* PDF reference 7.5.2 *)
     (***********************)
   | "%PDF-1." (version as v) eol
-              { VERSION (1, (int_of_char v) - (int_of_char '0')) }
+              { VERSION (1, (Char.code v) - (Char.code '0')) }
     (***********************)
     (* PDF reference 7.5.4 *)
     (***********************)
@@ -52,5 +52,5 @@ rule token = parse
               { STARTXREF }
   | "%%EOF"   { EOF_MARKER }
     (* Lexical error *)
-  | _ as c    { raise (Errors.LexingError (Printf.sprintf "unexpected character : 0x%x" (int_of_char c), ~:(Lexing.lexeme_start lexbuf))) }
+  | _ as c    { raise (Errors.LexingError (Printf.sprintf "unexpected character : 0x%x" (Char.code c), ~:(Lexing.lexeme_start lexbuf))) }
 

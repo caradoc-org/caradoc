@@ -74,41 +74,41 @@ module Predictor = struct
       if y = 0 then
         0
       else
-        (int_of_char (Buffer.nth buf ((y - 1) * w + x)))
+        Char.code (Buffer.nth buf ((y - 1) * w + x))
     in
 
     let left buf x y =
       if x < sample_size then
         0
       else
-        (int_of_char (Buffer.nth buf (y * w + x - sample_size)))
+        Char.code (Buffer.nth buf (y * w + x - sample_size))
     in
 
     let topleft buf x y =
       if x < sample_size || y = 0 then
         0
       else
-        (int_of_char (Buffer.nth buf ((y - 1) * w + x - sample_size)))
+        Char.code (Buffer.nth buf ((y - 1) * w + x - sample_size))
     in
 
     let write buf c =
-      Buffer.add_char buf (char_of_int (c mod 256))
+      Buffer.add_char buf (Char.chr (c mod 256))
     in
 
 
     let result = Buffer.create (BoundedInt.to_int (width *: height)) in
     for y = 0 to BoundedInt.to_int (height -: ~:1) do
-      let pred = int_of_char content.[y * wp1] in
+      let pred = Char.code content.[y * wp1] in
       match pred with
       | 0 ->
         Buffer.add_substring result content (y * wp1 + 1) w
       | 1 ->
         for x = 0 to w - 1 do
-          write result ((int_of_char content.[y * wp1 + x + 1]) + (left result x y))
+          write result ((Char.code content.[y * wp1 + x + 1]) + (left result x y))
         done
       | 2 ->
         for x = 0 to w - 1 do
-          write result ((int_of_char content.[y * wp1 + x + 1]) + (top result x y))
+          write result ((Char.code content.[y * wp1 + x + 1]) + (top result x y))
         done
       | 3 ->
         for x = 0 to w - 1 do
@@ -116,7 +116,7 @@ module Predictor = struct
           let b = top result x y in
           let avg = (a + b) / 2 in
 
-          write result ((int_of_char content.[y * wp1 + x + 1]) + avg)
+          write result ((Char.code content.[y * wp1 + x + 1]) + avg)
         done
       | 4 ->
         for x = 0 to w - 1 do
@@ -124,7 +124,7 @@ module Predictor = struct
           let b = top result x y in
           let c = topleft result x y in
 
-          write result ((int_of_char content.[y * wp1 + x + 1]) + (paeth a b c))
+          write result ((Char.code content.[y * wp1 + x + 1]) + (paeth a b c))
         done
       | _ ->
         raise (Errors.PDFError ("Invalid PNG filter predictor method", ctxt));
