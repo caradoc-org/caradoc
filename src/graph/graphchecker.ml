@@ -30,13 +30,7 @@ open Params
 module GraphChecker = struct
 
   let check doc _types =
-    let trailer =
-      match Document.trailers doc with
-      | [] ->
-        raise (Errors.PDFError ("No trailer", Errors.ctxt_none))
-      | t::_ ->
-        t
-    in
+    let trailer = Document.main_trailer doc in
 
     let catalog_k = DirectObject.get_reference
         () "Catalog is mandatory and shall be indirect" (Errors.make_ctxt_name Key.Trailer "Root")

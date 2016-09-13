@@ -134,5 +134,15 @@ module IndirectObject = struct
       s
     | _ -> raise (Errors.PDFError (error_msg, ctxt))
 
+
+  let get_dict x =
+    match x with
+    | Direct (DirectObject.Dictionary d) ->
+      Some d
+    | Stream s ->
+      Some (PDFStream.get_dict s)
+    | _ ->
+      None
+
 end
 

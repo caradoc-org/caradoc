@@ -242,6 +242,34 @@ module DirectObject : sig
   *)
   val apply_not_null : t -> (t -> unit) -> unit
 
+  (*   Check and extract a boolean from an object, or raise an exception
+       Args    :
+       - [optional] default value for null object
+       - error message
+       - error context
+       - object
+       Returns :
+       - boolean value of object
+  *)
+  val get_bool :
+    ?default:bool -> unit ->
+    string -> Errors.error_ctxt ->
+    t -> bool
+
+  (*   Check and extract an integer from an object, or raise an exception
+       Args    :
+       - [optional] default value for null object
+       - error message
+       - error context
+       - object
+       Returns :
+       - integer value of object
+  *)
+  val get_int :
+    ?default:BoundedInt.t -> unit ->
+    string -> Errors.error_ctxt ->
+    t -> BoundedInt.t
+
   (*   Check and extract a (strictly) positive integer from an object, or raise an exception
        Args    :
        - [optional] default value for null object

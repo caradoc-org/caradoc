@@ -119,6 +119,36 @@ module DirectObject = struct
       | _ as c -> Buffer.add_char buf c
     done
 
+  let pretty_string (buf : Buffer.t) (x : string) : unit =
+    let l = String.length x in
+
+    let printable =
+      try
+        for i = 0 to l-1 do
+          match x.[i] with
+          | '\x0A' | '\x0D' | '\x09' | '\x08' | '\x0C'
+          | '\x20'..'\x7E' ->
+            ()
+          | _ ->
+            raise Exit
+        done;
+        true
+      with Exit ->
+        false
+    in
+
+    if printable then (
+      Buffer.add_char buf '(';
+      escape_string buf x;
+      Buffer.add_char buf ')'
+    ) else (
+      Buffer.add_char buf '<';
+      for i = 0 to l-1 do
+        Convert.hexa_of_char_buf buf x.[i]
+      done;
+      Buffer.add_char buf '>'
+    )
+
   let escape_name (buf : Buffer.t) (x : string) : unit =
     for i = 0 to (String.length x) - 1 do
       let c = x.[i] in
@@ -129,12 +159,12 @@ module DirectObject = struct
       | '(' | ')' | '<' | '>' | '[' | ']' | '{' | '}' | '/' | '%'
       | '#' ->
         Buffer.add_char buf '#';
-        Buffer.add_string buf (Convert.hexa_of_char c)
-      | _ when c <= '\x20' || c >= '\x7F' ->
-        Buffer.add_char buf '#';
-        Buffer.add_string buf (Convert.hexa_of_char c)
-      | _ ->
+        Convert.hexa_of_char_buf buf c
+      | '\x21'..'\x7E' ->
         Buffer.add_char buf c
+      | _ ->
+        Buffer.add_char buf '#';
+        Convert.hexa_of_char_buf buf c
     done
 
 
@@ -154,9 +184,7 @@ module DirectObject = struct
     | Int i -> Buffer.add_string buf (BoundedInt.to_string i)
     | Real r -> Buffer.add_string buf r
     | String s ->
-      Buffer.add_char buf '(';
-      escape_string buf s;
-      Buffer.add_char buf ')'
+      pretty_string buf s
     | Name n ->
       Buffer.add_char buf '/';
       escape_name buf n
@@ -458,6 +486,22 @@ module DirectObject = struct
 
   let apply_not_null x fn =
     if x <> Null then fn x
+
+
+  let get_bool ?default () error_msg ctxt x =
+    match x, default with
+    | (Bool b), _
+    | Null, (Some b) ->
+      b
+    | _ -> raise (Errors.PDFError (error_msg, ctxt))
+
+
+  let get_int ?default () error_msg ctxt x =
+    match x, default with
+    | (Int i), _
+    | Null, (Some i) ->
+      i
+    | _ -> raise (Errors.PDFError (error_msg, ctxt))
 
 
   let get_positive_int ?default () error_msg ctxt x =

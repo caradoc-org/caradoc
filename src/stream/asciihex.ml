@@ -57,8 +57,8 @@ module ASCIIHex = struct
     let l = String.length content in
     let buf = Buffer.create (2*l + 1) in
 
-    for i = 0 to (l-1) do
-      Buffer.add_string buf (Convert.hexa_of_char content.[i]) 
+    for i = 0 to l-1 do
+      Convert.hexa_of_char_buf buf content.[i]
     done;
 
     Buffer.add_char buf '>';

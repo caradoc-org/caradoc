@@ -191,5 +191,13 @@ module IndirectObject : sig
     string -> Errors.error_ctxt ->
     t -> PDFStream.t
 
+  (*   Extract a dictionary from an object (direct dictionary or stream dictionary)
+       Args    :
+       - object
+       Returns :
+       - dictionary if found
+  *)
+  val get_dict : t -> DirectObject.dict_t option
+
 end
 

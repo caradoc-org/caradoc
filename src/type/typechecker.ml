@@ -40,13 +40,7 @@ module TypeChecker = struct
 
   let check (doc : Document.t) (stats : Stats.t) : Type.kind_t MapKey.t =
     let ctxt = init () in
-    let trailer =
-      match Document.trailers doc with
-      | [] ->
-        raise (Errors.PDFError ("No trailer", Errors.ctxt_none))
-      | t::_ ->
-        t
-    in
+    let trailer = Document.main_trailer doc in
 
     if Params.global.Params.verbose then
       Printf.eprintf "\nChecking trailer\n";

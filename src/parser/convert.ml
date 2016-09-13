@@ -99,3 +99,8 @@ let hexa_of_char (c : char) : string =
   s.[1] <- hexa_digit_of_int (x mod 16);
   s
 
+let hexa_of_char_buf (buf : Buffer.t) (c : char) : unit =
+  let x = int_of_char c in
+  Buffer.add_char buf (hexa_digit_of_int (x / 16));
+  Buffer.add_char buf (hexa_digit_of_int (x mod 16))
+

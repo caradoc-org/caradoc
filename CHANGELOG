@@ -1,3 +1,7 @@
+Breaking changes:
+- Strings containing non-ASCII characters are now printed in hexadecimal
+  format.
+
 New features:
 - Added the 'findref' command to find all references to an object.
 - Added the 'findname' command to find all occurrences of a PDF name.

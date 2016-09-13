@@ -98,3 +98,10 @@ val hexa_digit_of_int : int -> char
 *)
 val hexa_of_char : char -> string
 
+(*   Convert a character to the corresponding hexadecimal code
+     Args    :
+     - output buffer
+     - character
+*)
+val hexa_of_char_buf : Buffer.t -> char -> unit
+
