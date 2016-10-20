@@ -186,13 +186,11 @@ let tests =
       "direct" >:::
       [
         "(1)" >:: (fun _ -> assert_equal
-                      (let w = ref [] in let x = undef_refs_to_null (TestMapkey.add_all [Key.make_0 ~:1, ()]) w (Errors.make_ctxt_key Key.Trailer)
-                                             (Direct (DirectObject.Array [DirectObject.Reference (Key.make_0 ~:1) ; DirectObject.Array [DirectObject.Reference (Key.make_0 ~:2)]])) in x, !w)
+                      (let w = ref [] in let x = undef_refs_to_null (TestMapkey.add_all [Key.make_0 ~:1, ()]) w (Errors.make_ctxt_key Key.Trailer) (Direct (DirectObject.Array [DirectObject.Reference (Key.make_0 ~:1) ; DirectObject.Array [DirectObject.Reference (Key.make_0 ~:2)]])) in x, !w)
                       (Direct (DirectObject.Array [DirectObject.Reference (Key.make_0 ~:1) ; DirectObject.Array [DirectObject.Null]]),
                        [Key.make_0 ~:2, Errors.make_ctxt_entry Key.Trailer (Entry.append_index (Entry.make_index 1) 0)])) ;
         "(2)" >:: (fun _ -> assert_equal
-                      (let w = ref [] in let x = undef_refs_to_null (TestMapkey.add_all [Key.make_0 ~:1, ()]) w (Errors.make_ctxt_key Key.Trailer)
-                                             (Direct (DirectObject.Dictionary (TestDict.add_all ["Key", DirectObject.Reference (Key.make_0 ~:1) ; "Other", DirectObject.Reference (Key.make_0 ~:2)]))) in x, !w)
+                      (let w = ref [] in let x = undef_refs_to_null (TestMapkey.add_all [Key.make_0 ~:1, ()]) w (Errors.make_ctxt_key Key.Trailer) (Direct (DirectObject.Dictionary (TestDict.add_all ["Key", DirectObject.Reference (Key.make_0 ~:1) ; "Other", DirectObject.Reference (Key.make_0 ~:2)]))) in x, !w)
                       (Direct (DirectObject.Dictionary (TestDict.add_all ["Key", DirectObject.Reference (Key.make_0 ~:1)])),
                        [Key.make_0 ~:2, Errors.make_ctxt_entry Key.Trailer (Entry.make_name "Other")])) ;
       ] ;
@@ -200,8 +198,7 @@ let tests =
       "stream" >:::
       [
         "(1)" >:: (fun _ -> assert_equal
-                      (let w = ref [] in let x = undef_refs_to_null (TestMapkey.add_all [Key.make_0 ~:1, ()]) w (Errors.make_ctxt_key Key.Trailer)
-                                             (Stream (TestStream.make_raw_dict ["Foo", DirectObject.Reference (Key.make_0 ~:1) ; "Bar", DirectObject.Reference (Key.make_0 ~:2)] "raw content")) in x, !w)
+                      (let w = ref [] in let x = undef_refs_to_null (TestMapkey.add_all [Key.make_0 ~:1, ()]) w (Errors.make_ctxt_key Key.Trailer) (Stream (TestStream.make_raw_dict ["Foo", DirectObject.Reference (Key.make_0 ~:1) ; "Bar", DirectObject.Reference (Key.make_0 ~:2)] "raw content")) in x, !w)
                       (Stream (TestStream.make_raw_dict ["Foo", DirectObject.Reference (Key.make_0 ~:1)] "raw content"),
                        [Key.make_0 ~:2, Errors.make_ctxt_entry Key.Trailer (Entry.make_name "Bar")])) ;
       ] ;
