@@ -34,7 +34,7 @@ module MakeFetch (FetchComp : FetchCompT) = struct
 
   let rec fetchobject (key : Key.t) (off : BoundedInt.t) (ctxt : FetchCommon.context) =
     let error_ctxt = Errors.make_ctxt key (Errors.make_pos_file off) in
-    traverse_object key error_ctxt ctxt (fun () ->
+    traverse_object key ~decrypt:true error_ctxt ctxt (fun () ->
         if off >=: ctxt.FetchCommon.length then
           raise (Errors.PDFError ("Object position is out of bounds", error_ctxt));
 

@@ -17,6 +17,8 @@
 (*****************************************************************************)
 
 
+open Directobject
+
 module Stats = struct
 
   type version_t =
@@ -35,10 +37,19 @@ module Stats = struct
     mutable knowntypes : int;
     mutable incompletetypes : bool;
     mutable nographerror : bool;
+    (* /Info dictionary *)
     mutable producer : string option;
     mutable creator : string option;
     mutable creation_date : string option;
     mutable mod_date : string option;
+    (* /Encrypt dictionary *)
+    mutable encrypt_v : int option;
+    mutable encrypt_r : int option;
+    mutable encrypt_u : string option;
+    mutable encrypt_o : string option;
+    mutable encrypt_id : string option;
+    mutable verify_user : bool;
+    mutable verify_owner : bool;
   }
 
 
@@ -58,6 +69,13 @@ module Stats = struct
       creator = None;
       creation_date = None;
       mod_date = None;
+      encrypt_v = None;
+      encrypt_r = None;
+      encrypt_u = None;
+      encrypt_o = None;
+      encrypt_id = None;
+      verify_user = false;
+      verify_owner = false;
     }
 
   let print_version (x : t) : bool =
@@ -84,9 +102,11 @@ module Stats = struct
         if (not x.objstm) && (not x.free) && x.updatecount = 0 && (not x.encrypted) then
           Printf.printf "Neither updates nor object streams nor free objects nor encryption\n";
 
-        if x.encrypted then
-          Printf.printf "Encrypted\n"
-        else (
+        if x.encrypted then (
+          Printf.printf "Encrypted\n";
+          Printf.printf "User password is %s\n" (if x.verify_user then "valid" else "invalid");
+          Printf.printf "Owner password is %s\n" (if x.verify_owner then "valid" else "invalid");
+        ) else (
           if x.objcount >= 0 then (
             Printf.printf "Object count : %d\n" x.objcount;
             Hashtbl.iter (fun filter count ->
@@ -109,15 +129,25 @@ module Stats = struct
       )
     );
 
-    let print_some (x : string option) (title : string) : unit =
+    let print_some_string (x : string option) (title : string) : unit =
       match x with
-      | Some s -> Printf.printf "/%s : %s\n" title s
+      | Some s -> Printf.printf "/%s : %s\n" title (DirectObject.to_string (DirectObject.String s))
       | None -> ()
     in
-    print_some x.producer "Producer";
-    print_some x.creator "Creator";
-    print_some x.creation_date "CreationDate";
-    print_some x.mod_date "ModDate";
+    let print_some_int (x : int option) (title : string) : unit =
+      match x with
+      | Some i -> Printf.printf "/%s : %d\n" title i
+      | None -> ()
+    in
+    print_some_string x.producer "Producer";
+    print_some_string x.creator "Creator";
+    print_some_string x.creation_date "CreationDate";
+    print_some_string x.mod_date "ModDate";
+    print_some_int x.encrypt_v "Encrypt/V";
+    print_some_int x.encrypt_r "Encrypt/R";
+    print_some_string x.encrypt_u "Encrypt/U";
+    print_some_string x.encrypt_o "Encrypt/O";
+    print_some_string x.encrypt_id ((if x.encrypted then "Encrypt/" else "") ^ "ID");
 
     if x.nographerror && (not x.incompletetypes) && (x.knowntypes = x.objcount) then
       Printf.printf "No error found\n"

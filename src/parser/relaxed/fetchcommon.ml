@@ -30,12 +30,14 @@ open Params
 open Common
 open Wrap
 open Pdfstream
+open Crypto
 
 
 module FetchCommon = struct
 
   type context = {
     doc : Document.t;
+    crypto : Crypto.t option;
     input : in_channel;
     length : BoundedInt.t;
     xref : XRefTable.t;
@@ -47,6 +49,7 @@ module FetchCommon = struct
   let make_context (input : in_channel) (length : BoundedInt.t) (xref : XRefTable.t) (intervals : Key.t Intervals.t) (doc : Document.t) : context =
     {
       doc = doc;
+      crypto = Document.crypto doc;
       input = input;
       length = length;
       xref = xref;
@@ -79,7 +82,7 @@ module type FetchCompT = sig
 end
 
 
-let traverse_object (key : Key.t) (error_ctxt : Errors.error_ctxt) (ctxt : FetchCommon.context) (fetch : unit -> IndirectObject.t) : IndirectObject.t =
+let traverse_object (key : Key.t) ~(decrypt : bool) (error_ctxt : Errors.error_ctxt) (ctxt : FetchCommon.context) (fetch : unit -> IndirectObject.t) : IndirectObject.t =
   try
     if FetchCommon.is_traversed ctxt key then
       Document.find_obj ctxt.FetchCommon.doc key
@@ -91,7 +94,32 @@ let traverse_object (key : Key.t) (error_ctxt : Errors.error_ctxt) (ctxt : Fetch
     if Params.global.Params.debug then
       Printf.eprintf "Begin object %s\n" (Key.to_string key);
 
-    let content = fetch () in
+    (* Special cases: do not decrypt xref tables and metadata streams *)
+    let is_exception (o : IndirectObject.t) (crypto : Crypto.t) : bool =
+      match IndirectObject.get_dict o with
+      | None ->
+        false
+      | Some d ->
+        let typ = DirectObject.get_name
+            ~default:"" ()
+            "Expected name" (Errors.make_ctxt_name key "Type")
+            (DirectObject.dict_find d "Type")
+        in
+
+        typ = "XRef" || (typ = "Metadata" && not (Crypto.encrypt_meta crypto))
+    in
+
+    let o = fetch () in
+    let content =
+      if decrypt then (
+        match ctxt.FetchCommon.crypto with
+        | Some c when not (is_exception o c) ->
+          IndirectObject.decrypt c key o
+        | _ ->
+          o
+      ) else
+        o
+    in
     Document.add ctxt.FetchCommon.doc key content;
 
     (* object succesfully traversed *)

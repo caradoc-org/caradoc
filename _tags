@@ -1,5 +1,6 @@
 true: use_menhir, package(cryptokit), package(oUnit)
 "src": include
+"src/crypto": include
 "src/data": include
 "src/graph": include
 "src/parser": include

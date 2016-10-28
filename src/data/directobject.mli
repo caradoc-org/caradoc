@@ -23,6 +23,7 @@ open Key
 open Mapkey
 open Errors
 open Entry
+open Crypto
 
 module DirectObject : sig
 
@@ -60,6 +61,23 @@ module DirectObject : sig
   val dict_map : (t -> t) -> dict_t -> dict_t
   val dict_fold : (string -> t -> 'a -> 'a) -> dict_t -> 'a -> 'a
 
+
+  (*   Decrypt an object
+       Args    :
+       - decryption function
+       - object
+       Returns :
+       - decrypted object
+  *)
+  val decrypt : Crypto.decrypt_t -> t -> t
+  (*   Decrypt a dictionary
+       Args    :
+       - decryption function
+       - dictionary
+       Returns :
+       - decrypted dictionary
+  *)
+  val decrypt_dict : Crypto.decrypt_t -> dict_t -> dict_t
 
   (*   Convert an object to a string
        Args    :

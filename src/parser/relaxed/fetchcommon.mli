@@ -27,6 +27,7 @@ open Indirectobject
 open Intervals
 open Pdfstream
 open Errors
+open Crypto
 
 
 module FetchCommon : sig
@@ -34,6 +35,8 @@ module FetchCommon : sig
   type context = {
     (* Document of retrieved objects *)
     doc : Document.t;
+    (* Encryption parameters *)
+    crypto : Crypto.t option;
     (* Input file *)
     input : in_channel;
     (* Length of input *)
@@ -150,13 +153,14 @@ end
 (*   Traverse an object and retrieve its content
      Args    :
      - id of object
+     - whether to decrypt this object
      - error context
      - traversal context
      - fetch function
      Returns :
      - content of object
 *)
-val traverse_object : Key.t -> Errors.error_ctxt -> FetchCommon.context -> (unit -> IndirectObject.t) -> IndirectObject.t
+val traverse_object : Key.t -> decrypt:bool -> Errors.error_ctxt -> FetchCommon.context -> (unit -> IndirectObject.t) -> IndirectObject.t
 
 (*   Parse a stream given an offset in an input channel
      Args    :

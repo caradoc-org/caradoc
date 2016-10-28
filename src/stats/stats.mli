@@ -45,6 +45,8 @@ module Stats : sig
     mutable incompletetypes : bool;
     (* No error found on graph *)
     mutable nographerror : bool;
+
+    (**** /Info dictionary ****)
     (* ∕Producer field in /Info dictionary *)
     mutable producer : string option;
     (* ∕Creator field in /Info dictionary *)
@@ -53,6 +55,22 @@ module Stats : sig
     mutable creation_date : string option;
     (* ∕ModDate field in /Info dictionary *)
     mutable mod_date : string option;
+
+    (**** /Encrypt dictionary ****)
+    (* ∕V field in /Encrypt dictionary *)
+    mutable encrypt_v : int option;
+    (* ∕R field in /Encrypt dictionary *)
+    mutable encrypt_r : int option;
+    (* ∕U field in /Encrypt dictionary *)
+    mutable encrypt_u : string option;
+    (* ∕O field in /Encrypt dictionary *)
+    mutable encrypt_o : string option;
+    (* First element of ∕ID field *)
+    mutable encrypt_id : string option;
+    (* Validity of user password *)
+    mutable verify_user : bool;
+    (* Validity of owner password *)
+    mutable verify_owner : bool;
   }
 
   val create : unit -> t

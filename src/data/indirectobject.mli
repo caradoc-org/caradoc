@@ -25,6 +25,7 @@ open Errors
 open Pdfstream
 open Directobject
 open Entry
+open Crypto
 
 module IndirectObject : sig
 
@@ -39,6 +40,16 @@ module IndirectObject : sig
     (* Incomplete stream (parsed dictionary + offset of data) *)
     | StreamOffset of DirectObject.dict_t * BoundedInt.t
 
+
+  (*   Decrypt an object
+       Args    :
+       - encryption parameters
+       - object identifier
+       - object
+       Returns :
+       - decrypted object
+  *)
+  val decrypt : Crypto.t -> Key.t -> t -> t
 
   (*   Convert an object to a string
        Args    :

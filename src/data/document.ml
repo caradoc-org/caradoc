@@ -29,6 +29,7 @@ open Graph
 open Params
 open Errors
 open Entry
+open Crypto
 
 module Document = struct
 
@@ -38,6 +39,7 @@ module Document = struct
     mutable objects : IndirectObject.t MapKey.t;
     mutable trailers : DirectObject.dict_t list;
     mutable special_streams : kind_t MapKey.t;
+    mutable crypto : Crypto.t option;
   }
 
 
@@ -45,6 +47,7 @@ module Document = struct
     objects = MapKey.empty;
     trailers = [];
     special_streams = MapKey.empty;
+    crypto = None;
   }
 
   let mem_obj (x : t) (k : Key.t) : bool =
@@ -82,9 +85,6 @@ module Document = struct
       Printf.eprintf "Several declarations of object %s in xref table\n" (Key.to_string k)
     else
       x.objects <- MapKey.add k v x.objects
-  (*
-    raise (Common.PDFError "Several declarations of object in xref table")
-  *)
 
   let set (x : t) (k : Key.t) (v : IndirectObject.t) : unit =
     x.objects <- MapKey.add k v x.objects
@@ -99,6 +99,12 @@ module Document = struct
   let add_xrefstm (x : t) (k : Key.t) : unit =
     if not (MapKey.mem k x.special_streams) then (* TODO : necessary to check this? *)
       x.special_streams <- MapKey.add k Xrefstm x.special_streams
+
+  let add_crypto (x : t) (crypto : Crypto.t) : unit =
+    x.crypto <- Some crypto
+
+  let crypto (x : t) : Crypto.t option =
+    x.crypto
 
 
   let iter_objects f (x : t) : unit =
@@ -265,6 +271,7 @@ module Document = struct
       objects = !xx;
       trailers = [IndirectObject.simplify_refs_dict x.objects (Errors.make_ctxt_key Key.Trailer) trailer];
       special_streams = MapKey.empty;
+      crypto = x.crypto;
     }
 
 
@@ -289,6 +296,7 @@ module Document = struct
       objects = !xx;
       trailers = [sanitize_trailer !newkeys trailer];
       special_streams = MapKey.empty;
+      crypto = x.crypto;
     }
 
 end

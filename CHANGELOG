@@ -3,6 +3,7 @@ Breaking changes:
   format.
 
 New features:
+- Added support for encrypted files.
 - Added the 'findref' command to find all references to an object.
 - Added the 'findname' command to find all occurrences of a PDF name.
 - Added --allow-nonascii-in-names option to allow names to contain non-ASCII
@@ -11,7 +12,8 @@ New features:
 - Added --xref-stream-default-zero option to use a default value of 0 when the
   last field is not present in xref stream entries.
 - When available, the 'stats' command also outputs main metadata from the /Info
-  dictionary (/Producer, /Creator, /CreationDate and /ModDate).
+  dictionary (/Producer, /Creator, /CreationDate and /ModDate) and /Encrypt
+  dictionary (/V, /R, /U, /O, /ID).
 
 Improvements:
 - Added type checking of functions (see PDF reference 7.10).

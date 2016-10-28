@@ -47,6 +47,7 @@ module Errors : sig
   val ctxt_add_offset : error_ctxt -> BoundedInt.t -> error_ctxt
 
   val ctxt_to_string : error_ctxt -> string
+  val key_of_ctxt : error_ctxt -> Key.t option
 
   exception LexingError of string * BoundedInt.t
   exception ParseError of string

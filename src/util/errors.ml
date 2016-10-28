@@ -137,6 +137,9 @@ module Errors = struct
     end;
     Buffer.contents buf
 
+  let key_of_ctxt (ctxt : error_ctxt) : Key.t option =
+    ctxt.key
+
 
   exception LexingError of string * BoundedInt.t
   exception ParseError of string

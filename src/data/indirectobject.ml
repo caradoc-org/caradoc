@@ -25,6 +25,7 @@ open Mapkey
 open Errors
 open Pdfstream
 open Entry
+open Crypto
 
 module IndirectObject = struct
 
@@ -47,12 +48,19 @@ module IndirectObject = struct
   let make_fun_dict (fun_direct : DirectObject.t -> 'a) (fun_dict : DirectObject.dict_t -> 'a) : t -> 'a =
     make_fun fun_direct (fun s -> fun_dict (PDFStream.get_dict s))
 
-  let make_map_dict (fun_direct : DirectObject.t -> DirectObject.t) (fun_dict : DirectObject.dict_t -> DirectObject.dict_t) (x : t) : t =
+  let make_map (fun_direct : DirectObject.t -> DirectObject.t) (fun_stream : PDFStream.t -> PDFStream.t) (x : t) : t =
     match x with
     | Direct y ->
       Direct (fun_direct y)
     | Stream s ->
-      Stream (PDFStream.set_dict s (fun_dict (PDFStream.get_dict s)))
+      Stream (fun_stream s)
+
+  let make_map_dict (fun_direct : DirectObject.t -> DirectObject.t) (fun_dict : DirectObject.dict_t -> DirectObject.dict_t) : t -> t =
+    make_map fun_direct (fun s -> PDFStream.set_dict s (fun_dict (PDFStream.get_dict s)))
+
+
+  let decrypt (crypto : Crypto.t) (key : Key.t) : t -> t =
+    make_map (DirectObject.decrypt (Crypto.decrypt_for_object crypto true key)) (PDFStream.decrypt crypto key)
 
 
   let to_string : t -> string =

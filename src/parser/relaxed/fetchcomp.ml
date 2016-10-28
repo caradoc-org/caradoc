@@ -158,7 +158,7 @@ module MakeFetchComp (Fetch : FetchT) = struct
     let key_objstm = Key.make_0 id in
     let error_ctxt = Errors.make_ctxt key (Errors.make_pos_objstm key_objstm idx) in
 
-    traverse_object key error_ctxt ctxt (fun () ->
+    traverse_object key ~decrypt:false error_ctxt ctxt (fun () ->
         let bag = fetchobjstm key_objstm ctxt in
         if not (MapKey.mem key bag) then
           raise (Errors.PDFError ("Object not found in object stream", error_ctxt));

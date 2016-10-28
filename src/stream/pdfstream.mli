@@ -22,6 +22,7 @@ open Boundedint
 open Directobject
 open Errors
 open Entry
+open Crypto
 
 module PDFStream : sig
 
@@ -67,6 +68,16 @@ module PDFStream : sig
        - decoded status
   *)
   val is_decoded : t -> bool
+
+  (*   Decrypt a stream
+       Args    :
+       - encryption parameters
+       - object identifier
+       - stream
+       Returns :
+       - decrypted stream
+  *)
+  val decrypt : Crypto.t -> Key.t -> t -> t
 
   (*   Convert a stream to a string
        Args    :

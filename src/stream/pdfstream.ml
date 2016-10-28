@@ -28,6 +28,7 @@ open Runlength
 open Predictor
 open Params
 open Entry
+open Crypto
 
 
 module PDFStream = struct
@@ -56,6 +57,18 @@ module PDFStream = struct
 
   let is_decoded (s : t) : bool =
     s.decoded <> None
+
+
+  let decrypt (crypto : Crypto.t) (key : Key.t) (s : t) : t =
+    let encoded = Crypto.decrypt_for_object crypto false key s.encoded in
+    let d = DirectObject.decrypt_dict (Crypto.decrypt_for_object crypto true key) s.dictionary in
+    DirectObject.dict_set d ("Length", DirectObject.Int ~:(String.length encoded));
+
+    {
+      dictionary = d;
+      encoded = encoded;
+      decoded = s.decoded;
+    }
 
 
   let to_string_hl (s : t) (selector : Entry.select_t) : string =

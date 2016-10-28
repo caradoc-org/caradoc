@@ -29,6 +29,17 @@ module Params = struct
     (* Use strict parser *)
     mutable strict_parser : bool;
 
+    (**** Encryption parameters ****)
+    (* Parse input as if the /Encrypt field was not present *)
+    mutable ignore_crypt : bool;
+    (* Decrypt input if the /Encrypt field is present *)
+    (* If the file is not encrypted, this parameter is ignored *)
+    mutable decrypt : bool;
+    (* User password for decryption (empty password by default) *)
+    mutable user_password : string;
+    (* Owner password for decryption (empty password by default) *)
+    mutable owner_password : string;
+
     (**** Parsing parameters for non-conforming files ****)
     (* Allow a file to contain a non-conforming version header *)
     (* Instead, only the "%PDF" signature must be present at offset zero *)
@@ -93,6 +104,11 @@ module Params = struct
     relax_streams = false;
     (* TODO : which default parameter? *)
     strict_parser = false;
+    (* Encryption parameters *)
+    ignore_crypt = false;
+    decrypt = true;
+    user_password = "";
+    owner_password = "";
     (* Parsing non-conforming files *)
     allow_invalid_version = false;
     allow_dict_duplicates = false;
@@ -129,6 +145,10 @@ module Params = struct
     global.decode_streams <- false;
     global.relax_streams <- false;
     global.strict_parser <- false;
+    global.ignore_crypt <- false;
+    global.decrypt <- true;
+    global.user_password <- "";
+    global.owner_password <- "";
     global.allow_invalid_version <- false;
     global.allow_dict_duplicates <- false;
     global.zero_offset_as_free <- false;
@@ -156,6 +176,12 @@ module Params = struct
     match p with
     | "strict" ->
       params.strict_parser <- true;
+      true
+    | "ignore-crypt" ->
+      params.ignore_crypt <- true;
+      true
+    | "no-decrypt" ->
+      params.decrypt <- false;
       true
     | "allow-invalid-version" ->
       params.allow_invalid_version <- true;
@@ -187,6 +213,12 @@ module Params = struct
     match k with
     | "reencode-streams" ->
       params.reencode_streams <- Some v;
+      true
+    | "user-password" ->
+      params.user_password <- v;
+      true
+    | "owner-password" ->
+      params.owner_password <- v;
       true
     | _ -> false
 

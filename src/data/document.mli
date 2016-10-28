@@ -25,6 +25,7 @@ open Indirectobject
 open Graph
 open Errors
 open Entry
+open Crypto
 
 (* Set of objects and trailers extracted from a file *)
 module Document : sig
@@ -45,6 +46,8 @@ module Document : sig
   val add_trailer : t -> DirectObject.dict_t -> unit
   val add_objstm : t -> Key.t -> unit
   val add_xrefstm : t -> Key.t -> unit
+  val add_crypto : t -> Crypto.t -> unit
+  val crypto : t -> Crypto.t option
 
   val iter_objects : (Key.t -> IndirectObject.t -> unit) -> t -> unit
   val fold_objects : (Key.t -> IndirectObject.t -> 'a -> 'a) -> t -> 'a -> 'a

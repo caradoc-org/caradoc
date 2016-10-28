@@ -25,6 +25,7 @@ open Algo
 open Params
 open Entry
 open Console
+open Crypto
 
 module DirectObject = struct
 
@@ -103,6 +104,21 @@ module DirectObject = struct
 
   let dict_fold f (x : dict_t) a =
     Hashtbl.fold f x a
+
+
+  let rec decrypt (f : Crypto.decrypt_t) (x : t) : t =
+    match x with
+    | Null | Bool _ | Int _ | Real _ | Name _ | Reference _ ->
+      x
+    | String s ->
+      String (f s)
+    | Array a ->
+      Array (List.map (decrypt f) a)
+    | Dictionary d ->
+      Dictionary (decrypt_dict f d)
+
+  and decrypt_dict (f : Crypto.decrypt_t) (d : dict_t) : dict_t =
+    dict_map (decrypt f) d
 
 
   let escape_string (buf : Buffer.t) (x : string) : unit =
