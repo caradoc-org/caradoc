@@ -18,67 +18,16 @@
 
 
 open OUnit
+open Md5
 
 
 let tests =
-  "PDF" >:::
+  "MD5" >:::
   [
-    (* crypto/ *)
-    TestAES.tests;
-    TestMD5.tests;
-    TestRC4.tests;
-
-    (* data/ *)
-    TestDocument.tests;
-    TestDict.tests;
-    TestDirectObject.tests;
-    TestIndirectObject.tests;
-
-    (* parse/ *)
-    TestCommon.tests;
-    TestConvert.tests;
-    TestLexer.tests;
-    TestParser.tests;
-    TestStrictLexer.tests;
-    TestXrefLexer.tests;
-    TestXrefParser.tests;
-
-    (* util/ *)
-    TestAlgo.tests;
-    TestBoundedint.tests;
-    TestErrors.tests;
-    TestKey.tests;
-
-    (* TODO : finish *)
-    (* crypto/ *)
-    TestCryptoParse.tests;
-
-    (* data/ *)
-    TestGraph.tests;
-    TestIntervals.tests;
-    TestXref.tests;
-
-    (* parse/ *)
-    TestStrictParser.tests;
-
-    (* stream/ *)
-    TestStream.tests;
-
-    (* type/ *)
-    TestType.tests;
-
-    (* util/ *)
-    TestEntry.tests;
-
-    (* TODO *)
-    (* graph/ *)
-    TestTree.tests;
-
-    (* type/ *)
-    TestCheckType.tests;
-    TestTypeUtil.tests;
+    "hash" >:::
+    [
+      "(1)" >:: (fun _ -> assert_equal (MD5.hash "") "\xd4\x1d\x8c\xd9\x8f\x00\xb2\x04\xe9\x80\x09\x98\xec\xf8\x42\x7e") ;
+      "(2)" >:: (fun _ -> assert_equal (MD5.hash "Hello world") "\x3e\x25\x96\x0a\x79\xdb\xc6\x9b\x67\x4c\xd4\xec\x67\xa7\x2c\x62") ;
+    ] ;
   ]
-
-let (_:OUnit.test_results) =
-  run_test_tt_main tests
 

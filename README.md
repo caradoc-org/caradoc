@@ -111,6 +111,7 @@ The following options are defined, to cope with common errors produced by variou
 The source code is organized as follows :
 
 - `src/` : source code of `caradoc` ;
+- `src/crypto/` : decoding of encrypted files ;
 - `src/data/` : modules to represent PDF data (e.g. object, xref table, PDF document) ;
 - `src/graph/` : graph checker ;
 - `src/parser/` : core parsing code (for the strict and the relaxed parser) ;

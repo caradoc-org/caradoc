@@ -18,67 +18,15 @@
 
 
 open OUnit
+open Rc4
 
 
 let tests =
-  "PDF" >:::
+  "RC4" >:::
   [
-    (* crypto/ *)
-    TestAES.tests;
-    TestMD5.tests;
-    TestRC4.tests;
-
-    (* data/ *)
-    TestDocument.tests;
-    TestDict.tests;
-    TestDirectObject.tests;
-    TestIndirectObject.tests;
-
-    (* parse/ *)
-    TestCommon.tests;
-    TestConvert.tests;
-    TestLexer.tests;
-    TestParser.tests;
-    TestStrictLexer.tests;
-    TestXrefLexer.tests;
-    TestXrefParser.tests;
-
-    (* util/ *)
-    TestAlgo.tests;
-    TestBoundedint.tests;
-    TestErrors.tests;
-    TestKey.tests;
-
-    (* TODO : finish *)
-    (* crypto/ *)
-    TestCryptoParse.tests;
-
-    (* data/ *)
-    TestGraph.tests;
-    TestIntervals.tests;
-    TestXref.tests;
-
-    (* parse/ *)
-    TestStrictParser.tests;
-
-    (* stream/ *)
-    TestStream.tests;
-
-    (* type/ *)
-    TestType.tests;
-
-    (* util/ *)
-    TestEntry.tests;
-
-    (* TODO *)
-    (* graph/ *)
-    TestTree.tests;
-
-    (* type/ *)
-    TestCheckType.tests;
-    TestTypeUtil.tests;
+    "crypt" >:::
+    [
+      "(1)" >:: (fun _ -> assert_equal (RC4.crypt "Password" "Hello world") "\x68\x8a\x03\x0b\x2d\x4e\xd1\x56\x71\xeb\xc5") ;
+    ] ;
   ]
-
-let (_:OUnit.test_results) =
-  run_test_tt_main tests
 

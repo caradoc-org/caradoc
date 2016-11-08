@@ -41,23 +41,20 @@ module AES = struct
       None
 
   let decrypt_cbc (key : string) (ctxt : Errors.error_ctxt) (data : string) : string =
-    try
-      let len = String.length data in
-      if len mod 16 <> 0 then
-        raise (Errors.PDFError ("Expected a multiple of 16 bytes for encrypted data in AES-CBC mode", ctxt));
-      if len < 32 then
-        raise (Errors.PDFError ("Expected at least two blocks for encrypted data in AES-CBC mode", ctxt));
+    let len = String.length data in
+    if len mod 16 <> 0 then
+      raise (Errors.PDFError ("Expected a multiple of 16 bytes for encrypted data in AES-CBC mode", ctxt));
+    if len < 32 then
+      raise (Errors.PDFError ("Expected at least two blocks for encrypted data in AES-CBC mode", ctxt));
 
-      let cipher = (Cryptokit.Cipher.aes ~mode:Cryptokit.Cipher.CBC) key Cryptokit.Cipher.Decrypt in
-      let plaintext = Cryptokit.transform_string cipher data in
+    let cipher = (Cryptokit.Cipher.aes ~mode:Cryptokit.Cipher.CBC) key Cryptokit.Cipher.Decrypt in
+    let plaintext = Cryptokit.transform_string cipher data in
 
-      match remove_pkcs5 plaintext with
-      | Some s ->
-        s
-      | None ->
-        raise (Errors.PDFError ("Invalid PKCS#5 padding for encrypted data in AES-CBC mode", ctxt))
-    with Exit ->
-      data
+    match remove_pkcs5 plaintext with
+    | Some s ->
+      s
+    | None ->
+      raise (Errors.PDFError ("Invalid PKCS#5 padding for encrypted data in AES-CBC mode", ctxt))
 
 end
 
