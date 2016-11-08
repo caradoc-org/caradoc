@@ -242,26 +242,37 @@ module Document = struct
     Printf.fprintf out "startxref\n%d\n%%%%EOF" !offset
 
 
-  let sanitize_trailer (newkeys : Key.t MapKey.t) (trailer : DirectObject.dict_t) : DirectObject.dict_t =
-    let tmp = DirectObject.relink_dict newkeys (Errors.make_ctxt_key Key.Trailer) trailer in
-    let size = 1 + (MapKey.cardinal newkeys) in
-    let root = DirectObject.dict_find tmp "Root" in
-    let info = DirectObject.dict_find tmp "Info" in
-    let id = DirectObject.dict_find tmp "ID" in
+  let simplify_info_dict (d : DirectObject.dict_t) : DirectObject.t =
+    (* TODO : check this list of keys *)
+    DirectObject.Dictionary (DirectObject.dict_simplify ["Title" ; "Author" ; "Subject" ; "Keywords" ; "Creator" ; "Producer" ; "CreationDate" ; "ModDate" ; "Trapped"] d)
 
-    let result = DirectObject.dict_create () in
-    if root <> DirectObject.Null then
-      DirectObject.dict_set result ("Root", root);
-    if info <> DirectObject.Null then
-      DirectObject.dict_set result ("Info", info);
-    if id <> DirectObject.Null then
-      DirectObject.dict_set result ("ID", id);
-    DirectObject.dict_set result ("Size", DirectObject.Int ~:size);
+  let simplify_trailer (x : t) (simplify_info : bool) : DirectObject.dict_t =
+    let trailer = main_trailer x in
+    let tmp = IndirectObject.simplify_refs_dict x.objects (Errors.make_ctxt_key Key.Trailer) trailer in
+    let result = DirectObject.dict_simplify ["Size" ; "Root" ; "Info" ; "ID"] tmp in
+
+    if simplify_info then (
+      let info = DirectObject.dict_find result "Info" in
+      if info <> DirectObject.Null then (
+        match info with
+        | DirectObject.Dictionary d ->
+          DirectObject.dict_set result ("Info", simplify_info_dict d)
+        | DirectObject.Reference k ->
+          let d = IndirectObject.get_direct_of
+              "Expected a dictionary for object /Info" (Errors.make_ctxt_key k)
+              ~transform:(DirectObject.get_dict ())
+              (find_obj x k) in
+          set x k (IndirectObject.Direct (simplify_info_dict d))
+        | _ ->
+          raise (Errors.PDFError ("Expected dictionary or reference", Errors.make_ctxt_name Key.Trailer "Info"))
+      )
+    );
+
     result
 
+  let simplify_refs (x : t) (simplify_info : bool) : t =
+    let trailer = simplify_trailer x simplify_info in
 
-  let simplify_refs (x : t) : t =
-    let trailer = main_trailer x in
     let xx = ref MapKey.empty in
     MapKey.iter (fun key obj ->
         xx := MapKey.add key (IndirectObject.simplify_refs x.objects (Errors.make_ctxt_key key) obj) !xx
@@ -269,10 +280,17 @@ module Document = struct
 
     {
       objects = !xx;
-      trailers = [IndirectObject.simplify_refs_dict x.objects (Errors.make_ctxt_key Key.Trailer) trailer];
+      trailers = [trailer];
       special_streams = MapKey.empty;
       crypto = x.crypto;
     }
+
+
+  let sanitize_trailer (newkeys : Key.t MapKey.t) (trailer : DirectObject.dict_t) : DirectObject.dict_t =
+    let result = DirectObject.relink_dict newkeys (Errors.make_ctxt_key Key.Trailer) trailer in
+    let size = 1 + (MapKey.cardinal newkeys) in
+    DirectObject.dict_set result ("Size", DirectObject.Int ~:size);
+    result
 
 
   let sanitize_nums (x : t) : t =

@@ -105,6 +105,14 @@ module DirectObject = struct
   let dict_fold f (x : dict_t) a =
     Hashtbl.fold f x a
 
+  let dict_simplify (keys : string list) (x : dict_t) : dict_t =
+    let d = dict_create () in
+    List.iter (fun k ->
+        let v = dict_find x k in
+        dict_set d (k, v);
+      ) keys;
+    d
+
 
   let rec decrypt (f : Crypto.decrypt_t) (x : t) : t =
     match x with

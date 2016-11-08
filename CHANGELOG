@@ -6,6 +6,8 @@ New features:
 - Added support for encrypted files.
 - Added the 'findref' command to find all references to an object.
 - Added the 'findname' command to find all occurrences of a PDF name.
+- Added --simplify-info option to the 'cleanup' command to remove non-standard
+  fields from the /Info dictionary.
 - Added --allow-nonascii-in-names option to allow names to contain non-ASCII
   characters instead of the corresponding escape sequence.
 - Added --allow-overlaps option to allow several objects to overlap in a file.

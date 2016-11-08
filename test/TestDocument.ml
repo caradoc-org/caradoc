@@ -105,6 +105,18 @@ let make_doc id =
         "Size", Int ~:4 ;
         "ID", Null ;
       ])
+  | 33 ->
+    make_doc_trailer_direct [
+      Key.make_0 ~:1, Array [Reference (Key.make_gen ~:3 ~:1)] ;
+      Key.make_0 ~:2, Int ~:123 ;
+      Key.make_gen ~:3 ~:1, Int ~:456 ;
+    ] (TestDict.add_all [
+        "Root", Reference (Key.make_0 ~:1) ;
+        "Info", Reference (Key.make_0 ~:2) ;
+        "Size", Int ~:4 ;
+        "ID", Null ;
+        "Unknown", String "Foo" ;
+      ])
   | 4 ->
     make_doc_trailer_direct [
       Key.make_0 ~:1, Array [Reference (Key.make_0 ~:3)] ;
@@ -264,7 +276,7 @@ let tests =
     [
       "(1)" >:: (fun _ -> assert_equal
                     (Document.sanitize_trailer (TestMapkey.add_all []) (TestDict.add_all ["Foo", String "Bar"]))
-                    (TestDict.add_all ["Size", Int ~:1])) ;
+                    (TestDict.add_all ["Size", Int ~:1 ; "Foo", String "Bar"])) ;
       "(2)" >:: (fun _ -> assert_equal
                     (Document.sanitize_trailer (TestMapkey.add_all []) (TestDict.add_all ["Root", Int ~:123 ; "Info", String "test" ; "ID", Bool true]))
                     (TestDict.add_all ["Size", Int ~:1 ; "Root", Int ~:123 ; "Info", String "test" ; "ID", Bool true])) ;
@@ -282,18 +294,21 @@ let tests =
     "simplify_refs" >:::
     [
       "(1)" >:: (fun _ -> assert_equal
-                    (Document.simplify_refs (make_doc 3))
+                    (Document.simplify_refs (make_doc 3) false)
                     (make_doc 23)) ;
       "(2)" >:: (fun _ -> assert_equal
-                    (Document.simplify_refs (make_doc 5))
+                    (Document.simplify_refs (make_doc 33) false)
+                    (make_doc 23)) ;
+      "(3)" >:: (fun _ -> assert_equal
+                    (Document.simplify_refs (make_doc 5) false)
                     (make_doc 15)) ;
 
-      "(3)" >:: (fun _ -> assert_raises
-                    (Errors.UnexpectedError "No trailer found in document")
-                    (fun () -> Document.simplify_refs (make_doc 1))) ;
       "(4)" >:: (fun _ -> assert_raises
+                    (Errors.UnexpectedError "No trailer found in document")
+                    (fun () -> Document.simplify_refs (make_doc 1) false)) ;
+      "(5)" >:: (fun _ -> assert_raises
                     (Errors.PDFError ("Reference to unknown object : 3", Errors.make_ctxt_index (Key.make_0 ~:2) 0))
-                    (fun () -> Document.simplify_refs (make_doc (-2)))) ;
+                    (fun () -> Document.simplify_refs (make_doc (-2)) false)) ;
     ] ;
 
     "sanitize_nums" >:::

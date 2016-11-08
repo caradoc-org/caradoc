@@ -75,5 +75,21 @@ let tests =
                     (DirectObject.dict_find (make_pages ()) "Type")
                     (DirectObject.Name "Pages")) ;
     ] ;
+
+    "simplify" >:::
+    [
+      "(1)" >:: (fun _ -> assert_equal
+                    (DirectObject.dict_simplify ["Key"] (add_all ["Key", DirectObject.Bool true]))
+                    (add_all ["Key", DirectObject.Bool true])) ;
+      "(2)" >:: (fun _ -> assert_equal
+                    (DirectObject.dict_simplify ["Key"] (add_all ["Foo", DirectObject.String "Bar"]))
+                    (add_all [])) ;
+      "(3)" >:: (fun _ -> assert_equal
+                    (DirectObject.dict_simplify ["Foo" ; "Bar"] (add_all ["Key", DirectObject.Int ~:4 ; "Foo", DirectObject.Name "Bar"]))
+                    (add_all ["Foo", DirectObject.Name "Bar"])) ;
+      "(4)" >:: (fun _ -> assert_equal
+                    (DirectObject.dict_simplify [] (add_all ["Key", DirectObject.Int ~:4 ; "Foo", DirectObject.Name "Bar"]))
+                    (add_all [])) ;
+    ] ;
   ]
 

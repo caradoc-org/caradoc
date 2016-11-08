@@ -116,10 +116,11 @@ module Document : sig
   (*   Remove references to simple direct objects
        Args    :
        - document
+       - whether to simplify the /Info dictionary as well
        Returns :
        - sanitized version of the document
   *)
-  val simplify_refs : t -> t
+  val simplify_refs : t -> bool -> t
 
   (*   Reassign object numbers to a continuous range starting at 1
        Args    :

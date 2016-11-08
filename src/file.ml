@@ -653,7 +653,7 @@ let cleanup (filename : string) (out_filename : string) : unit =
 
   if Params.global.Params.verbose then
     Printf.printf "Simplifying references\n";
-  let doc2 = Document.simplify_refs doc in
+  let doc2 = Document.simplify_refs doc Params.global.Params.simplify_info in
 
   if Params.global.Params.verbose then
     Printf.printf "Sanitizing object numbers\n";

@@ -64,6 +64,11 @@ module Params = struct
     (* For example, pdfTeX can produce files with "PTEX.Fullbanner" field *)
     mutable allow_arbitrary_info : bool;
 
+    (**** Normalization parameters ****)
+    (* Remove arbitrary entries from "info" dictionary *)
+    (* For example, pdfTeX can produce files with "PTEX.Fullbanner" field *)
+    mutable simplify_info : bool;
+
     (**** Output parameters ****)
     (* Sort dictionary by key in output *)
     mutable sort_dicts : bool;
@@ -119,6 +124,8 @@ module Params = struct
     xref_stream_default_zero = false;
     (* Type-checking parameters *)
     allow_arbitrary_info = false;
+    (* Normalization parameters *)
+    simplify_info = false;
     (* Output parameters *)
     sort_dicts = false;
     expand_streams = false;
@@ -157,6 +164,7 @@ module Params = struct
     global.allow_overlaps <- false;
     global.xref_stream_default_zero <- false;
     global.allow_arbitrary_info <- false;
+    global.simplify_info <- false;
     global.sort_dicts <- false;
     global.expand_streams <- false;
     global.stream_limit <- None;

@@ -61,6 +61,15 @@ module DirectObject : sig
   val dict_map : (t -> t) -> dict_t -> dict_t
   val dict_fold : (string -> t -> 'a -> 'a) -> dict_t -> 'a -> 'a
 
+  (*   Keep only keys that belong to a list
+       Args    :
+       - list of keys to keep
+       - dictionary
+       Returns :
+       - simplified dictionary
+  *)
+  val dict_simplify : string list -> dict_t -> dict_t
+
 
   (*   Decrypt an object
        Args    :
