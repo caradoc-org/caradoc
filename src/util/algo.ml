@@ -96,6 +96,10 @@ module Algo = struct
       !result
 
 
+  let string_starts_with (x : string) (y : string) : bool =
+    String.length x >= String.length y && (String.sub x 0 (String.length y)) = y
+
+
   let join_buffer (buf : Buffer.t) fold_left to_buffer (separator : string) iterable : unit =
     iter_start fold_left (fun started x ->
         if started then

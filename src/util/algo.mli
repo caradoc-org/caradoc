@@ -97,7 +97,7 @@ module Algo : sig
   *)
   val mapkey_union : 'a MapKey.t -> 'a MapKey.t -> 'a MapKey.t
 
-  (*   Test wether a string contains a substring
+  (*   Test whether a string contains a substring
        Args    :
        - string
        - substring
@@ -105,6 +105,15 @@ module Algo : sig
        - whether string contains substring
   *)
   val string_contains : string -> string -> bool
+
+  (*   Test whether a string starts with a substring
+       Args    :
+       - string
+       - substring
+       Returns :
+       - whether string starts with substring
+  *)
+  val string_starts_with : string -> string -> bool
 
   (*   Join into a buffer an iterable object with separators
        Args    :

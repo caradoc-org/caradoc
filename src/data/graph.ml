@@ -23,6 +23,7 @@ open Setkey
 open Boundedint
 open Uniqueid
 open Type
+open Algo
 
 module Graph = struct
 
@@ -111,10 +112,6 @@ module Graph = struct
     print_dot_colors graph (fun _ -> None) filename
 
   let print_dot_types (graph : t) (types : Type.kind_t MapKey.t) (filename : string) : unit =
-    let is_prefix x y =
-      String.length x >= String.length y && (String.sub x 0 (String.length y)) = y
-    in
-
     let colors key =
       try
         let typ = MapKey.find key types in
@@ -125,18 +122,18 @@ module Graph = struct
           Some "blue"
         | Type.Class "destination" ->
           Some "orange"
-        | Type.Class c when is_prefix c "page" ->
+        | Type.Class c when Algo.string_starts_with c "page" ->
           Some "red"
-        | Type.Class c when is_prefix c "annot_" ->
+        | Type.Class c when Algo.string_starts_with c "annot_" ->
           Some "yellow"
-        | Type.Class c when is_prefix c "outline" ->
+        | Type.Class c when Algo.string_starts_with c "outline" ->
           Some "turquoise"
-        | Type.Class c when is_prefix c "nametree" ->
+        | Type.Class c when Algo.string_starts_with c "nametree" ->
           Some "brown"
-        | Type.Class c when is_prefix c "action_" ->
+        | Type.Class c when Algo.string_starts_with c "action_" ->
           Some "magenta"
         | Type.Class c
-        | Type.Stream c when is_prefix c "font_" ->
+        | Type.Stream c when Algo.string_starts_with c "font_" ->
           Some "purple"
         | _ ->
           None

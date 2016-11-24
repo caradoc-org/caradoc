@@ -68,6 +68,9 @@ module Params = struct
     (* Remove arbitrary entries from "info" dictionary *)
     (* For example, pdfTeX can produce files with "PTEX.Fullbanner" field *)
     mutable simplify_info : bool;
+    (* Recursively remove all dictionary keys starting with "PTEX." *)
+    (* This is to remove custom fields introduced by pdfTeX *)
+    mutable remove_ptex : bool;
 
     (**** Output parameters ****)
     (* Sort dictionary by key in output *)
@@ -126,6 +129,7 @@ module Params = struct
     allow_arbitrary_info = false;
     (* Normalization parameters *)
     simplify_info = false;
+    remove_ptex = false;
     (* Output parameters *)
     sort_dicts = false;
     expand_streams = false;
@@ -165,6 +169,7 @@ module Params = struct
     global.xref_stream_default_zero <- false;
     global.allow_arbitrary_info <- false;
     global.simplify_info <- false;
+    global.remove_ptex <- false;
     global.sort_dicts <- false;
     global.expand_streams <- false;
     global.stream_limit <- None;

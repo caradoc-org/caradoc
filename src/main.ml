@@ -241,6 +241,7 @@ let command_cleanup =
     "--decode-streams", Arg.Unit (fun () -> Params.global.Params.decode_streams <- true), "decode content of all streams";
     "--relax-streams", Arg.Unit (fun () -> Params.global.Params.relax_streams <- true), "relax unsupported filters (warning instead of fatal error)";
     "--simplify-info", Arg.Unit (fun () -> Params.global.Params.simplify_info <- true), "remove non-standard entries from /Info dictionary";
+    "--remove-ptex", Arg.Unit (fun () -> Params.global.Params.remove_ptex <- true), "recursively remove all entries starting with /PTEX.";
     "--verbose", Arg.Unit (fun () -> Params.global.Params.verbose <- true), "verbose mode";
     "--debug", Arg.Unit (fun () -> Params.global.Params.debug <- true), "debug mode";
   ] in
