@@ -121,11 +121,11 @@ module IndirectObject = struct
 
   and simplify_refs_dict (objects : t MapKey.t) (ctxt : Errors.error_ctxt) (d : DirectObject.dict_t) : DirectObject.dict_t =
     DirectObject.dict_map_key (fun key x ->
-      if Params.global.Params.remove_ptex && Algo.string_starts_with key "PTEX." then (
-        Errors.warning "Removing PTEX entry" (Errors.ctxt_append_name ctxt key);
-        DirectObject.Null
-      ) else
-        simplify_refs_direct objects (Errors.ctxt_append_name ctxt key) x
+        if Params.global.Params.remove_ptex && Algo.string_starts_with key "PTEX." then (
+          Errors.warning "Removing PTEX entry" (Errors.ctxt_append_name ctxt key);
+          DirectObject.Null
+        ) else
+          simplify_refs_direct objects (Errors.ctxt_append_name ctxt key) x
       ) d
 
   let simplify_refs (objects : t MapKey.t) (ctxt : Errors.error_ctxt) : t -> t =
