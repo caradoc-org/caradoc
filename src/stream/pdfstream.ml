@@ -263,6 +263,19 @@ module PDFStream = struct
     DirectObject.dict_set d ("DecodeParms", DirectObject.Null)
 
 
+  let make_contents (s : string) (ctxt : Errors.error_ctxt) (filter : string) : t =
+    let e = encode_filter s ctxt filter in
+    let length = ~:(String.length e) in
+
+    let d = DirectObject.dict_create () in
+    reset_stream_dict d length filter;
+
+    {
+      dictionary = d;
+      encoded = e;
+      decoded = Some s;
+    }
+
   let reencode (s : t) (ctxt : Errors.error_ctxt) (relax : bool) (filter : string) : t * bool =
     if not (decode s ctxt relax) then
       s, false

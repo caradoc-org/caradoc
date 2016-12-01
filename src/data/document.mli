@@ -26,6 +26,7 @@ open Graph
 open Errors
 open Entry
 open Crypto
+open Boundedint
 
 (* Set of objects and trailers extracted from a file *)
 module Document : sig
@@ -53,6 +54,14 @@ module Document : sig
   val fold_objects : (Key.t -> IndirectObject.t -> 'a -> 'a) -> t -> 'a -> 'a
   val map_objects : (Key.t -> IndirectObject.t -> IndirectObject.t) -> t -> unit
   val iter_stms : (Key.t -> kind_t -> unit) -> t -> unit
+
+  (*   Find the largest object number used in a document
+       Args    :
+       - document
+       Returns :
+       - maximal object number
+  *)
+  val max_objnum : t -> BoundedInt.t
 
   (*   Find all references to an object
        Args    :

@@ -18,40 +18,15 @@
 
 
 open Document
-open Key
-open Directobject
 
 
-module Tree : sig
+module CleanupCS : sig
 
-  (*   Traverse a tree structure
+  (*   Cleanup content streams in a document
        Args    :
-       - traversing function
-       - field that defines an array of children
        - document
-       - root of the tree
   *)
-  val traverse : (DirectObject.dict_t -> Key.t -> Key.t -> unit) -> string -> Document.t -> Key.t -> unit
-
-  (*   Check a tree structure
-       Args    :
-       - field that defines the parent
-       - field that defines an array of children
-       - document
-       - root of the tree
-  *)
-  val check : string option -> string -> Document.t -> Key.t -> unit
-
-  (*   Check a list-tree structure
-       Args    :
-       - field that defines the parent
-       - field that defines the first child
-       - field that defines the last child
-       - field that defines the next node
-       - field that defines the previous node
-       - document
-       - root of the tree
-  *)
-  val checklist : string -> string -> string -> string -> string -> Document.t -> Key.t -> unit
+  val cleanup : Document.t -> unit
 
 end
+

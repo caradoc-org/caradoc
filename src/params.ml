@@ -71,6 +71,8 @@ module Params = struct
     (* Recursively remove all dictionary keys starting with "PTEX." *)
     (* This is to remove custom fields introduced by pdfTeX *)
     mutable remove_ptex : bool;
+    (* Merge arrays of content streams in pages *)
+    mutable merge_content_streams : bool;
 
     (**** Output parameters ****)
     (* Sort dictionary by key in output *)
@@ -130,6 +132,7 @@ module Params = struct
     (* Normalization parameters *)
     simplify_info = false;
     remove_ptex = false;
+    merge_content_streams = false;
     (* Output parameters *)
     sort_dicts = false;
     expand_streams = false;
@@ -170,6 +173,7 @@ module Params = struct
     global.allow_arbitrary_info <- false;
     global.simplify_info <- false;
     global.remove_ptex <- false;
+    global.merge_content_streams <- false;
     global.sort_dicts <- false;
     global.expand_streams <- false;
     global.stream_limit <- None;

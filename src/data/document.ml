@@ -120,6 +120,17 @@ module Document = struct
     MapKey.iter f x.special_streams
 
 
+  let max_objnum (x : t) : BoundedInt.t =
+    fold_objects (fun k _ m ->
+        let i, _ = Key.get_obj_ref k in
+        let j = ~:i in
+        if j >: m then
+          j
+        else
+          m
+      ) x ~:0
+
+
   let find (indirect_find : 'a -> IndirectObject.t -> Entry.t list) (dict_find : 'a -> DirectObject.dict_t -> Entry.t list) (what : 'a) (x : t) : Entry.t list MapKey.t =
     let tmp = fold_objects (fun k o m ->
         let l = indirect_find what o in

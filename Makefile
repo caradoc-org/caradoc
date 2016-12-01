@@ -83,15 +83,15 @@ tmpfolder:
 	cmp -s $*.xref tmp/xref
 
 %.testcleanup: %.pdf %.clean $(PROGRAM) tmpfolder
-	./$(PROGRAM) cleanup --out tmp/clean $<;
+	./$(PROGRAM) cleanup --merge-content-streams --out tmp/clean $<;
 	cmp -s $*.clean tmp/clean
-	./$(PROGRAM) cleanup --out tmp/clean $*.clean;
+	./$(PROGRAM) cleanup --merge-content-streams --out tmp/clean $*.clean;
 	cmp -s $*.clean tmp/clean
 
 %.testcleanup_options: %.pdf %.options %.clean $(PROGRAM) tmpfolder
-	./$(PROGRAM) cleanup --options $*.options --out tmp/clean $<;
+	./$(PROGRAM) cleanup --merge-content-streams --options $*.options --out tmp/clean $<;
 	cmp -s $*.clean tmp/clean
-	./$(PROGRAM) cleanup --options $*.options --out tmp/clean $*.clean;
+	./$(PROGRAM) cleanup --merge-content-streams --options $*.options --out tmp/clean $*.clean;
 	cmp -s $*.clean tmp/clean
 
 %.testtypes: %.pdf %.types $(PROGRAM) tmpfolder

@@ -114,6 +114,12 @@ module DirectObject = struct
     d
 
 
+  let is_array (x : t) : bool =
+    match x with
+    | Array _ -> true
+    | _ -> false
+
+
   let rec decrypt (f : Crypto.decrypt_t) (x : t) : t =
     match x with
     | Null | Bool _ | Int _ | Real _ | Name _ | Reference _ ->

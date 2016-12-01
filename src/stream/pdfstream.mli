@@ -122,6 +122,16 @@ module PDFStream : sig
   *)
   val get_decoded : t -> Errors.error_ctxt -> string
 
+  (*   Create a stream with empty dictionary from decoded data
+       Args    :
+       - decoded data
+       - error context
+       - filter to encode with (empty string for no filter)
+       Returns :
+       - stream
+  *)
+  val make_contents : string -> Errors.error_ctxt -> string -> t
+
   (*   Try to reencode a stream
        Args    :
        - stream

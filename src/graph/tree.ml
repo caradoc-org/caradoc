@@ -29,6 +29,64 @@ open Params
 
 module Tree = struct
 
+  let traverse (f : DirectObject.dict_t -> Key.t -> Key.t -> unit) (children_s : string) (doc : Document.t) (root_k : Key.t) : unit =
+
+    let rec traverse_children (doc : Document.t) (visited : SetKey.t ref) (node : DirectObject.dict_t) (node_k : Key.t) =
+      let error_ctxt = Errors.make_ctxt_name node_k children_s in
+
+      let children = DirectObject.get_array_of
+          ~default:[] () "Graph error : Expected an array of references" error_ctxt
+          ~transform:(DirectObject.get_reference ())
+          (DirectObject.dict_find node children_s) in
+
+      Array.iter (fun child_k ->
+          traverse_subtree doc visited child_k node_k
+        ) children
+
+
+    and traverse_subtree (doc : Document.t) (visited : SetKey.t ref) (node_k : Key.t) (parent_k : Key.t) =
+      let error_ctxt = Errors.make_ctxt_key node_k in
+
+      if Params.global.Params.debug then
+        Printf.eprintf "Visiting node %s\n" (Key.to_string node_k);
+
+      (* Check cycles *)
+      if SetKey.mem node_k !visited then
+        raise (Errors.PDFError ("Graph error : Cyclic tree structure", error_ctxt))
+      else
+        visited := SetKey.add node_k !visited;
+
+      let node = IndirectObject.get_direct_of
+          "Graph error : Expected a dictionary" error_ctxt
+          ~transform:(DirectObject.get_dict ())
+          (Document.find_obj doc node_k) in
+
+      (* Call function *)
+      f node node_k parent_k;
+
+      (* Traverse children *)
+      traverse_children doc visited node node_k
+    in
+
+    let traverse_tree (doc : Document.t) (root_k : Key.t) =
+      if Params.global.Params.debug then
+        Printf.eprintf "Visiting root node %s\n" (Key.to_string root_k);
+
+      let visited = ref SetKey.empty in
+      visited := SetKey.add root_k !visited;
+
+      let root = IndirectObject.get_direct_of
+          "Graph error : Expected a dictionary" (Errors.make_ctxt_key root_k)
+          ~transform:(DirectObject.get_dict ())
+          (Document.find_obj doc root_k) in
+
+      (* Traverse children *)
+      traverse_children doc visited root root_k
+    in
+
+    traverse_tree doc root_k
+
+
   let check (parent_s : string option) (children_s : string) (doc : Document.t) (root_k : Key.t) : unit =
 
     let checkparent =
@@ -48,61 +106,7 @@ module Tree = struct
         )
     in
 
-
-    let rec checkchildren (doc : Document.t) (visited : SetKey.t ref) (node : DirectObject.dict_t) (node_k : Key.t) =
-      let error_ctxt = Errors.make_ctxt_name node_k children_s in
-
-      let children = DirectObject.get_array_of
-          ~default:[] () "Graph error : Expected an array of references" error_ctxt
-          ~transform:(DirectObject.get_reference ())
-          (DirectObject.dict_find node children_s) in
-
-      Array.iter (fun child_k ->
-          checksubtree doc visited child_k node_k
-        ) children
-
-
-    and checksubtree (doc : Document.t) (visited : SetKey.t ref) (node_k : Key.t) (parent_k : Key.t) =
-      let error_ctxt = Errors.make_ctxt_key node_k in
-
-      if Params.global.Params.debug then
-        Printf.eprintf "Visiting node %s\n" (Key.to_string node_k);
-
-      (* Check cycles *)
-      if SetKey.mem node_k !visited then
-        raise (Errors.PDFError ("Graph error : Cyclic tree structure", error_ctxt))
-      else
-        visited := SetKey.add node_k !visited;
-
-      let node = IndirectObject.get_direct_of
-          "Graph error : Expected a dictionary" error_ctxt
-          ~transform:(DirectObject.get_dict ())
-          (Document.find_obj doc node_k) in
-
-      (* Check parent *)
-      checkparent node node_k parent_k;
-
-      (* Check children *)
-      checkchildren doc visited node node_k
-    in
-
-    let checktree (doc : Document.t) (root_k : Key.t) =
-      if Params.global.Params.debug then
-        Printf.eprintf "Visiting root node %s\n" (Key.to_string root_k);
-
-      let visited = ref SetKey.empty in
-      visited := SetKey.add root_k !visited;
-
-      let root = IndirectObject.get_direct_of
-          "Graph error : Expected a dictionary" (Errors.make_ctxt_key root_k)
-          ~transform:(DirectObject.get_dict ())
-          (Document.find_obj doc root_k) in
-
-      (* Check children *)
-      checkchildren doc visited root root_k
-    in
-
-    checktree doc root_k
+    traverse checkparent children_s doc root_k
 
 
   let checklist (parent_s : string) (first_s : string) (last_s : string) (next_s : string) (prev_s : string) (doc : Document.t) (root_k : Key.t) =

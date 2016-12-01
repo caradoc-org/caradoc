@@ -71,6 +71,8 @@ module DirectObject : sig
   val dict_simplify : string list -> dict_t -> dict_t
 
 
+  val is_array : t -> bool
+
   (*   Decrypt an object
        Args    :
        - decryption function

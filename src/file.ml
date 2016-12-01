@@ -42,6 +42,7 @@ open Pdfstream
 open Cryptoparse
 open Crypto
 open Contentstream
+open Cleanupcs
 
 
 (*   Find version of PDF file and check that it is in [1.0, 1.7]
@@ -648,7 +649,10 @@ let check_file (filename : string) : unit =
 let cleanup (filename : string) (out_filename : string) : unit =
   let doc = parse_file filename (Stats.create ()) in
 
-  (* TODO : merge content stream arrays in pages *)
+  if Params.global.Params.merge_content_streams then
+    Errors.catch ~fail:(fun () ->
+        Errors.warning "Could not merge content stream arrays in all pages" Errors.ctxt_none
+      ) (fun () -> CleanupCS.cleanup doc);
 
   begin
     match Params.global.Params.reencode_streams with

@@ -242,6 +242,7 @@ let command_cleanup =
     "--relax-streams", Arg.Unit (fun () -> Params.global.Params.relax_streams <- true), "relax unsupported filters (warning instead of fatal error)";
     "--simplify-info", Arg.Unit (fun () -> Params.global.Params.simplify_info <- true), "remove non-standard entries from /Info dictionary";
     "--remove-ptex", Arg.Unit (fun () -> Params.global.Params.remove_ptex <- true), "recursively remove all entries starting with /PTEX.";
+    "--merge-content-streams", Arg.Unit (fun () -> Params.global.Params.merge_content_streams <- true), "merge arrays of content streams in pages";
     "--verbose", Arg.Unit (fun () -> Params.global.Params.verbose <- true), "verbose mode";
     "--debug", Arg.Unit (fun () -> Params.global.Params.debug <- true), "debug mode";
   ] in

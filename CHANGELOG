@@ -7,6 +7,8 @@ New features:
 - Added validation of content streams.
 - Added the 'findref' command to find all references to an object.
 - Added the 'findname' command to find all occurrences of a PDF name.
+- Added --merge-content-stream option to the 'cleanup' command to merge content
+  stream arrays in pages.
 - Added --simplify-info option to the 'cleanup' command to remove non-standard
   fields from the /Info dictionary.
 - Added --remove-ptex option to the 'cleanup' command to recursively remove all
