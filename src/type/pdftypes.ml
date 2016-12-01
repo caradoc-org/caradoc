@@ -87,9 +87,6 @@ let load_types ctxt =
 
 
 
-  (*
-  register_alias ctxt.pool "content_stream" (Stream "stream_base");
-  *)
   register_alias ctxt.pool "stream_objstm" (Stream "object_stream");
   register_alias ctxt.pool "stream_xrefstm" (Stream "xref_stream");
 

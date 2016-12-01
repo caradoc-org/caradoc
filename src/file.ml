@@ -41,6 +41,7 @@ open Params
 open Pdfstream
 open Cryptoparse
 open Crypto
+open Contentstream
 
 
 (*   Find version of PDF file and check that it is in [1.0, 1.7]
@@ -617,6 +618,9 @@ let statistics (filename : string) (stats : Stats.t) : unit =
 
   GraphChecker.check doc types;
   stats.Stats.nographerror <- true;
+
+  ContentStream.check doc types;
+  stats.Stats.nocontentstreamerror <- true;
   ()
 
 
@@ -636,11 +640,15 @@ let check_file (filename : string) : unit =
 
   GraphChecker.check doc types;
 
+  ContentStream.check doc types;
+
   Printf.printf "No error detected !\n"
 
 
 let cleanup (filename : string) (out_filename : string) : unit =
   let doc = parse_file filename (Stats.create ()) in
+
+  (* TODO : merge content stream arrays in pages *)
 
   begin
     match Params.global.Params.reencode_streams with

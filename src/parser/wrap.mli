@@ -50,3 +50,15 @@ val wrap_xrefparser : ((Lexing.lexbuf -> Xrefparser.token) -> Lexing.lexbuf -> '
 *)
 val wrap_strictparser : ((Lexing.lexbuf -> Strictparser.token) -> Lexing.lexbuf -> 'a) -> Lexing.lexbuf -> Errors.error_ctxt -> 'a
 
+(*   Calls a parse function on a Contentstream token function and intercept syntax errors to insert the correct offset
+     Args    :
+     - parse function
+     - token function
+     - get offset function
+     - lexbuf to parse
+     - error context
+     Returns :
+     - result of the parse function
+*)
+val wrap_contentparser : ((Lexing.lexbuf -> Contentparser.token) -> Lexing.lexbuf -> 'a) -> (Lexing.lexbuf -> Contentparser.token) -> (unit -> BoundedInt.t) -> Lexing.lexbuf -> Errors.error_ctxt -> 'a
+

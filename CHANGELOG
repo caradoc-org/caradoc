@@ -4,6 +4,7 @@ Breaking changes:
 
 New features:
 - Added support for encrypted files.
+- Added validation of content streams.
 - Added the 'findref' command to find all references to an object.
 - Added the 'findname' command to find all occurrences of a PDF name.
 - Added --simplify-info option to the 'cleanup' command to remove non-standard

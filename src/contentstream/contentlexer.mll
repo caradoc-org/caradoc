@@ -1,5 +1,5 @@
 {
-  open Parser
+  open Contentparser
   open Errors
   open Common
   open Boundedint
@@ -13,10 +13,8 @@
 let eolstream = "\x0D\x0A" (* CRLF *) | "\x0A" (* LF *)
 let cr = '\x0D' (* CR *)
 let eol = eolstream | cr
-let noteol = [^ '\x0A' '\x0D']
 let space = ['\x00' (* NUL *) '\x09' (* HT *) '\x0C' (* FF *) '\x20' (*SP *)]
 let whitespace = space | '\x0A' (* LF *) | '\x0D' (* CR *)
-let delimiter = ['(' ')' '<' '>' '[' ']' '{' '}' '/' '%']
 let regular = [^ '\x0D' '\x0A' '\x00' '\x09' '\x0C' '\x20' '(' ')' '<' '>' '[' ']' '{' '}' '/' '%']
 
 let digit = ['0'-'9']
@@ -33,13 +31,7 @@ let real = sign? ((digit+ '.' digit*) | ('.' digit+))
 
 rule token = parse
   | eof       { EOF }
-  | cr        { CR }
-  | space | eolstream
-    (***********************)
-    (* PDF reference 7.2.3 *)
-    (***********************)
-  (* TODO : accept NUL and FF ? *)
-  | '%' noteol* (* treat like whitespace *)
+  | whitespace+
               { token lexbuf }
     (***********************)
     (* PDF reference 7.3.2 *)
@@ -78,27 +70,116 @@ rule token = parse
   | "<<"      { LDOUBLEANGLEBRACKET }
   | ">>"      { RDOUBLEANGLEBRACKET }
     (***********************)
-    (* PDF reference 7.3.8 *)
-    (***********************)
-  | "stream" eolstream
-              { STREAM (~: (Lexing.lexeme_end lexbuf)) }
-  (* TODO : move to other lexer (comment at EOL ??) *)
-  | eol? "endstream"
-              { ENDSTREAM }
-    (***********************)
     (* PDF reference 7.3.9 *)
     (***********************)
   | "null"    { NULL }
-    (************************)
-    (* PDF reference 7.3.10 *)
-    (************************)
-  | "obj"     { OBJ }
-  | "endobj"  { ENDOBJ }
-  | "R"       { R }
-    (* Lexical error *)
+
+  | "ID" whitespace
+              { token_inline_image (Buffer.create 16) lexbuf }
+
+    (*********************)
+    (* PDF reference 8.2 *)
+    (*********************)
+  | 'w'       { OP_w }
+  | 'J'       { OP_J }
+  | 'j'       { OP_j }
+  | 'M'       { OP_M }
+  | 'd'       { OP_d }
+  | "ri"      { OP_ri }
+  | 'i'       { OP_i }
+  | "gs"      { OP_gs }
+
+  | 'q'       { OP_q }
+  | 'Q'       { OP_Q }
+  | "cm"      { OP_cm }
+
+  | 'm'       { OP_m }
+  | 'l'       { OP_l }
+  | 'c'       { OP_c }
+  | 'v'       { OP_v }
+  | 'y'       { OP_y }
+  | 'h'       { OP_h }
+  | "re"      { OP_re }
+
+  | 'S'       { OP_S }
+  | 's'       { OP_s }
+  | 'f'       { OP_f }
+  | 'F'       { OP_F }
+  | "f*"      { OP_f_star }
+  | 'B'       { OP_B }
+  | "B*"      { OP_B_star }
+  | 'b'       { OP_b }
+  | "b*"      { OP_b_star }
+  | 'n'       { OP_n }
+
+  | 'W'       { OP_W }
+  | "W*"      { OP_W_star }
+
+  | "BT"      { OP_BT }
+  | "ET"      { OP_ET }
+
+  | "Tc"      { OP_Tc }
+  | "Tw"      { OP_Tw }
+  | "Tz"      { OP_Tz }
+  | "TL"      { OP_TL }
+  | "Tf"      { OP_Tf }
+  | "Tr"      { OP_Tr }
+  | "Ts"      { OP_Ts }
+
+  | "Td"      { OP_Td }
+  | "TD"      { OP_TD }
+  | "Tm"      { OP_Tm }
+  | "T*"      { OP_T_star }
+
+  | "Tj"      { OP_Tj }
+  | "TJ"      { OP_TJ }
+  | '\''      { OP_quote }
+  | '"'       { OP_dblquote }
+
+  | "d0"      { OP_d0 }
+  | "d1"      { OP_d1 }
+
+  | "CS"      { OP_CS }
+  | "cs"      { OP_cs }
+  | "SC"      { OP_SC }
+  | "SCN"     { OP_SCN }
+  | "sc"      { OP_sc }
+  | "scn"     { OP_scn }
+  | 'G'       { OP_G }
+  | 'g'       { OP_g }
+  | "RG"      { OP_RG }
+  | "rg"      { OP_rg }
+  | 'K'       { OP_K }
+  | 'k'       { OP_k }
+
+  | "sh"      { OP_sh }
+
+  | "BI"      { OP_BI }
+
+  | "Do"      { OP_Do }
+
+  | "MP"      { OP_MP }
+  | "DP"      { OP_DP }
+  | "BMC"     { OP_BMC }
+  | "BDC"     { OP_BDC }
+  | "EMC"     { OP_EMC }
+
+  | "BX"      { OP_BX }
+  | "EX"      { OP_EX }
+
   | ['a'-'z''A'-'Z''0'-'9']+
               { raise (Errors.LexingError ("unexpected word", ~:(Lexing.lexeme_start lexbuf))) }
-  | _ as c    { raise (Errors.LexingError (Printf.sprintf "unexpected character : 0x%x" (Char.code c), ~:(Lexing.lexeme_start lexbuf))) }
+  | _ as c    { raise (Errors.LexingError (Printf.sprintf "unexpected character in content stream : 0x%x" (Char.code c), ~:(Lexing.lexeme_start lexbuf))) }
+
+
+and token_inline_image buf = parse
+  | "EI" ['a'-'z''A'-'Z''0'-'9']
+              { raise (Errors.LexingError ("unexpected word", ~:(Lexing.lexeme_start lexbuf) +: ~:(String.length "endstream"))) }
+  | "EI"
+              { OP_INLINE_IMAGE (Buffer.contents buf) }
+  | eof       { raise (Errors.LexingError ("inline image is not terminated at end of content stream", ~:(Lexing.lexeme_start lexbuf))) }
+  | _ as c    { Buffer.add_char buf c;
+                token_inline_image buf lexbuf }
 
 
     (*************************)

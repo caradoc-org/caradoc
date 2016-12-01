@@ -133,7 +133,12 @@ let register_font ctxt =
   ];
 
   (* TODO *)
-  register_alias ctxt.pool "char_procs" (Dictionary (type_stream "content_stream"));
+  register_class ctxt.pool "content_stream_font3" ~includes:[
+    "content_stream"
+  ] [
+  ];
+
+  register_alias ctxt.pool "char_procs" (Dictionary (type_stream "content_stream_font3"));
 
   (***********************)
   (* PDF reference 9.6.6 *)

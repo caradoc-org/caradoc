@@ -37,6 +37,7 @@ module Stats = struct
     mutable knowntypes : int;
     mutable incompletetypes : bool;
     mutable nographerror : bool;
+    mutable nocontentstreamerror : bool;
     (* /Info dictionary *)
     mutable producer : string option;
     mutable creator : string option;
@@ -65,6 +66,7 @@ module Stats = struct
       knowntypes = -1;
       incompletetypes = false;
       nographerror = false;
+      nocontentstreamerror = false;
       producer = None;
       creator = None;
       creation_date = None;
@@ -124,6 +126,8 @@ module Stats = struct
 
             if x.nographerror then
               Printf.printf "Graph has no known error\n";
+            if x.nocontentstreamerror then
+              Printf.printf "Content streams have no known error\n";
           )
         )
       )
@@ -149,7 +153,7 @@ module Stats = struct
     print_some_string x.encrypt_o "Encrypt/O";
     print_some_string x.encrypt_id ((if x.encrypted then "Encrypt/" else "") ^ "ID");
 
-    if x.nographerror && (not x.incompletetypes) && (x.knowntypes = x.objcount) then
+    if x.nographerror && x.nocontentstreamerror && (not x.incompletetypes) && (x.knowntypes = x.objcount) then
       Printf.printf "No error found\n"
 
 end

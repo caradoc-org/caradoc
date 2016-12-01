@@ -45,6 +45,8 @@ module Stats : sig
     mutable incompletetypes : bool;
     (* No error found on graph *)
     mutable nographerror : bool;
+    (* No error found in content streams *)
+    mutable nocontentstreamerror : bool;
 
     (**** /Info dictionary ****)
     (* ∕Producer field in /Info dictionary *)

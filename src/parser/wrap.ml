@@ -21,15 +21,16 @@ open Boundedint
 open Errors
 
 
-let raise_syntax (lexbuf : Lexing.lexbuf) (error_ctxt : Errors.error_ctxt) =
-  let off = ~:(Lexing.lexeme_start lexbuf) in
+let raise_syntax (off : BoundedInt.t) (error_ctxt : Errors.error_ctxt) =
   raise (Errors.PDFError ("Syntax error", Errors.ctxt_add_offset error_ctxt off))
+
+let raise_syntax_content (off : BoundedInt.t) (error_ctxt : Errors.error_ctxt) =
+  raise (Errors.PDFError ("Syntax error in content stream", Errors.ctxt_add_offset error_ctxt off))
 
 let raise_lexer (msg : string) (off : BoundedInt.t) (error_ctxt : Errors.error_ctxt) =
   raise (Errors.PDFError (Printf.sprintf "Lexing error : %s" msg, Errors.ctxt_add_offset error_ctxt off))
 
-let raise_integer (msg : string) (lexbuf : Lexing.lexbuf) (error_ctxt : Errors.error_ctxt) =
-  let off = ~:(Lexing.lexeme_start lexbuf) in
+let raise_integer (msg : string) (off : BoundedInt.t) (error_ctxt : Errors.error_ctxt) =
   raise (Errors.PDFError (Printf.sprintf "Lexing error : integer error : %s" msg, Errors.ctxt_add_offset error_ctxt off))
 
 let raise_pdf (msg : string) (error_ctxt : Errors.error_ctxt) =
@@ -37,41 +38,57 @@ let raise_pdf (msg : string) (error_ctxt : Errors.error_ctxt) =
 
 
 let wrap_parser f (lexbuf : Lexing.lexbuf) (error_ctxt : Errors.error_ctxt) =
+  let getpos = fun () -> ~:(Lexing.lexeme_start lexbuf) in
   try
     f Lexer.token lexbuf
   with
   | Parser.Error ->
-    raise_syntax lexbuf error_ctxt
+    raise_syntax (getpos ()) error_ctxt
   | Errors.LexingError (msg, off) ->
     raise_lexer msg off error_ctxt
   | BoundedInt.IntegerError msg ->
-    raise_integer msg lexbuf error_ctxt
+    raise_integer msg (getpos ()) error_ctxt
   | Errors.PDFError (msg, ctxt) when ctxt = Errors.ctxt_none ->
     raise_pdf msg error_ctxt
 
 let wrap_xrefparser f (lexbuf : Lexing.lexbuf) (error_ctxt : Errors.error_ctxt) =
+  let getpos = fun () -> ~:(Lexing.lexeme_start lexbuf) in
   try
     f Xreflexer.token lexbuf
   with
   | Xrefparser.Error ->
-    raise_syntax lexbuf error_ctxt
+    raise_syntax (getpos ()) error_ctxt
   | Errors.LexingError (msg, pos) ->
     raise_lexer msg pos error_ctxt
   | BoundedInt.IntegerError msg ->
-    raise_integer msg lexbuf error_ctxt
+    raise_integer msg (getpos ()) error_ctxt
   | Errors.PDFError (msg, ctxt) when ctxt = Errors.ctxt_none ->
     raise_pdf msg error_ctxt
 
 let wrap_strictparser f (lexbuf : Lexing.lexbuf) (error_ctxt : Errors.error_ctxt) =
+  let getpos = fun () -> ~:(Lexing.lexeme_start lexbuf) in
   try
     f Strictlexer.token lexbuf
   with
   | Strictparser.Error ->
-    raise_syntax lexbuf error_ctxt
+    raise_syntax (getpos ()) error_ctxt
   | Errors.LexingError (msg, pos) ->
     raise_lexer msg pos error_ctxt
   | BoundedInt.IntegerError msg ->
-    raise_integer msg lexbuf error_ctxt
+    raise_integer msg (getpos ()) error_ctxt
+  | Errors.PDFError (msg, ctxt) when ctxt = Errors.ctxt_none ->
+    raise_pdf msg error_ctxt
+
+let wrap_contentparser f token (getpos : unit -> BoundedInt.t) (lexbuf : Lexing.lexbuf) (error_ctxt : Errors.error_ctxt) =
+  try
+    f token lexbuf
+  with
+  | Contentparser.Error ->
+    raise_syntax_content (getpos ()) error_ctxt
+  | Errors.LexingError (msg, pos) ->
+    raise_lexer msg pos error_ctxt
+  | BoundedInt.IntegerError msg ->
+    raise_integer msg (getpos ()) error_ctxt
   | Errors.PDFError (msg, ctxt) when ctxt = Errors.ctxt_none ->
     raise_pdf msg error_ctxt
 
