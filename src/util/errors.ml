@@ -141,6 +141,7 @@ module Errors = struct
     ctxt.key
 
 
+  exception FileError of string * string
   exception LexingError of string * BoundedInt.t
   exception ParseError of string
   exception PDFError of string * error_ctxt
@@ -174,6 +175,10 @@ module Errors = struct
     try
       f ()
     with
+    | FileError (filename, msg) ->
+      Printf.eprintf "Invalid file name \"%s\" : %s !\n" filename msg;
+      fail ()
+
     | LexingError (msg, pos) ->
       Printf.eprintf "Lexing error at offset %d [0x%x] : %s !\n" (BoundedInt.to_int pos) (BoundedInt.to_int pos) msg;
       fail ()

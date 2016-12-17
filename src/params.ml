@@ -17,6 +17,7 @@
 (*****************************************************************************)
 
 
+open Openfile
 
 module Params = struct
 
@@ -251,7 +252,7 @@ module Params = struct
 
   let load_file (params : t) (filename : string) : unit =
     let i = ref 0 in
-    let input = open_in_bin filename in
+    let input = OpenFile.in_bin filename in
 
     try
       while true do

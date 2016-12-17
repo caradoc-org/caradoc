@@ -43,6 +43,7 @@ open Cryptoparse
 open Crypto
 open Contentstream
 open Cleanupcs
+open Openfile
 
 
 (*   Find version of PDF file and check that it is in [1.0, 1.7]
@@ -491,7 +492,7 @@ let parse_strict (input : in_channel) (stats : Stats.t) : Document.t =
 
 
 let parse_file (filename : string) (stats : Stats.t) : Document.t =
-  let input = open_in_bin filename in
+  let input = OpenFile.in_bin filename in
   let doc =
     if Params.global.Params.strict_parser then
       parse_strict input stats

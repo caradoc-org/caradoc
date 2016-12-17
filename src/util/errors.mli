@@ -49,6 +49,7 @@ module Errors : sig
   val ctxt_to_string : error_ctxt -> string
   val key_of_ctxt : error_ctxt -> Key.t option
 
+  exception FileError of string * string
   exception LexingError of string * BoundedInt.t
   exception ParseError of string
   exception PDFError of string * error_ctxt
