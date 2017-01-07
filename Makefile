@@ -23,6 +23,8 @@ TESTCLEANUP_OPTIONS= $(PDFCLEANUP:.pdf=.testcleanup_options)
 TESTTYPES= $(PDFPOS:.pdf=.testtypes) $(TYPESNEG:.types=.testtypes)
 TESTS= $(TESTSTATS) $(TESTSTATS_STRICT) $(TESTTRAILER) $(TESTXREF) $(TESTCLEANUP) $(TESTCLEANUP_OPTIONS) $(TESTTYPES)
 
+BINDIR ?= /usr/bin
+
 
 all: $(PROGRAM)
 
@@ -107,3 +109,5 @@ clean:
 	rm -f oUnit-anon.cache
 	rm -Rf tmp
 
+install: $(PROGRAM)
+	install -D -m 0755 "$(PROGRAM)" "$(BINDIR)/$$(basename $(PROGRAM))"

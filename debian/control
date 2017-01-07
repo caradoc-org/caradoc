@@ -1,0 +1,12 @@
+Source: caradoc
+Maintainer: Olivier Levillain <olivier.levillain@ssi.gouv.fr>
+Section: ocaml
+Priority: optional
+Standards-Version: 3.9.2
+Build-Depends: debhelper (>= 9)
+
+Package: caradoc
+Architecture: amd64
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: PDF parser and validator
+  Caradoc is a parser and validator of PDF files written in OCaml.
