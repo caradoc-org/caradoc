@@ -22,7 +22,11 @@ opam install ocamlfind
 opam install cryptokit ounit menhir
 ```
 
-It is also possible to use the corresponding Debian packages on Jessie.
+It is also possible to use the corresponding Debian packages.
+```
+apt-get install ocaml zlib1g-dev ocaml-findlib libcryptokit-ocaml-dev libounit-ocaml-dev menhir
+```
+
 
 
 ## Installation
