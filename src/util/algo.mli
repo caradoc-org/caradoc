@@ -70,6 +70,9 @@ module Algo : sig
   *)
   val array_contains : 'a array -> 'a -> bool
 
+  val array_insert : 'a array -> 'a -> int -> 'a array
+  val array_erase : 'a array -> int -> 'a array
+
   (*   Sort a hash table by key
        Args    :
        - hash table

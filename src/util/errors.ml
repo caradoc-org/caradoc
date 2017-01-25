@@ -172,39 +172,34 @@ module Errors = struct
       raise (LexingError (msg, ctxt))
 
 
-  let catch ~fail (f : unit -> 'a) : 'a =
+  let catch_msg ~fail_msg (f : unit -> 'a) : 'a =
     try
       f ()
     with
     | FileError (filename, msg) ->
-      Printf.eprintf "Invalid file name \"%s\" : %s !\n" filename msg;
-      fail ()
+      fail_msg (Printf.sprintf "Invalid file name \"%s\" : %s !\n" filename msg)
 
     | LexingError (msg, pos) ->
-      Printf.eprintf "Lexing error at offset %d [0x%x] : %s !\n" (BoundedInt.to_int pos) (BoundedInt.to_int pos) msg;
-      fail ()
+      fail_msg (Printf.sprintf "Lexing error at offset %d [0x%x] : %s !\n" (BoundedInt.to_int pos) (BoundedInt.to_int pos) msg)
     | ParseError msg ->
-      Printf.eprintf "Parse error : %s !\n" msg;
-      fail ()
+      fail_msg (Printf.sprintf "Parse error : %s !\n" msg)
 
     | BoundedInt.IntegerError msg ->
-      Printf.eprintf "Integer error : %s !\n" msg;
-      fail ()
+      fail_msg (Printf.sprintf "Integer error : %s !\n" msg)
     | Convert.ConvertError msg ->
-      Printf.eprintf "Convert error : %s !\n" msg;
-      fail ()
+      fail_msg (Printf.sprintf "Convert error : %s !\n" msg)
     | PDFError (msg, ctxt) ->
-      Printf.eprintf "PDF error : %s%s !\n" msg (ctxt_to_string ctxt);
-      fail ()
+      fail_msg (Printf.sprintf "PDF error : %s%s !\n" msg (ctxt_to_string ctxt))
 
     | TypeError (msg, ctxt) ->
-      Printf.eprintf "Type error : %s%s !\n" msg (ctxt_to_string ctxt);
-      fail ()
+      fail_msg (Printf.sprintf "Type error : %s%s !\n" msg (ctxt_to_string ctxt))
 
     | UnexpectedError msg ->
-      Printf.eprintf "UNEXPECTED ERROR : %s !\n" msg;
-      fail ()
+      fail_msg (Printf.sprintf "UNEXPECTED ERROR : %s !\n" msg)
 
+
+  let catch ~fail (f : unit -> 'a) : 'a =
+    catch_msg ~fail_msg:(fun msg -> prerr_string msg; fail ()) f
 
   let print (f : unit -> unit) : unit =
     catch ~fail:(fun () -> ()) f

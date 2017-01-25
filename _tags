@@ -1,4 +1,4 @@
-true: use_menhir, package(cryptokit), package(oUnit)
+true: use_menhir, package(cryptokit), package(oUnit), package(curses)
 "src": include
 "src/contentstream": include
 "src/crypto": include
@@ -11,4 +11,5 @@ true: use_menhir, package(cryptokit), package(oUnit)
 "src/tools": include
 "src/type": include
 "src/type/pdf": include
+"src/ui": include
 "src/util": include

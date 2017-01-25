@@ -46,6 +46,27 @@ module Algo = struct
          result || y = z
       ) false x
 
+  let array_insert (x : 'a array) (y : 'a) (i : int) : 'a array =
+    let n = Array.length x in
+    if i <= 0 then
+      Array.concat [[|y|] ; x]
+    else if i >= n then
+      Array.concat [x ; [|y|]]
+    else
+      Array.concat [Array.sub x 0 i ; [|y|] ; Array.sub x i (n-i)]
+
+  let array_erase (x : 'a array) (i : int) : 'a array =
+    let n = Array.length x in
+    if n == 1 then
+      [| |]
+    else if i <= 0 then
+      Array.sub x 1 (n-1)
+    else if i >= n-1 then
+      Array.sub x 0 (n-1)
+    else
+      Array.concat [Array.sub x 0 i ; Array.sub x (i+1) (n-i-1)]
+
+
   let sort_hash (x : (string, 'a) Hashtbl.t) : (string * 'a) list =
     let l = Hashtbl.fold
         (fun key value l ->

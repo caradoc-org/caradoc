@@ -1,3 +1,7 @@
+New features:
+- Added the 'ui' command, an interactive user interface in console based on
+  ncurses.
+
 Bugfixes:
 - Added sanity checks if a non-existing file or directory is given as argument.
 

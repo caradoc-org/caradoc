@@ -32,6 +32,7 @@ open Errors
 open Pdfstream
 open Find
 open Openfile
+open Mainwindow
 
 
 (***************)
@@ -302,6 +303,14 @@ let command_findname =
   OneFileCmd (options, "Find all references to an object in a PDF file", find_name)
 
 
+let command_ui =
+  let ui filename =
+    MainWindow.run filename
+  in
+
+  OneFileCmd ([], "Launch the fancy console UI", ui)
+
+
 
 (****************)
 (* Main program *)
@@ -317,6 +326,7 @@ let commands = [
   "stats", command_stats;
   "findref", command_findref;
   "findname", command_findname;
+  "ui", command_ui;
 ]
 
 

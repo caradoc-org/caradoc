@@ -2,7 +2,10 @@
 
 Caradoc is a parser and validator of PDF files written in OCaml. This is version 0.3 (beta).
 
-Caradoc was presented at the the third Workshop on Language-Theoretic Security (LangSec) in May 2016. More information is available on the [site of the conference](http://spw16.langsec.org/papers.html#caradoc).
+Caradoc provides many commands to analyze PDFs, as well as an interactive user interface in console.
+
+Caradoc was presented at the the third Workshop on Language-Theoretic Security (LangSec) in May 2016.
+More information is available on the [website of the conference](http://spw16.langsec.org/papers.html#caradoc).
 
 ## Dependencies
 
@@ -19,7 +22,7 @@ apt-get install ocaml opam
 apt-get install zlib1g-dev
 opam init
 opam install ocamlfind
-opam install cryptokit ounit menhir
+opam install cryptokit ounit menhir curses
 ```
 
 It is also possible to use the corresponding Debian packages.
@@ -35,6 +38,8 @@ After installing the dependencies, just type `make` to compile the code.
 You may want to run `make test` to check that the program runs properly on your architecture and versions of OCaml and OPAM.
 
 ## Examples
+
+### Command line
 
 To obtain simple statistics on a PDF file, just type :
 ```
@@ -89,6 +94,13 @@ caradoc findname --name Page input.pdf
 caradoc findname --name Resources --show --highlight input.pdf
 ```
 
+### Interactive mode
+
+You can also try the interactive user interface in console :
+```
+caradoc ui path/to/your/input.pdf
+```
+
 ## Ad-hoc parser options
 
 You can specify an option file as parameter of most commands in the relaxed parser mode :
@@ -126,6 +138,7 @@ The source code is organized as follows :
 - `src/tools/` : various PDF tools (e.g. search in a file) ;
 - `src/type/` : code of the type checker ;
 - `src/type/pdf/` : definitions of PDF types ;
+- `src/ui/` : console user interface ;
 - `src/util/` : various helper modules ;
 - `test/` : unit tests ;
 - `test_files/` : examples of valid and corrupted PDF files.

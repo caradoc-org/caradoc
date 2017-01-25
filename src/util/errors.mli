@@ -87,6 +87,8 @@ module Errors : sig
   *)
   val warning_or_lexing_error : bool -> string -> BoundedInt.t -> unit
 
+  val catch_msg : fail_msg:(string -> 'a) -> (unit -> 'a) -> 'a
+
   (*   Call a function and call fail if an exception is caught
        Args    :
        - function to call in case of failure
