@@ -6,7 +6,7 @@ Standards-Version: 3.9.6
 Build-Depends: debhelper (>= 9), ocaml-nox, zlib1g-dev, ocaml-findlib, libcryptokit-ocaml-dev, libounit-ocaml-dev, menhir
 
 Package: caradoc
-Architecture: amd64
+Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g (>= 1:1.1.4)
 Description: PDF parser and validator
  Caradoc is a parser and validator of PDF files written in OCaml.
