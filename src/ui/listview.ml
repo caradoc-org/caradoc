@@ -17,20 +17,57 @@
 (*****************************************************************************)
 
 
-module TextView : sig
+module ListView = struct
 
-  type t
+  type t = {
+    buf : string array;
+    len : int;
+    mutable offset : int;
+  }
 
-  val make : unit -> t
-  val make_string : string -> t
-  val help : t
 
-  val move_up : t -> int -> unit
-  val move_down : t -> int -> unit
-  val move_to : t -> int -> unit
-  val move_home : t -> unit
-  val move_end : t -> unit
-  val draw : t -> Curses.window -> unit
+  let make (a : string array) : t =
+    {buf = a; len = Array.length a; offset = 0;}
+
+
+  let move_up (view : t) (i : int) : unit =
+    let o = view.offset - i in
+    let newoffset =
+      if o >= 0 then
+        o
+      else
+        0
+    in
+    view.offset <- newoffset
+
+  let move_down (view : t) (i : int) : unit =
+    let o = view.offset + i in
+    let newoffset =
+      if o < view.len - 1 then
+        o
+      else if view.len > 0 then
+        view.len - 1
+      else
+        0
+    in
+    view.offset <- newoffset
+
+  let move_to (view : t) (o : int) : unit =
+    let newoffset =
+      if o >= view.len then
+        view.len - 1
+      else if o < 0 then
+        0
+      else
+        o
+    in
+    view.offset <- newoffset
+
+  let move_home (view : t) : unit =
+    view.offset <- 0
+
+  let move_end (view : t) : unit =
+    view.offset <- view.len - 1
 
 end
 

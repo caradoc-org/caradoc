@@ -56,6 +56,13 @@ val extract_object : in_channel -> Key.t -> IndirectObject.t
 *)
 val extract_trailers : in_channel -> (DirectObject.dict_t list)
 
+(*   Extract detailed statistics from a PDF document
+     Args    :
+     - document
+     - file statistics
+*)
+val extract_info : Document.t -> Stats.t -> unit
+
 (*   Extract statistics from a PDF file
      Args    :
      - input file name

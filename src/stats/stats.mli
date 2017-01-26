@@ -77,6 +77,7 @@ module Stats : sig
   }
 
   val create : unit -> t
+  val to_string : t -> string
   val print : t -> unit
 
 end

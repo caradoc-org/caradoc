@@ -18,12 +18,14 @@
 
 
 open Textview
+open Selectview
 open Hexview
 
 module View = struct
 
   type t =
     | Text of TextView.t
+    | Select of SelectView.t
     | Hex of HexView.t
 
 
@@ -36,51 +38,48 @@ module View = struct
   let make_text (s : string) : t =
     Text (TextView.make_string s)
 
+  let make_select (a : string array) (title : string) : t =
+    Select (SelectView.make a title)
+
   let make_hex (s : string) : t =
     Hex (HexView.make_string s)
 
 
-  let move_up (v : t) (i : int) (width : int) : t =
+  let get_selection (v : t) : int option =
     match v with
-    | Text tv ->
-      Text (TextView.move_up tv i)
-    | Hex hv ->
-      Hex (HexView.move_up hv i width)
+    | Select sv ->
+      Some (SelectView.get_selection sv)
+    | Text _
+    | Hex _ ->
+      None
 
-  let move_down (v : t) (i : int) (width : int) : t =
-    match v with
-    | Text tv ->
-      Text (TextView.move_down tv i)
-    | Hex hv ->
-      Hex (HexView.move_down hv i width)
 
-  let move_to (v : t) (i : int) : t =
+  let dispatch (ftext : TextView.t -> 'a) (fselect : SelectView.t -> 'a) (fhex : HexView.t -> 'a) (v : t) : 'a =
     match v with
     | Text tv ->
-      Text (TextView.move_to tv i)
+      ftext tv
+    | Select sv ->
+      fselect sv
     | Hex hv ->
-      Hex (HexView.move_to hv i)
+      fhex hv
 
-  let move_home (v : t) : t =
-    match v with
-    | Text tv ->
-      Text (TextView.move_home tv)
-    | Hex hv ->
-      Hex (HexView.move_home hv)
+  let move_up : t -> int -> int -> unit =
+    dispatch (fun v _ -> TextView.move_up v) (fun v _ -> SelectView.move_up v) HexView.move_up
 
-  let move_end (v : t) : t =
-    match v with
-    | Text tv ->
-      Text (TextView.move_end tv)
-    | Hex hv ->
-      Hex (HexView.move_end hv)
+  let move_down : t -> int -> int -> unit =
+    dispatch (fun v _ -> TextView.move_down v) (fun v _ -> SelectView.move_down v) HexView.move_down
 
-  let draw (w : Curses.window) (v : t) : unit =
-    match v with
-    | Text tv ->
-      TextView.draw w tv
-    | Hex hv ->
-      HexView.draw w hv
+  let move_to : t -> int -> unit =
+    dispatch TextView.move_to SelectView.move_to HexView.move_to
+
+  let move_home : t -> unit =
+    dispatch TextView.move_home SelectView.move_home HexView.move_home
+
+  let move_end : t -> unit =
+    dispatch TextView.move_end SelectView.move_end HexView.move_end
+
+  let draw : t -> Curses.window -> unit =
+    dispatch TextView.draw SelectView.draw HexView.draw
 
 end
 

@@ -27,37 +27,14 @@ module MainWindow = struct
   type state_t = {
     window : Curses.window;
     mutable status : StatusBar.t;
-    mutable widgets : Widget.t ref array;
+    mutable widgets : Widget.t array;
     mutable active : int;
   }
-
-  let init (filename : string) : state_t =
-    Curses.ripoffline true;
-    let window = Curses.initscr () in
-
-    (* cbreak() : remove line buffering of characters *)
-    (* raw() : same + capture control characters such as CTRL+C *)
-    assert (Curses.cbreak ());
-    (* Do not print characters when typed on keyboard *)
-    assert (Curses.noecho ());
-    (* Disable interruption flush *)
-    assert (Curses.intrflush window false);
-    (* Capture keypad characters such as arrows *)
-    assert (Curses.keypad window true);
-    (* Hide cursor *)
-    assert (Curses.curs_set 0);
-
-    {
-      window = window;
-      status = StatusBar.make ();
-      widgets = [| ref (Widget.make filename "") |];
-      active = 0;
-    }
 
   let draw (s : state_t) : unit =
     let n = Array.length s.widgets in
     for i = 0 to n-1 do
-      let w = !(s.widgets.(i)) in
+      let w = s.widgets.(i) in
       Widget.set_active w (i == s.active);
       Widget.draw w
     done;
@@ -72,7 +49,7 @@ module MainWindow = struct
 
     for i = 0 to n-1 do
       let x, w = splitted.(i) in
-      Widget.resize !(s.widgets.(i)) s.window 0 x (height - 1) w;
+      Widget.resize s.widgets.(i) s.window 0 x (height - 1) w;
     done;
     StatusBar.resize s.status s.window (height - 1) 0 width;
 
@@ -92,7 +69,7 @@ module MainWindow = struct
     draw s
 
   let get_active (s : state_t) : Widget.t =
-    !(s.widgets.(s.active))
+    s.widgets.(s.active)
 
   let set_status (s : state_t) (msg : string) : unit =
     StatusBar.set_msg s.status msg;
@@ -101,6 +78,36 @@ module MainWindow = struct
   let get_input (s : state_t) () : string =
     StatusBar.get_input s.status
 
+
+  let init (filename : string) : state_t =
+    Curses.ripoffline true;
+    let window = Curses.initscr () in
+
+    (* cbreak() : remove line buffering of characters *)
+    (* raw() : same + capture control characters such as CTRL+C *)
+    assert (Curses.cbreak ());
+    (* Do not print characters when typed on keyboard *)
+    assert (Curses.noecho ());
+    (* Disable interruption flush *)
+    assert (Curses.intrflush window false);
+    (* Capture keypad characters such as arrows *)
+    assert (Curses.keypad window true);
+    (* Hide cursor *)
+    assert (Curses.curs_set 0);
+
+    let s = {
+      window = window;
+      status = StatusBar.make ();
+      widgets = [| Widget.make "" |];
+      active = 0;
+    }
+    in
+
+    resized s;
+    set_status s "Loading file in memory...";
+    Widget.loadfile s.widgets.(0) filename;
+    set_status s "File loaded!";
+    s
 
   let loop (s : state_t) : unit =
     resized s;
@@ -113,7 +120,7 @@ module MainWindow = struct
           resized s
           (* Split active widget *)
         else if i == int_of_char 's' then (
-          let w = ref (Widget.clone (get_active s)) in
+          let w = Widget.clone (get_active s) in
           s.widgets <- Algo.array_insert s.widgets w s.active;
           s.active <- s.active + 1;
           resized s
@@ -153,11 +160,11 @@ module MainWindow = struct
       ()
 
   let run (filename : string) : unit =
-    let s = init filename in
     let error = ref None in
     begin
       try
-        loop s
+        let state = init filename in
+        loop state
       with
       | Assert_failure (file, line, column) ->
         error := Some (Printf.sprintf "Assertion failed at: %s:%d:%d" file line column)

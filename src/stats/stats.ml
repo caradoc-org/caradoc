@@ -81,54 +81,59 @@ module Stats = struct
       verify_owner = false;
     }
 
-  let print_version (x : t) : bool =
+  let print_version (x : t) : bool * string =
     match x.version with
     | NotPDF ->
-      Printf.printf "Not a PDF file\n";
-      false
+      false, Printf.sprintf "Not a PDF file\n"
     | Unknown ->
-      Printf.printf "Version : unknown\n";
-      true
+      true,  Printf.sprintf "Version : unknown\n"
     | Version v ->
-      Printf.printf "Version : 1.%d\n" v;
-      true
+      true,  Printf.sprintf "Version : 1.%d\n" v
 
-  let print (x : t) : unit =
-    if print_version x then (
+  let to_string (x : t) : string =
+    let buf = Buffer.create 16 in
+    let addbuf s =
+      Buffer.add_string buf s
+    in
+
+    let ispdf, ver = print_version x in
+    addbuf ver;
+
+    if ispdf then (
       if x.updatecount >= 0 then (
-        Printf.printf "Incremental updates : %d\n" x.updatecount;
+        addbuf (Printf.sprintf "Incremental updates : %d\n" x.updatecount);
 
         if x.objstm then
-          Printf.printf "Contains object stream(s)\n";
+          addbuf (Printf.sprintf "Contains object stream(s)\n");
         if x.free then
-          Printf.printf "Contains free object(s)\n";
+          addbuf (Printf.sprintf "Contains free object(s)\n");
         if (not x.objstm) && (not x.free) && x.updatecount = 0 && (not x.encrypted) then
-          Printf.printf "Neither updates nor object streams nor free objects nor encryption\n";
+          addbuf (Printf.sprintf "Neither updates nor object streams nor free objects nor encryption\n");
 
         if x.encrypted then (
-          Printf.printf "Encrypted\n";
-          Printf.printf "User password is %s\n" (if x.verify_user then "valid" else "invalid");
-          Printf.printf "Owner password is %s\n" (if x.verify_owner then "valid" else "invalid");
+          addbuf (Printf.sprintf "Encrypted\n");
+          addbuf (Printf.sprintf "User password is %s\n" (if x.verify_user then "valid" else "invalid"));
+          addbuf (Printf.sprintf "Owner password is %s\n" (if x.verify_owner then "valid" else "invalid"));
         ) else (
           if x.objcount >= 0 then (
-            Printf.printf "Object count : %d\n" x.objcount;
+            addbuf (Printf.sprintf "Object count : %d\n" x.objcount);
             Hashtbl.iter (fun filter count ->
-                Printf.printf "Filter : %s -> %d times\n" filter count
+                addbuf (Printf.sprintf "Filter : %s -> %d times\n" filter count)
               ) x.filters;
             if x.knowntypes >= 0 then (
-              Printf.printf "Objects of known type : %d\n" x.knowntypes;
-              Printf.printf "Known type rate : %f\n" ((float_of_int x.knowntypes) /. (float_of_int x.objcount));
+              addbuf (Printf.sprintf "Objects of known type : %d\n" x.knowntypes);
+              addbuf (Printf.sprintf "Known type rate : %f\n" ((float_of_int x.knowntypes) /. (float_of_int x.objcount)));
             );
 
             if x.incompletetypes then
-              Printf.printf "Some types were not fully checked\n"
+              addbuf (Printf.sprintf "Some types were not fully checked\n")
             else if (x.knowntypes = x.objcount) then
-              Printf.printf "All types were fully checked\n";
+              addbuf (Printf.sprintf "All types were fully checked\n");
 
             if x.nographerror then
-              Printf.printf "Graph has no known error\n";
+              addbuf (Printf.sprintf "Graph has no known error\n");
             if x.nocontentstreamerror then
-              Printf.printf "Content streams have no known error\n";
+              addbuf (Printf.sprintf "Content streams have no known error\n");
           )
         )
       )
@@ -136,12 +141,12 @@ module Stats = struct
 
     let print_some_string (x : string option) (title : string) : unit =
       match x with
-      | Some s -> Printf.printf "/%s : %s\n" title (DirectObject.to_string (DirectObject.String s))
+      | Some s -> addbuf (Printf.sprintf "/%s : %s\n" title (DirectObject.to_string (DirectObject.String s)))
       | None -> ()
     in
     let print_some_int (x : int option) (title : string) : unit =
       match x with
-      | Some i -> Printf.printf "/%s : %d\n" title i
+      | Some i -> addbuf (Printf.sprintf "/%s : %d\n" title i)
       | None -> ()
     in
     print_some_string x.producer "Producer";
@@ -155,7 +160,12 @@ module Stats = struct
     print_some_string x.encrypt_id ((if x.encrypted then "Encrypt/" else "") ^ "ID");
 
     if x.nographerror && x.nocontentstreamerror && (not x.incompletetypes) && (x.knowntypes = x.objcount) then
-      Printf.printf "No error found\n"
+      addbuf (Printf.sprintf "No error found\n");
+
+    Buffer.contents buf
+
+  let print (x : t) : unit =
+    print_string (to_string x)
 
 end
 

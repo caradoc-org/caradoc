@@ -17,20 +17,27 @@
 (*****************************************************************************)
 
 
-module TextView : sig
+open Directobject
+open Indirectobject
+open Key
+open Errors
+open Stats
+
+module CachedFile : sig
 
   type t
 
   val make : unit -> t
-  val make_string : string -> t
-  val help : t
+  val make_file : string -> t
 
-  val move_up : t -> int -> unit
-  val move_down : t -> int -> unit
-  val move_to : t -> int -> unit
-  val move_home : t -> unit
-  val move_end : t -> unit
-  val draw : t -> Curses.window -> unit
+  val filename : t -> string
+  val contents : t -> string
+
+  val fetch_stats : t -> Stats.t
+  val fetch_trailers : t -> DirectObject.dict_t list
+  val fetch_object : t -> Key.t -> IndirectObject.t
+  val decode_stream : t -> Key.t -> string
+  val fetch_refs : t -> Key.t -> Errors.error_ctxt array
 
 end
 

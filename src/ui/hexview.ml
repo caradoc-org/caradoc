@@ -22,7 +22,7 @@ module HexView = struct
   type t = {
     buf : string;
     len : int;
-    offset : int;
+    mutable offset : int;
   }
 
 
@@ -43,7 +43,7 @@ module HexView = struct
     use_offsets, ch_per_line
 
 
-  let move_up (view : t) (i : int) (width : int) : t =
+  let move_up (view : t) (width : int) (i : int) : unit =
     let _, ch_per_line = adjust_params width in
     let o = view.offset - i * ch_per_line in
     let newoffset =
@@ -52,9 +52,9 @@ module HexView = struct
       else
         0
     in
-    {view with offset = newoffset}
+    view.offset <- newoffset
 
-  let move_down (view : t) (i : int) (width : int) : t =
+  let move_down (view : t) (width : int) (i : int) : unit =
     let _, ch_per_line = adjust_params width in
     let o = view.offset + i * ch_per_line in
     let newoffset =
@@ -65,9 +65,9 @@ module HexView = struct
       else
         0
     in
-    {view with offset = newoffset}
+    view.offset <- newoffset
 
-  let move_to (view : t) (o : int) : t =
+  let move_to (view : t) (o : int) : unit =
     let newoffset =
       if o >= view.len then
         view.len - 1
@@ -76,13 +76,13 @@ module HexView = struct
       else
         o
     in
-    {view with offset = newoffset}
+    view.offset <- newoffset
 
-  let move_home (view : t) : t =
-    {view with offset = 0}
+  let move_home (view : t) : unit =
+    view.offset <- 0
 
-  let move_end (view : t) : t =
-    {view with offset = view.len - 1}
+  let move_end (view : t) : unit =
+    view.offset <- view.len - 1
 
 
   let display_char (c : char) : string =
@@ -104,7 +104,7 @@ module HexView = struct
       *)
     Convert.hexa_of_char c
 
-  let draw (w : Curses.window) (v : t) : unit =
+  let draw (v : t) (w : Curses.window) : unit =
     let height, width = Curses.getmaxyx w in
     let use_offsets, ch_per_line = adjust_params width in
     let line_offset = v.offset / ch_per_line in

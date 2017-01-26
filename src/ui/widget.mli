@@ -21,8 +21,9 @@ module Widget : sig
 
   type t
 
-  val make : string -> string -> t
+  val make : string -> t
   val clone : t -> t
+  val loadfile : t -> string -> unit
   val resize : t -> Curses.window -> int -> int -> int -> int -> unit
 
   val set_active : t -> bool -> unit

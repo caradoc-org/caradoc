@@ -17,20 +17,21 @@
 (*****************************************************************************)
 
 
-module TextView : sig
+module ListView : sig
 
-  type t
+  type t = {
+    buf : string array;
+    len : int;
+    mutable offset : int;
+  }
 
-  val make : unit -> t
-  val make_string : string -> t
-  val help : t
+  val make : string array -> t
 
   val move_up : t -> int -> unit
   val move_down : t -> int -> unit
   val move_to : t -> int -> unit
   val move_home : t -> unit
   val move_end : t -> unit
-  val draw : t -> Curses.window -> unit
 
 end
 

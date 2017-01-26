@@ -17,19 +17,20 @@
 (*****************************************************************************)
 
 
-module TextView : sig
+module SelectView : sig
 
   type t
 
-  val make : unit -> t
-  val make_string : string -> t
-  val help : t
+  val make : string array -> string -> t
+
+  val get_selection : t -> int
 
   val move_up : t -> int -> unit
   val move_down : t -> int -> unit
   val move_to : t -> int -> unit
   val move_home : t -> unit
   val move_end : t -> unit
+
   val draw : t -> Curses.window -> unit
 
 end

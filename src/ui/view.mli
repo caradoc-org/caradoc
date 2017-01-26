@@ -24,14 +24,17 @@ module View : sig
   val make : unit -> t
   val make_help : unit -> t
   val make_text : string -> t
+  val make_select : string array -> string -> t
   val make_hex : string -> t
 
-  val move_up : t -> int -> int -> t
-  val move_down : t -> int -> int -> t
-  val move_to : t -> int -> t
-  val move_home : t -> t
-  val move_end : t -> t
-  val draw : Curses.window -> t -> unit
+  val get_selection : t -> int option
+
+  val move_up : t -> int -> int -> unit
+  val move_down : t -> int -> int -> unit
+  val move_to : t -> int -> unit
+  val move_home : t -> unit
+  val move_end : t -> unit
+  val draw : t -> Curses.window -> unit
 
 end
 

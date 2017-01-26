@@ -23,11 +23,24 @@ let newemptywin () : Curses.window =
 let inlinestr (s : string) (width : int) : string =
   let l = String.length s in
   if l <= width then
-    s ^ (String.make (width - l) ' ')
+    s
   else if width <= 3 then
     String.make width '.'
   else
     "..." ^ (String.sub s (l - width + 3) (width - 3))
+
+let trim_str (s : string) (l : int) : string =
+  if l < String.length s then
+    String.sub s 0 l
+  else
+    s
+
+let reverse_wadd_inlinestr (w : Curses.window) (y : int) (s : string) (width : int) : unit =
+  Curses.wattr_on w Curses.A.reverse;
+  ignore (Curses.mvwaddstr w y 0 (String.make width ' '));
+  ignore (Curses.mvwaddstr w y 0 (inlinestr s width));
+  Curses.wattr_off w Curses.A.reverse
+
 
 let split_width (w : int) (n : int) : (int * int) array =
   let avail = w - n + 1 in

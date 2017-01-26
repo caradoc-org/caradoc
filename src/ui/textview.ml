@@ -17,21 +17,16 @@
 (*****************************************************************************)
 
 
+open Listview
+open Uiutils
+
 module TextView = struct
 
-  type t = {
-    buf : string array;
-    len : int;
-    offset : int;
-  }
+  type t = ListView.t
 
 
   let make () : t =
-    {
-      buf = Array.make 0 "";
-      len = 0;
-      offset = 0;
-    }
+    ListView.make [||]
 
   let make_string (s : string) : t =
     let rec split (s : string) (i : int) (l : int) (c : char) : string list =
@@ -47,7 +42,14 @@ module TextView = struct
     in
 
     let a = Array.of_list (split s 0 (String.length s) '\n') in
-    {buf = a; len = Array.length a; offset = 0;}
+    ListView.make a
+
+
+  let move_up = ListView.move_up
+  let move_down = ListView.move_down
+  let move_to = ListView.move_to
+  let move_home = ListView.move_home
+  let move_end = ListView.move_end
 
 
   let help_string =
@@ -59,9 +61,13 @@ module TextView = struct
     ^ "\n"
     ^ " # CONTENT\n"
     ^ "\n"
-    ^ "F          show file\n"
+    ^ "F          show file content\n"
+    ^ "I          show file info\n"
     ^ "T          show trailer\n"
     ^ "12345 O    show object number 12345\n"
+    ^ "D          decode stream of current obj\n"
+    ^ "123   R    find refs. to object 123\n"
+    ^ "ENTER      show search result\n"
     ^ "\n"
     ^ " # VIEWS\n"
     ^ "\n"
@@ -76,62 +82,16 @@ module TextView = struct
     ^ "(PG)DOWN   move in active view\n"
     ^ "HOME       begin. of active view\n"
     ^ "END        end of active view\n"
-    ^ "12345 G    got to offset 12345\n"
+    ^ "12345 G    go to byte/line 12345\n"
 
   let help = make_string help_string
 
 
-  let move_up (view : t) (i : int) : t =
-    let o = view.offset - i in
-    let newoffset =
-      if o >= 0 then
-        o
-      else
-        0
-    in
-    {view with offset = newoffset}
-
-  let move_down (view : t) (i : int) : t =
-    let o = view.offset + i in
-    let newoffset =
-      if o < view.len - 1 then
-        o
-      else if view.len > 0 then
-        view.len - 1
-      else
-        0
-    in
-    {view with offset = newoffset}
-
-  let move_to (view : t) (o : int) : t =
-    let newoffset =
-      if o >= view.len then
-        view.len - 1
-      else if o < 0 then
-        0
-      else
-        o
-    in
-    {view with offset = newoffset}
-
-  let move_home (view : t) : t =
-    {view with offset = 0}
-
-  let move_end (view : t) : t =
-    {view with offset = view.len - 1}
-
-
-  let trim_str (s : string) (l : int) : string =
-    if l < String.length s then
-      String.sub s 0 l
-    else
-      s
-
-  let draw (w : Curses.window) (v : t) : unit =
+  let draw (v : t) (w : Curses.window) : unit =
     let height, width = Curses.getmaxyx w in
     for i = 0 to height - 1 do
-      let j = v.offset + i in
-      let s = trim_str (if j < v.len then v.buf.(j) else "~") width in
+      let j = v.ListView.offset + i in
+      let s = trim_str (if j < v.ListView.len then v.ListView.buf.(j) else "~") width in
       assert (Curses.mvwaddstr w i 0 s)
     done
 

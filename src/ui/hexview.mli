@@ -23,12 +23,12 @@ module HexView : sig
 
   val make_string : string -> t
 
-  val move_up : t -> int -> int -> t
-  val move_down : t -> int -> int -> t
-  val move_to : t -> int -> t
-  val move_home : t -> t
-  val move_end : t -> t
-  val draw : Curses.window -> t -> unit
+  val move_up : t -> int -> int -> unit
+  val move_down : t -> int -> int -> unit
+  val move_to : t -> int -> unit
+  val move_home : t -> unit
+  val move_end : t -> unit
+  val draw : t -> Curses.window -> unit
 
 end
 
