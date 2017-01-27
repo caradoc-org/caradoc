@@ -1,5 +1,5 @@
 Bugfixes:
-- Add sanity checks if a non-existing file or directory is given as argument.
+- Added sanity checks if a non-existing file or directory is given as argument.
 
 -------------------
 Version 0.3 (beta):
