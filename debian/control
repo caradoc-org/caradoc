@@ -3,7 +3,7 @@ Maintainer: Olivier Levillain <olivier.levillain@ssi.gouv.fr>
 Section: ocaml
 Priority: optional
 Standards-Version: 3.9.6
-Build-Depends: debhelper (>= 9), ocaml-nox, zlib1g-dev, ocaml-findlib, libcryptokit-ocaml-dev, libounit-ocaml-dev, menhir
+Build-Depends: debhelper (>= 9), ocaml-nox, zlib1g-dev, ocaml-findlib, libcryptokit-ocaml-dev, libounit-ocaml-dev, menhir, libcurses-ocaml-dev
 
 Package: caradoc
 Architecture: any

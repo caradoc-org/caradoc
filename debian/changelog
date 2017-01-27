@@ -1,3 +1,9 @@
+caradoc (0.3.1-1) UNRELEASED; urgency=medium
+
+  * Add curses interface (caradoc ui command)
+
+ -- Olivier Levillain <olivier.levillain@ssi.gouv.fr>  Fri, 27 Jan 2017 16:50:00 +0100
+
 caradoc (0.3-1) UNRELEASED; urgency=medium
 
   * Initial release as a Debian package.
