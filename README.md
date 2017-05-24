@@ -19,7 +19,7 @@ The prefered way to install dependencies is via [opam](https://opam.ocaml.org/),
 The following commands give an example of installation.
 ```
 apt-get install ocaml opam
-apt-get install zlib1g-dev
+apt-get install zlib1g-dev libgmp-dev pkg-config m4
 opam init
 opam install ocamlfind
 opam install cryptokit ounit menhir curses
