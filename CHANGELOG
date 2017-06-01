@@ -1,3 +1,6 @@
+New features:
+- Added support for LZW stream filter.
+
 ---------------------
 Version 0.3.1 (beta):
 ---------------------

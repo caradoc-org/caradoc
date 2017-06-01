@@ -23,6 +23,7 @@ open Asciihex
 open Ascii85
 open Runlength
 open Zlib
+open Lzw
 open Pdfstream.PDFStream
 open Directobject
 open Boundedint
@@ -88,6 +89,9 @@ let tests =
         "(2)" >:: (fun _ -> assert_equal
                       (ASCIIHex.decode (ASCIIHex.encode "foobar"))
                       (Some "foobar")) ;
+        "(3)" >:: (fun _ -> assert_equal
+                      (ASCIIHex.decode (ASCIIHex.encode (String.make 10000 'x')))
+                      (Some (String.make 10000 'x'))) ;
       ] ;
     ] ;
 
@@ -186,6 +190,9 @@ let tests =
         "(2)" >:: (fun _ -> assert_equal
                       (ASCII85.decode (ASCII85.encode "foobar"))
                       (Some "foobar")) ;
+        "(3)" >:: (fun _ -> assert_equal
+                      (ASCII85.decode (ASCII85.encode (String.make 10000 'x')))
+                      (Some (String.make 10000 'x'))) ;
       ] ;
     ] ;
 
@@ -233,6 +240,37 @@ let tests =
         "(2)" >:: (fun _ -> assert_equal
                       (RunLength.decode (RunLength.encode "foobar"))
                       (Some "foobar")) ;
+        "(3)" >:: (fun _ -> assert_equal
+                      (RunLength.decode (RunLength.encode (String.make 10000 'x')))
+                      (Some (String.make 10000 'x'))) ;
+      ] ;
+    ] ;
+
+    "lzw" >:::
+    [
+      "encode" >:::
+      [
+        "(1)" >:: (fun _ -> assert_equal
+                      (LZW.encode "")
+                      "\x80\x80") ;
+      ] ;
+      "decode" >:::
+      [
+        "(1)" >:: (fun _ -> assert_equal
+                      (LZW.decode "\x80\x0B\x60\x50\x22\x0C\x0C\x85\x01")
+                      (Some "-----A---B")) ;
+      ] ;
+      "encode-decode" >:::
+      [
+        "(1)" >:: (fun _ -> assert_equal
+                      (LZW.decode (LZW.encode ""))
+                      (Some "")) ;
+        "(2)" >:: (fun _ -> assert_equal
+                      (LZW.decode (LZW.encode "foobar"))
+                      (Some "foobar")) ;
+        "(3)" >:: (fun _ -> assert_equal
+                      (LZW.decode (LZW.encode (String.make 10000 'x')))
+                      (Some (String.make 10000 'x'))) ;
       ] ;
     ] ;
 
@@ -316,6 +354,9 @@ let tests =
         "(2)" >:: (fun _ -> assert_equal
                       (Zlib.decode (Zlib.encode "foobar"))
                       (Some "foobar")) ;
+        "(3)" >:: (fun _ -> assert_equal
+                      (Zlib.decode (Zlib.encode (String.make 10000 'x')))
+                      (Some (String.make 10000 'x'))) ;
       ] ;
     ] ;
     "adler32" >:::

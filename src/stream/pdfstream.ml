@@ -26,6 +26,7 @@ open Zlib
 open Asciihex
 open Ascii85
 open Runlength
+open Lzw
 open Predictor
 open Params
 open Entry
@@ -170,7 +171,15 @@ module PDFStream = struct
           (* TODO : check predictor *)
           d
       end
-    | "LZWDecode"
+    | "LZWDecode" ->
+      begin
+        match LZW.decode content with
+        | None ->
+          raise (Errors.PDFError ("Error in LZW stream", ctxt))
+        | Some d ->
+          (* TODO : check predictor *)
+          d
+      end
     | "CCITTFaxDecode"
     | "JBIG2Decode"
     | "DCTDecode"
@@ -243,7 +252,8 @@ module PDFStream = struct
       ASCII85.encode content
     | "RunLengthDecode" ->
       RunLength.encode content
-    | "LZWDecode"
+    | "LZWDecode" ->
+      LZW.encode content
     | "CCITTFaxDecode"
     | "JBIG2Decode"
     | "DCTDecode"
