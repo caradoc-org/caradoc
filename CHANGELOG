@@ -1,6 +1,9 @@
 New features:
 - Added support for LZW stream filter.
 
+Improvements:
+- Uniformized --verbose and --debug options.
+
 ---------------------
 Version 0.3.1 (beta):
 ---------------------

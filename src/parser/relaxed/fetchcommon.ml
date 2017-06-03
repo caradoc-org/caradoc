@@ -27,7 +27,7 @@ open Directobject
 open Indirectobject
 open Errors
 open Intervals
-open Params
+open Print
 open Common
 open Wrap
 open Pdfstream
@@ -92,8 +92,7 @@ let traverse_object (key : Key.t) ~(decrypt : bool) (error_ctxt : Errors.error_c
   with Not_found ->
     (* begin to traverse object *)
     FetchCommon.begin_traversal ctxt key;
-    if Params.global.Params.debug then
-      Printf.eprintf "Begin object %s\n" (Key.to_string key);
+    Print.debug ("Begin object " ^ (Key.to_string key));
 
     (* Special cases: do not decrypt xref tables and metadata streams *)
     let is_exception (o : IndirectObject.t) (crypto : Crypto.t) : bool =
@@ -125,8 +124,7 @@ let traverse_object (key : Key.t) ~(decrypt : bool) (error_ctxt : Errors.error_c
 
     (* object succesfully traversed *)
     FetchCommon.end_traversal ctxt key;
-    if Params.global.Params.debug then
-      Printf.eprintf "End object %s\n" (Key.to_string key);
+    Print.debug ("End object " ^ (Key.to_string key));
 
     content
 

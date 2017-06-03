@@ -39,6 +39,7 @@ open Mapkey
 open Graphchecker
 open Algo
 open Params
+open Print
 open Pdfstream
 open Cryptoparse
 open Crypto
@@ -192,8 +193,7 @@ let dump_objects (doc : Document.t) (filename : string) : unit =
 let check_header (input : in_channel) (stats : Stats.t) (intervals : Key.t Intervals.t) : unit =
   let vmajor, vminor = check_version input intervals in
   stats.Stats.version <- Stats.Version vminor;
-  if Params.global.Params.verbose then
-    Printf.printf "File version is : %d.%d\n" vmajor vminor
+  Print.verbose (Printf.sprintf "File version is : %d.%d" vmajor vminor)
 
 
 let check_signature (input : in_channel) (length : BoundedInt.t) (stats : Stats.t) : unit =
@@ -243,8 +243,7 @@ let parse_crypto_params (doc : Document.t) (input : in_channel) (length : Bounde
         raise (Errors.PDFError ("Encrypted document", Errors.make_ctxt_key Key.Trailer));
 
       stats.Stats.encrypted <- true;
-      if Params.global.Params.debug then
-        Printf.eprintf "File is encrypted\n";
+      Print.debug "File is encrypted";
 
       let id = DirectObject.dict_find trailer "ID" in
       let docid = DirectObject.get_array_of
@@ -252,12 +251,10 @@ let parse_crypto_params (doc : Document.t) (input : in_channel) (length : Bounde
           ~transform:(DirectObject.get_string ())
           id
       in
-      if Params.global.Params.debug then
-        Printf.eprintf "/ID array is: %s\n" (DirectObject.to_string id);
+      Print.debug ("/ID array is: " ^ (DirectObject.to_string id));
 
       let encrypt, error_ctxt = fetch_encrypt_dict input length xref enc in
-      if Params.global.Params.debug then
-        Printf.eprintf "∕Encrypt dictionary is: %s\n" (DirectObject.dict_to_string encrypt);
+      Print.debug ("∕Encrypt dictionary is: " ^ (DirectObject.dict_to_string encrypt));
 
       let params = CryptoParse.parse_encrypt_dict docid.(0) encrypt error_ctxt in
       let crypto, verify_u, verify_o = Crypto.make_crypto params Params.global.Params.user_password Params.global.Params.owner_password (Errors.key_of_ctxt error_ctxt) in
@@ -271,8 +268,7 @@ let parse_crypto_params (doc : Document.t) (input : in_channel) (length : Bounde
 
 let parse_until_xref (input : in_channel) (stats : Stats.t) : (BoundedInt.t * Key.t Intervals.t * XRefTable.t * Document.t) =
   let length = ~:(in_channel_length input) in
-  if Params.global.Params.verbose then
-    Printf.printf "File has length : %d [0x%x]\n" (BoundedInt.to_int length) (BoundedInt.to_int length);
+  Print.verbose (Printf.sprintf "File has length : %d [0x%x]" (BoundedInt.to_int length) (BoundedInt.to_int length));
 
   let intervals = Intervals.create () in
   if Params.global.Params.allow_invalid_version then
@@ -291,8 +287,7 @@ let parse_until_xref (input : in_channel) (stats : Stats.t) : (BoundedInt.t * Ke
   if not found then
     raise (Errors.PDFError ("No startxref found", Errors.ctxt_none));
 
-  if Params.global.Params.verbose then
-    Printf.printf "startxref : %d [0x%x]\n" (BoundedInt.to_int startxref) (BoundedInt.to_int startxref);
+  Print.verbose (Printf.sprintf "startxref : %d [0x%x]" (BoundedInt.to_int startxref) (BoundedInt.to_int startxref));
 
   let xref = XRefTable.create () in
   let setpos = IntSet.create () in
@@ -387,8 +382,7 @@ let apply_option (f : 'a -> 'b) (x : 'a option) : 'b =
 let parse_nonstrict (input : in_channel) (stats : Stats.t) : Document.t =
   let length, intervals, xref, doc = parse_until_xref input stats in
 
-  if Params.global.Params.verbose then
-    Printf.printf "Xref table(s) extracted successfully\n";
+  Print.verbose "Xref table(s) extracted successfully";
   apply_option (fun f -> dump_xref xref f) Params.global.Params.xref_filename;
 
   XRefTable.iter_all
@@ -402,8 +396,7 @@ let parse_nonstrict (input : in_channel) (stats : Stats.t) : Document.t =
     ) xref;
 
   parseobjects input length xref intervals doc;
-  if Params.global.Params.verbose then
-    Printf.printf "Objects extracted successfully\n";
+  Print.verbose "Objects extracted successfully";
 
   apply_option (fun f -> dump_intervals intervals f input length) Params.global.Params.loc_filename;
   apply_option (fun f -> dump_holes intervals f input length) Params.global.Params.holes_filename;
@@ -418,8 +411,7 @@ let parse_nonstrict (input : in_channel) (stats : Stats.t) : Document.t =
 
   (* TODO check content of holes in file ? *)
 
-  if Params.global.Params.verbose then
-    Printf.printf "Closing source file !\n";
+  Print.verbose "Closing source file !";
   close_in input;
   doc
 
@@ -502,14 +494,12 @@ let parse_file (filename : string) (stats : Stats.t) : Document.t =
   in
 
   if Params.global.Params.undefined_ref_as_null then (
-    if Params.global.Params.verbose then
-      Printf.printf "Replacing undefined references by null object\n";
+    Print.verbose "Replacing undefined references by null object";
     Document.undef_refs_to_null doc
   );
 
   if Params.global.Params.decode_streams then (
-    if Params.global.Params.verbose then
-      Printf.printf "Decoding streams\n";
+    Print.verbose "Decoding streams";
     Document.map_objects objdecodestream doc
   );
 
@@ -665,18 +655,15 @@ let cleanup (filename : string) (out_filename : string) : unit =
 
   (* TODO : normalize streams containing keywords *)
 
-  if Params.global.Params.verbose then
-    Printf.printf "Simplifying references\n";
+  Print.verbose "Simplifying references";
   let doc2 = Document.simplify_refs doc Params.global.Params.simplify_info in
 
-  if Params.global.Params.verbose then
-    Printf.printf "Sanitizing object numbers\n";
+  Print.verbose "Sanitizing object numbers";
   let doc3 = Document.sanitize_nums doc2 in
 
   (* TODO : sanitize unknown fields in /Info dictionary *)
 
-  if Params.global.Params.verbose then
-    Printf.printf "Saving file\n";
+  Print.verbose "Saving file";
   let output = open_out_bin out_filename in
   Document.print_pdf output doc3;
   close_out output

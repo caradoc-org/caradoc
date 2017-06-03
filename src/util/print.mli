@@ -25,5 +25,11 @@ module Print : sig
   *)
   val debug : string -> unit
 
+  (*   Print a debug message if --verbose is activated
+       Args    :
+       - message
+  *)
+  val verbose : string -> unit
+
 end
 

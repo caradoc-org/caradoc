@@ -401,8 +401,7 @@ module Operator = struct
   let check_commands_statemachine (commands : t list) (is_font3 : bool) (error_ctxt : Errors.error_ctxt) : unit =
     let last_state = List.fold_left (fun state command ->
       (*
-        if Params.global.Params.debug then
-          Printf.eprintf "State = %s, command = %s\n" (state_to_string state) (command_to_string command);
+        Print.debug ("State = " ^ (state_to_string state) ^ ", command = " ^ (command_to_string command));
           *)
         match check_command state command with
         | Some next_state ->

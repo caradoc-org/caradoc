@@ -25,7 +25,7 @@ open Directobject
 open Indirectobject
 open Document
 open Errors
-open Params
+open Print
 
 
 module Tree = struct
@@ -48,8 +48,7 @@ module Tree = struct
     and traverse_subtree (doc : Document.t) (visited : SetKey.t ref) (node_k : Key.t) (parent_k : Key.t) =
       let error_ctxt = Errors.make_ctxt_key node_k in
 
-      if Params.global.Params.debug then
-        Printf.eprintf "Visiting node %s\n" (Key.to_string node_k);
+      Print.debug ("Visiting node " ^ (Key.to_string node_k));
 
       (* Check cycles *)
       if SetKey.mem node_k !visited then
@@ -70,8 +69,7 @@ module Tree = struct
     in
 
     let traverse_tree (doc : Document.t) (root_k : Key.t) =
-      if Params.global.Params.debug then
-        Printf.eprintf "Visiting root node %s\n" (Key.to_string root_k);
+      Print.debug ("Visiting root node " ^ (Key.to_string root_k));
 
       let visited = ref SetKey.empty in
       visited := SetKey.add root_k !visited;
@@ -187,8 +185,7 @@ module Tree = struct
     and checknode (doc : Document.t) (visited : SetKey.t ref) (node_k : Key.t) (prev_k : Key.t option) (first_k : Key.t) (last_k : Key.t) (parent_k : Key.t) =
       let error_ctxt = Errors.make_ctxt_key node_k in
 
-      if Params.global.Params.debug then
-        Printf.eprintf "Visiting node %s\n" (Key.to_string node_k);
+      Print.debug ("Visiting node " ^ (Key.to_string node_k));
 
       (* Check cycles *)
       if SetKey.mem node_k !visited then
@@ -213,8 +210,7 @@ module Tree = struct
     in
 
     let checktree (doc : Document.t) (root_k : Key.t) =
-      if Params.global.Params.debug then
-        Printf.eprintf "Visiting root node %s\n" (Key.to_string root_k);
+      Print.debug ("Visiting root node " ^ (Key.to_string root_k));
 
       let visited = ref SetKey.empty in
       visited := SetKey.add root_k !visited;

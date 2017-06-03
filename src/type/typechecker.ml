@@ -28,7 +28,7 @@ open Mapkey
 open Directobject
 open Indirectobject
 open Stats
-open Params
+open Print
 
 module TypeChecker = struct
 
@@ -43,8 +43,7 @@ module TypeChecker = struct
     let ctxt = init () in
     let trailer = Document.main_trailer doc in
 
-    if Params.global.Params.verbose then
-      Printf.eprintf "\nChecking trailer\n";
+    Print.debug "\nChecking trailer";
     let (_:Type.t) = CheckObjectType.check_alias ctxt (IndirectObject.Direct (DirectObject.Dictionary trailer)) "trailer" false (Errors.make_ctxt_key Key.Trailer) in
 
     Document.iter_stms
@@ -63,8 +62,7 @@ module TypeChecker = struct
       let key, error_ctxt = List.hd ctxt.Type.to_check in
       ctxt.Type.to_check <- List.tl ctxt.Type.to_check;
 
-      if Params.global.Params.verbose then
-        Printf.eprintf "Remaining objects : %d -- checking object : %s " (List.length ctxt.Type.to_check) (Key.to_string key);
+      Print.debug (Printf.sprintf "Remaining objects : %d -- checking object : %s " (List.length ctxt.Type.to_check) (Key.to_string key));
 
       if not (Document.mem_obj doc key) then
         raise (Errors.PDFError (Printf.sprintf "Reference to unknown object during type checking : %s" (Key.to_string key), error_ctxt));
@@ -74,12 +72,10 @@ module TypeChecker = struct
         Type.allow_ind = false;
       } in
 
-      if Params.global.Params.verbose then
-        Printf.eprintf "of type : %s\n" (Type.type_to_string typ);
+      Print.debug ("of type : " ^ (Type.type_to_string typ));
 
       let real_type = CheckObjectType.check_object ctxt (Document.find_obj doc key) typ (Errors.make_ctxt_key key) in
-      if Params.global.Params.verbose then
-        Printf.eprintf "Object %s has type %s\n\n" (Key.to_string key) (Type.type_to_string real_type);
+      Print.debug ("Object " ^ (Key.to_string key) ^ " has type " ^ (Type.type_to_string real_type) ^ "\n");
 
       ctxt.Type.types <- MapKey.add key real_type.Type.kind ctxt.Type.types
     done;

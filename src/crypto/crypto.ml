@@ -21,7 +21,7 @@ open Errors
 open Rc4
 open Md5
 open Aes
-open Params
+open Print
 
 module Crypto = struct
 
@@ -288,16 +288,8 @@ module Crypto = struct
 
     let verify1 = verify_user params user_key1 in
     let verify2 = verify_user params user_key2 in
-    if Params.global.Params.debug then (
-      if verify1 then
-        Printf.eprintf "User password is valid!\n"
-      else
-        Printf.eprintf "User password is invalid...\n";
-      if verify2 then
-        Printf.eprintf "Owner password is valid!\n"
-      else
-        Printf.eprintf "Owner password is invalid...\n";
-    );
+    Print.debug ("User password is " ^ (if verify1 then "valid!" else "invalid..."));
+    Print.debug ("Owner password is " ^ (if verify2 then "valid!" else "invalid..."));
 
     let filekey =
       if verify1 then

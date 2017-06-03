@@ -23,7 +23,7 @@ open Indirectobject
 open Key
 open Tree
 open Errors
-open Params
+open Print
 open Boundedint
 open Pdfstream
 
@@ -115,11 +115,9 @@ module CleanupCS = struct
         () "Page root is mandatory and shall be indirect" (Errors.make_ctxt_name catalog_k "Pages")
         (DirectObject.dict_find catalog "Pages") in
 
-    if Params.global.Params.debug then
-      Printf.eprintf "Traversing page tree...\n";
+    Print.debug "Traversing page tree...";
     Tree.traverse (cleanup_pagenode doc objnum) "Kids" doc pageroot;
-    if Params.global.Params.debug then
-      Printf.eprintf "Page tree OK\n";
+    Print.debug "Page tree OK";
 
 end
 

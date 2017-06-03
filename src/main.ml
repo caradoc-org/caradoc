@@ -112,6 +112,8 @@ let command_stats =
   let options = [
     "--options", Arg.Set_string options_filename, "options filename";
     "--strict", Arg.Unit (fun () -> Params.global.Params.strict_parser <- true), "strict parser";
+    "--verbose", Arg.Unit (fun () -> Params.global.Params.verbose <- true), "verbose mode";
+    "--debug", Arg.Unit (fun () -> Params.global.Params.debug <- true), "debug mode";
   ] in
   OneFileCmd (options, "Give statistics about a file", print_stats)
 
@@ -141,8 +143,8 @@ let command_extract =
     "--loc", Arg.String (fun v -> Params.global.Params.loc_filename <- Some v), "file to dump the locations of objects in source file";
     "--holes", Arg.String (fun v -> Params.global.Params.holes_filename <- Some v), "file to dump the content of holes in source file (except whitespaces and comments)";
     "--types", Arg.String (fun v -> Params.global.Params.types_filename <- Some v), "file to dump the types of objects inferred by the typechecker";
-    "--verbose", Arg.Unit (fun () -> Params.global.Params.verbose <- true), "verbose mode";
     "--strict", Arg.Unit (fun () -> Params.global.Params.strict_parser <- true), "strict parser";
+    "--verbose", Arg.Unit (fun () -> Params.global.Params.verbose <- true), "verbose mode";
     "--debug", Arg.Unit (fun () -> Params.global.Params.debug <- true), "debug mode";
   ] in
   OneFileCmd (options, "Parse a PDF file and extract various data (objects, types, ...)", extract_fun)
@@ -197,6 +199,7 @@ let command_object =
     "--sort-dicts", Arg.Unit (fun () -> Params.global.Params.sort_dicts <- true), "sort dictionaries by key";
     "--raw-stream", Arg.Set_string raw_stream_filename, "file to dump the raw stream of this object";
     "--decoded-stream", Arg.String (fun v -> decoded_stream_filename := v; Params.global.Params.decode_streams <- true), "file to dump the decoded stream of this object";
+    "--verbose", Arg.Unit (fun () -> Params.global.Params.verbose <- true), "verbose mode";
     "--debug", Arg.Unit (fun () -> Params.global.Params.debug <- true), "debug mode";
   ] in
   OneFileCmd (options, "Extract a given object from a PDF file", parse_object)
@@ -222,6 +225,8 @@ let command_trailer =
   let options = [
     "--options", Arg.Set_string options_filename, "options filename";
     "--sort-dicts", Arg.Unit (fun () -> Params.global.Params.sort_dicts <- true), "sort dictionaries by key";
+    "--verbose", Arg.Unit (fun () -> Params.global.Params.verbose <- true), "verbose mode";
+    "--debug", Arg.Unit (fun () -> Params.global.Params.debug <- true), "debug mode";
   ] in
   OneFileCmd (options, "Extract the trailer(s) from a PDF file", parse_trailer)
 
@@ -275,6 +280,8 @@ let command_findref =
     "--show", Arg.Unit (fun () -> show_ctxt := true), "show context of each occurrence found";
     "--sort-dicts", Arg.Unit (fun () -> Params.global.Params.sort_dicts <- true), "when --show is activated, sort dictionaries by key";
     "--highlight", Arg.Unit (fun () -> highlight := true), "when --show is activated, highlight occurrences in console output";
+    "--verbose", Arg.Unit (fun () -> Params.global.Params.verbose <- true), "verbose mode";
+    "--debug", Arg.Unit (fun () -> Params.global.Params.debug <- true), "debug mode";
   ] in
   OneFileCmd (options, "Find all references to an object in a PDF file", find_reference)
 
@@ -299,6 +306,8 @@ let command_findname =
     "--show", Arg.Unit (fun () -> show_ctxt := true), "show context of each occurrence found";
     "--sort-dicts", Arg.Unit (fun () -> Params.global.Params.sort_dicts <- true), "when --show is activated, sort dictionaries by key";
     "--highlight", Arg.Unit (fun () -> highlight := true), "when --show is activated, highlight occurrences in console output";
+    "--verbose", Arg.Unit (fun () -> Params.global.Params.verbose <- true), "verbose mode";
+    "--debug", Arg.Unit (fun () -> Params.global.Params.debug <- true), "debug mode";
   ] in
   OneFileCmd (options, "Find all references to an object in a PDF file", find_name)
 

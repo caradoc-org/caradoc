@@ -27,6 +27,7 @@ open Boundedint
 open Errors
 open Algo
 open Params
+open Print
 open Pdfstream
 
 
@@ -146,8 +147,7 @@ module CheckObjectType = struct
       (* This file makes use of the "any" wildcard, thus is not fully checked*)
       ctxt.incomplete <- true;
 
-      if Params.global.Params.verbose then
-        Errors.warning "Any type specified" ectxt;
+      Print.verbose ("Warning : Any type specified" ^ (Errors.ctxt_to_string ectxt));
       typ
 
     | _ ->

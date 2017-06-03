@@ -29,6 +29,7 @@ open Directobject
 open Indirectobject
 open Key
 open Params
+open Print
 open Pdfstream
 
 
@@ -38,8 +39,7 @@ module MakeFetchComp (Fetch : FetchT) = struct
   (* PDF reference 7.5.7 *)
   (***********************)
   let parseobjstm (content : string) (key : Key.t) (error_ctxt : Errors.error_ctxt) (first : BoundedInt.t) (n : BoundedInt.t) (ctxt : FetchCommon.context) : (DirectObject.t * BoundedInt.t) MapKey.t =
-    if Params.global.Params.debug then
-      Printf.eprintf "Parse object stream %s\n" (Key.to_string key);
+    Print.debug ("Parse object stream " ^ (Key.to_string key));
 
     let nm1 = BoundedInt.to_int (n -: ~:1) in
 
@@ -93,22 +93,19 @@ module MakeFetchComp (Fetch : FetchT) = struct
       if MapKey.mem k !bag then
         raise (Errors.PDFError ("Object appears several times in object stream", error_ctxt_me));
 
-      if Params.global.Params.debug then
-        Printf.eprintf "In %s : parsing object %s\n" (Key.to_string key) (Key.to_string k);
+      Print.debug ("In " ^ (Key.to_string key) ^ " : parsing object " ^ (Key.to_string k));
 
       let substr = String.sub content (BoundedInt.to_int me) (BoundedInt.to_int len) in
       let lexbuf = Lexing.from_string substr in
 
-      if Params.global.Params.debug then
-        Printf.eprintf "Content of object %s : %s\n" (Key.to_string k) substr;
+      Print.debug ("Content of object " ^ (Key.to_string k) ^ " : " ^ substr);
 
       (* TODO : check that object is not reference, stream, etc... *)
       let obj = wrap_parser Parser.one_object lexbuf error_ctxt_me in
       bag := MapKey.add k (obj, ~:i) !bag;
     done;
 
-    if Params.global.Params.debug then
-      Printf.eprintf "Parsed object stream %s\n" (Key.to_string key);
+    Print.debug ("Parsed object stream " ^ (Key.to_string key));
 
     Document.add_objstm ctxt.FetchCommon.doc key;
     ctxt.FetchCommon.decompressed <- MapKey.add key !bag ctxt.FetchCommon.decompressed;

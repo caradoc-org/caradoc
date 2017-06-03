@@ -25,7 +25,7 @@ open Key
 open Boundedint
 open Directobject
 open Indirectobject
-open Params
+open Print
 
 
 module GraphChecker = struct
@@ -48,11 +48,9 @@ module GraphChecker = struct
         () "Page root is mandatory and shall be indirect" (Errors.make_ctxt_name catalog_k "Pages")
         (DirectObject.dict_find catalog "Pages") in
 
-    if Params.global.Params.debug then
-      Printf.eprintf "Checking page tree...\n";
+    Print.debug "Checking page tree...";
     Tree.check (Some "Parent") "Kids" doc pageroot;
-    if Params.global.Params.debug then
-      Printf.eprintf "Page tree OK\n";
+    Print.debug "Page tree OK";
 
 
     (* Name trees *)
@@ -69,11 +67,9 @@ module GraphChecker = struct
                 () "Dest shall be indirect" (Errors.ctxt_append_name error_ctxt "Dests")
                 x in
 
-            if Params.global.Params.debug then
-              Printf.eprintf "Checking destination tree...\n";
+            Print.debug "Checking destination tree...";
             Tree.check None "Kids" doc destroot;
-            if Params.global.Params.debug then
-              Printf.eprintf "Destination tree OK\n";
+            Print.debug "Destination tree OK";
           );
 
         (* TODO : other name trees *)
@@ -86,11 +82,9 @@ module GraphChecker = struct
             () "Outlines shall be indirect" (Errors.make_ctxt_name catalog_k "Outlines")
             x in
 
-        if Params.global.Params.debug then
-          Printf.eprintf "Checking outline tree...\n";
+        Print.debug "Checking outline tree...";
         Tree.checklist "Parent" "First" "Last" "Next" "Prev" doc outlineroot;
-        if Params.global.Params.debug then
-          Printf.eprintf "Outline tree OK\n";
+        Print.debug "Outline tree OK";
       );
 
     (* TODO : extend to other structures *)

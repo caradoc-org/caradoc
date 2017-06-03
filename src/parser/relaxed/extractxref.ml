@@ -32,6 +32,7 @@ open Indirectobject
 open Key
 open Stats
 open Params
+open Print
 open Fetchcommon
 
 
@@ -50,8 +51,7 @@ let parsexref_table (xref : XRefTable.t) (input : in_channel) (offset : BoundedI
 
   while not !trail do
     let error_ctxt = Errors.make_ctxt_pos (Errors.make_pos_file !pos) in
-    if Params.global.Params.debug then
-      Printf.eprintf "Parsing xref table section%s\n" (Errors.ctxt_to_string error_ctxt);
+    Print.debug ("Parsing xref table section" ^ (Errors.ctxt_to_string error_ctxt));
 
     let ( &> ) p lexbuf = wrap_xrefparser p lexbuf error_ctxt in
 
@@ -96,8 +96,7 @@ let parsexrefstm_subsection (xref : XRefTable.t) (error_pos : Errors.pos_t) (con
 
     let obj_num = start +: ~:i in
     let error_ctxt = Errors.make_ctxt (Key.make_0 obj_num) (Errors.pos_add_offset error_pos !pos) in
-    if Params.global.Params.debug then
-      Printf.eprintf "Xref stream entry : type = %s%s\n" (BoundedInt.to_string typ) (Errors.ctxt_to_string error_ctxt);
+    Print.debug ("Xref stream entry : type = " ^ (BoundedInt.to_string typ) ^ (Errors.ctxt_to_string error_ctxt));
 
     begin
       try
@@ -135,8 +134,7 @@ let parsexrefstm_subsection (xref : XRefTable.t) (error_pos : Errors.pos_t) (con
 (***********************)
 let parsexref_stm (xref : XRefTable.t) (input : in_channel) (offset : BoundedInt.t) (length : BoundedInt.t) (doc : Document.t) : BoundedInt.t * DirectObject.dict_t =
   let error_ctxt_pos = Errors.make_ctxt_pos (Errors.make_pos_file offset) in
-  if Params.global.Params.debug then
-    Printf.eprintf "Parsing xref stream%s\n" (Errors.ctxt_to_string error_ctxt_pos);
+  Print.debug ("Parsing xref stream" ^ (Errors.ctxt_to_string error_ctxt_pos));
 
   seek_xref input offset length;
   let lexbuf = Lexing.from_channel input in
@@ -162,8 +160,7 @@ let parsexref_stm (xref : XRefTable.t) (input : in_channel) (offset : BoundedInt
   (*************************)
   (* PDF reference 7.5.8.2 *)
   (*************************)
-  if Params.global.Params.debug then
-    Printf.eprintf "Decoding xref stream%s\n" (Errors.ctxt_to_string error_ctxt);
+  Print.debug ("Decoding xref stream" ^ (Errors.ctxt_to_string error_ctxt));
 
   let error_ctxt_w = Errors.ctxt_append_name error_ctxt "W" in
   let error_ctxt_size = Errors.ctxt_append_name error_ctxt "Size" in
@@ -173,8 +170,9 @@ let parsexref_stm (xref : XRefTable.t) (input : in_channel) (offset : BoundedInt
   let obj_size = DirectObject.dict_find stream_dict "Size" in
   let obj_index = DirectObject.dict_find stream_dict "Index" in
 
-  if Params.global.Params.debug then
-    Printf.eprintf "\t/W = %s\n\t/Size = %s\n\t/Index = %s\n" (DirectObject.to_string obj_w) (DirectObject.to_string obj_size) (DirectObject.to_string obj_index);
+  Print.debug ("\t/W = " ^ (DirectObject.to_string obj_w));
+  Print.debug ("\t/Size = " ^ (DirectObject.to_string obj_size));
+  Print.debug ("\t/Index = " ^ (DirectObject.to_string obj_index));
 
   let w = DirectObject.get_array_of
       ~length:3 ()
@@ -220,8 +218,7 @@ let parsexref_stm (xref : XRefTable.t) (input : in_channel) (offset : BoundedInt
 
 let parsexref (xref : XRefTable.t) (input : in_channel) (offset : BoundedInt.t) (length : BoundedInt.t) (setpos : IntSet.t) (intervals : Key.t Intervals.t) (doc : Document.t) : Errors.error_ctxt * DirectObject.dict_t =
   let error_ctxt = Errors.make_ctxt_pos (Errors.make_pos_file offset) in
-  if Params.global.Params.debug then
-    Printf.eprintf "Parsing xref table%s\n" (Errors.ctxt_to_string error_ctxt);
+  Print.debug ("Parsing xref table" ^ (Errors.ctxt_to_string error_ctxt));
 
   if not (IntSet.add setpos offset) then
     raise (Errors.PDFError ("Cyclic xref tables detected", error_ctxt));
@@ -251,8 +248,7 @@ let parsexref (xref : XRefTable.t) (input : in_channel) (offset : BoundedInt.t) 
 let rec parsetrailer (error_ctxt : Errors.error_ctxt) (trailer : DirectObject.dict_t) (xref : XRefTable.t) (input : in_channel) (length : BoundedInt.t) (setpos : IntSet.t) (intervals : Key.t Intervals.t) (doc : Document.t) (stats : Stats.t) : unit =
   stats.Stats.updatecount <- stats.Stats.updatecount + 1;
 
-  if Params.global.Params.debug then
-    Printf.eprintf "Parsing trailer%s\n" (Errors.ctxt_to_string error_ctxt);
+  Print.debug ("Parsing trailer" ^ (Errors.ctxt_to_string error_ctxt));
 
   (* Generic function to handle hybrid-reference files. *)
   let f name x =
@@ -260,8 +256,7 @@ let rec parsetrailer (error_ctxt : Errors.error_ctxt) (trailer : DirectObject.di
         "Expected positive integer" (Errors.ctxt_append_name error_ctxt name)
         x in
 
-    if Params.global.Params.debug then
-      Printf.eprintf "Trailer has /%s = %d [0x%x]\n" name (BoundedInt.to_int startxref) (BoundedInt.to_int startxref);
+    Print.debug (Printf.sprintf "Trailer has /%s = %d [0x%x]" name (BoundedInt.to_int startxref) (BoundedInt.to_int startxref));
 
     let new_error_ctxt, newtrailer = parsexref xref input startxref length setpos intervals doc in
     Document.add_trailer doc newtrailer;

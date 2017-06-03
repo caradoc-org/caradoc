@@ -19,6 +19,7 @@
 
 open Document
 open Params
+open Print
 open Errors
 open Indirectobject
 open Mapkey
@@ -77,13 +78,11 @@ module ContentStream = struct
     let commands = parse_commands s error_ctxt_stream in
     Operator.check_commands commands is_font3 error_ctxt;
     let resources = Resources.from_commands commands in
-    if Params.global.Params.debug then
-      Printf.eprintf "Needed resources for content stream%s :\n%s\n" (Errors.ctxt_to_string error_ctxt) (Resources.to_string resources)
+    Print.debug ("Needed resources for content stream" ^ (Errors.ctxt_to_string error_ctxt) ^ " :\n" ^ (Resources.to_string resources))
 
 
   let check_stream (doc : Document.t) (key : Key.t) (is_font3 : bool) : unit =
-    if Params.global.Params.verbose then
-      Printf.eprintf "Checking content stream in object %s\n" (Key.to_string key);
+    Print.debug ("Checking content stream in object " ^ (Key.to_string key));
     let error_ctxt = Errors.make_ctxt_key key in
     let error_ctxt_stream = Errors.make_ctxt_pos (Errors.make_pos_stream key ~:0) in
 

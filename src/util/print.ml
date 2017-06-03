@@ -25,5 +25,9 @@ module Print = struct
     if Params.global.Params.debug then
       Printf.eprintf "%s\n" msg
 
+  let verbose (msg : string) : unit =
+    if Params.global.Params.verbose then
+      Printf.eprintf "%s\n" msg
+
 end
 
