@@ -19,6 +19,7 @@
 
 
 open Algo
+open Print
 
 (***********************)
 (* PDF reference 7.4.3 *)
@@ -27,8 +28,10 @@ module ASCII85 = struct
 
   let decode_char (c : char) : int64 =
     let i = Char.code c in
-    if i < 0x21 || i > 0x75 then
-      raise Exit;
+    if i < 0x21 || i > 0x75 then (
+      Print.debug "[ASCII85] expected a base-85 character in range [0x21, 0x75]";
+      raise Exit
+    );
     Int64.of_int (i - 0x21)
 
   let decode_block_impl (dst : Buffer.t) (a : char) (b : char) (c : char) (d : char) (e : char) (l : int) : unit =
@@ -53,8 +56,10 @@ module ASCII85 = struct
            )
         )
     in
-    if x >= 0x1_0000_0000L then
-      raise Exit;
+    if x >= 0x1_0000_0000L then (
+      Print.debug "[ASCII85] 5-digit number above 2^32";
+      raise Exit
+    );
 
     if l >= 1 then
       Buffer.add_char dst (Char.chr (Int64.to_int (Int64.rem (Int64.shift_right x 24) 256L)));
@@ -67,9 +72,10 @@ module ASCII85 = struct
 
   let decode_block (dst : Buffer.t) (s : string) (i : int) (l : int) : unit =
     let d = l-i in
-    if d = 1 then
+    if d = 1 then (
+      Print.debug "[ASCII85] last block is too short: at least 2 characters are required";
       raise Exit
-    else if d = 2 then
+    ) else if d = 2 then
       decode_block_impl dst s.[i] s.[i+1] '\x75' '\x75' '\x75' 1
     else if d = 3 then
       decode_block_impl dst s.[i] s.[i+1] s.[i+2] '\x75' '\x75' 2
@@ -85,10 +91,14 @@ module ASCII85 = struct
       ) content in
     try
       let l = String.length s in
-      if l < 2 then
-        raise Exit;
-      if s.[l-2] <> '\x7E' || s.[l-1] <> '\x3E' then
-        raise Exit;
+      if l < 2 then (
+        Print.debug "[ASCII85] encoded stream is too short: at least 2 characters are required";
+        raise Exit
+      );
+      if s.[l-2] <> '\x7E' || s.[l-1] <> '\x3E' then (
+        Print.debug "[ASCII85] encoded stream must finish with EOD marker '~>'";
+        raise Exit
+      );
       let ll = l-2 in
 
       let i = ref 0 in

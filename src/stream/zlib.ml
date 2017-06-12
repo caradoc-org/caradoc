@@ -18,6 +18,8 @@
 (*****************************************************************************)
 
 
+open Print
+
 (*************************)
 (* PDF reference 7.4.4.1 *)
 (*************************)
@@ -35,9 +37,10 @@ module Zlib = struct
 
   let decode (content : string) : string option =
     let len = String.length content in
-    if len < 6 then
+    if len < 6 then (
+      Print.debug "[ZLIB] expected 6-byte header";
       None
-    else (
+    ) else (
       let x1 = Char.code content.[0] in
       let x2 = Char.code content.[1] in
       let meth = x1 land 0x0F in
@@ -52,9 +55,10 @@ module Zlib = struct
         meth <> 8 ||
         info > 7 ||
         fdict <> 0
-      ) then
+      ) then (
+        Print.debug "[ZLIB] unsupported or invalid header parameters";
         None
-      else
+      ) else
         try
           let transform = Cryptokit.Zlib.uncompress () in
           transform#put_substring content 2 (len - 6);
@@ -67,9 +71,10 @@ module Zlib = struct
           let h4 =                   (Int32.of_int (Char.code content.[len - 1]))     in
           let hash = Int32.logor (Int32.logor (Int32.logor h1 h2) h3) h4 in
 
-          if hash <> adler32 result then
+          if hash <> adler32 result then (
+            Print.debug "[ZLIB] invalid adler32";
             None
-          else
+          ) else
             Some result
         with _ ->
           None

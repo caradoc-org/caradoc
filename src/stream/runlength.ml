@@ -18,6 +18,8 @@
 (*****************************************************************************)
 
 
+open Print
+
 (***********************)
 (* PDF reference 7.4.5 *)
 (***********************)
@@ -34,19 +36,24 @@ module RunLength = struct
         let code = Char.code content.[!i] in
         i := !i + 1;
         if code = 0x80 then (
-          if !i != l then
+          if !i != l then (
+            Print.debug "[RunLength] unexpected byte after EOD marker";
             raise Exit
-          else
+          ) else
             eod := true
         ) else if code < 0x80 then (
           let ll = code + 1 in
-          if !i + ll > l then
-            raise Exit;
+          if !i + ll > l then (
+            Print.debug "[RunLength] too many bytes to copy verbatim";
+            raise Exit
+          );
           Buffer.add_substring buf content !i ll;
           i := !i + ll
         ) else (
-          if !i >= l then
-            raise Exit;
+          if !i >= l then (
+            Print.debug "[RunLength] missing byte to copy N times";
+            raise Exit
+          );
           let c = content.[!i] in
           for j = 1 to 257 - code do
             Buffer.add_char buf c

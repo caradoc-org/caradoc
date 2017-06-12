@@ -3,6 +3,7 @@ New features:
 
 Improvements:
 - Uniformized --verbose and --debug options.
+- Better debugging of stream filters.
 
 ---------------------
 Version 0.3.1 (beta):

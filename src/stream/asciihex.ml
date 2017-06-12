@@ -19,6 +19,7 @@
 
 
 open Algo
+open Print
 
 (***********************)
 (* PDF reference 7.4.2 *)
@@ -31,10 +32,14 @@ module ASCIIHex = struct
       ) content in
     try
       let l = String.length s in
-      if l < 1 then
-        raise Exit;
-      if s.[l-1] <> '>' then
-        raise Exit;
+      if l < 1 then (
+        Print.debug "[ASCIIHex] encoded stream is too short: at least 1 character is required";
+        raise Exit
+      );
+      if s.[l-1] <> '>' then (
+        Print.debug "[ASCIIHex] encoded stream must finish with EOD marker '>'";
+        raise Exit
+      );
       let ll = l-1 in
 
       let i = ref 0 in
